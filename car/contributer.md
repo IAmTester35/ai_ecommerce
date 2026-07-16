@@ -4,6 +4,7 @@
 Tại sao phù hợp: Nó chứa đầy đủ các trường Metadata cứng (Price, Year, Manufacturer, Model, Condition, Cylinders, Drive, Type) và đặc biệt là trường description chứa nội dung mô tả xe dài (rất tốt cho RAG và Semantic Search).
 Kích thước: ~275MB.
 Link Kaggle: austinreese/craigslist-carstrucks-data
+
 2. Edmunds Consumer Car Ratings and Reviews (Bổ sung cho RAG & LLM Reasoning)
 Nếu bạn muốn hệ thống có khả năng tư vấn theo cảm tính của người dùng (ví dụ: "xe bốc", "cách âm tốt", "phù hợp đi dạo phố" như trong PROJECT.md), đây là bộ dataset cực kỳ giá trị để augment dữ liệu.
 
