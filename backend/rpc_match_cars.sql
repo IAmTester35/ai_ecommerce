@@ -1,5 +1,5 @@
 CREATE OR REPLACE FUNCTION match_cars(
-  query_embedding VECTOR(3072),
+  query_embedding VECTOR(768),
   match_threshold FLOAT,
   match_count INT,
   filter_manufacturer TEXT DEFAULT NULL,

@@ -23,16 +23,16 @@ ai_client = genai.Client(api_key=GEMINI_API_KEY)
 # Configuration
 CSV_PATH = "../car/vehicles.csv"
 SAMPLE_SIZE = 1000  # Small sample size for testing
-TARGET_BRANDS = ['toyota', 'bmw', 'honda', 'ford']
 
 def get_embedding(text: str) -> list[float]:
-    """Generate 3072-dimensional embedding using Gemini text-embedding-004"""
+    """Generate 768-dimensional embedding"""
     max_retries = 5
     for attempt in range(max_retries):
         try:
             response = ai_client.models.embed_content(
                 model='gemini-embedding-2',
                 contents=text,
+                config={'output_dimensionality': 768}
             )
             return response.embeddings[0].values
         except Exception as e:
@@ -56,15 +56,6 @@ def main():
     df = df.dropna(subset=['id', 'price', 'year', 'manufacturer', 'model', 'description'])
     df['manufacturer'] = df['manufacturer'].str.lower()
     
-    # Filter by target brands
-    df = df[df['manufacturer'].isin(TARGET_BRANDS)]
-    
-    # Sample data
-    if len(df) > SAMPLE_SIZE:
-        df = df.sample(n=SAMPLE_SIZE, random_state=42)
-    
-    print(f"Processing {len(df)} records...")
-    
     print("Fetching existing IDs from Supabase to avoid reprocessing...")
     existing_ids = set()
     try:
@@ -74,6 +65,18 @@ def main():
         print(f"Found {len(existing_ids)} existing records in Supabase. These will be skipped.")
     except Exception as e:
         print(f"Could not fetch existing IDs: {e}")
+        
+    # Remove records that are already in database
+    if existing_ids:
+        df = df[~df['id'].isin(existing_ids)]
+        
+    print(f"Remaining new records to process: {len(df)}")
+    
+    # Sample data
+    if len(df) > SAMPLE_SIZE:
+        df = df.sample(n=SAMPLE_SIZE)
+    
+    print(f"Selected {len(df)} records for this run...")
     
     records_to_insert = []
     

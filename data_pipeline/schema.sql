@@ -21,10 +21,8 @@ CREATE TABLE cars (
     type TEXT,
     paint_color TEXT,
     description TEXT,
-    embedding VECTOR(3072) -- Gemini embedding 2 dimension is 3072
+    embedding VECTOR(768)
 );
 
 -- Create an HNSW index for fast approximate nearest neighbor search
--- Note: pgvector restricts standard vector indexing to 2000 dimensions. 
--- For 3072 dimensions, we must cast to halfvec.
-CREATE INDEX ON cars USING hnsw ((embedding::halfvec(3072)) halfvec_cosine_ops);
+CREATE INDEX ON cars USING hnsw (embedding vector_cosine_ops);
