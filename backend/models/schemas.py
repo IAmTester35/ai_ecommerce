@@ -6,16 +6,17 @@ class QueryRequest(BaseModel):
 
 class ExtractedConstraints(BaseModel):
     max_price: Optional[int] = Field(None, description="Ngân sách tối đa của khách hàng")
-    manufacturer: Optional[str] = Field(None, description="Hãng xe khách hàng muốn (nếu có)")
+    make: Optional[str] = Field(None, description="Hãng xe khách hàng muốn (nếu có)")
+    target_year: Optional[int] = Field(None, description="Năm sản xuất mục tiêu")
     soft_intent: str = Field(..., description="Các yêu cầu mềm về cảm giác lái, phong cách, mục đích sử dụng, v.v.")
     
 class CarResponse(BaseModel):
     id: str
-    manufacturer: Optional[str] = None
+    make: Optional[str] = None
     model: Optional[str] = None
     year: Optional[int] = None
     price: Optional[int] = None
-    description: Optional[str] = None
+    review: Optional[str] = None
     similarity: Optional[float] = None
 
 class SearchResponse(BaseModel):

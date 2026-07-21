@@ -12,12 +12,14 @@ def extract_constraints(query: str) -> ExtractedConstraints:
     Sử dụng LLM để bóc tách yêu cầu cứng và yêu cầu mềm từ câu lệnh người dùng.
     """
     prompt = f"""
-    Bạn là một trợ lý AI phân tích nhu cầu mua ô tô.
-    Khách hàng yêu cầu: "{query}"
-    Hãy trích xuất thông tin thành dạng JSON.
-    - max_price: Số tiền tối đa (nếu có nhắc đến, ví dụ "dưới 20000" -> 20000). Không có thì để null.
-    - manufacturer: Hãng xe (nếu có, viết thường, ví dụ: "toyota", "bmw"). Không có thì để null.
-    - soft_intent: Tóm tắt tất cả các yêu cầu còn lại bằng 1 câu ngắn (ví dụ: "xe thể thao màu đỏ", "xe gia đình rộng rãi", "động cơ mạnh").
+    You are an AI assistant specialized in analyzing car purchase intents.
+    Extract the constraints from the user's query: "{query}"
+
+    Extract the information based on the following rules:
+    - max_price: The maximum budget mentioned (e.g., "under 20000" -> 20000, "20k" -> 20000). If not mentioned, return null.
+    - make: The car brand mentioned (e.g., "Toyota", "BMW"). Convert to lowercase. If not mentioned, return null.
+    - target_year: The specific car year mentioned (e.g., "đời 2020" -> 2020, "2018 model" -> 2018). If not mentioned, return null.
+    - soft_intent: Summarize all other preferences, requirements, and sentiments into a concise string (e.g., "red sports car", "spacious family SUV", "reliable and fuel-efficient"). This will be used for vector semantic search.
     """
     
     # Dùng tính năng response_schema của google-genai
@@ -39,21 +41,27 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
     """
     cars_info = ""
     for idx, c in enumerate(cars):
-        cars_info += f"{idx+1}. {c['year']} {c['manufacturer']} {c['model']} - Giá: ${c['price']}\n"
+        cars_info += f"- {c['year']} {c['make']} {c['model']} (Price: ${c['price']})\n"
     
     prompt = f"""
-    Bạn là nhân viên tư vấn bán ô tô cao cấp.
-    Khách hàng yêu cầu: "{query}"
-    Bạn đã tìm được các xe sau:
-    {cars_info if cars_info else "Không tìm thấy xe nào."}
+    You are a premium automotive sales consultant. 
+    The user is looking for a car with the following query: "{query}"
     
-    Mâu thuẫn giá cả/yêu cầu: {"Có mâu thuẫn. Đã nới lỏng ngân sách để tìm xe thay thế." if conflict_detected else "Không có mâu thuẫn."}
+    Based on their query, you have retrieved the following options from the database:
+    {cars_info if cars_info else "No exact matches found."}
     
-    Hãy viết một câu tư vấn thân thiện, ngắn gọn (dưới 4 câu) giới thiệu các xe bạn đã tìm được. Nếu có mâu thuẫn, hãy khéo léo giải thích lý do đề xuất xe thay thế.
+    Context about the search:
+    Conflict detected (e.g., unrealistic budget): {"Yes. The budget was relaxed to find alternative options." if conflict_detected else "No."}
+    
+    Instructions:
+    1. Write a friendly, professional, and persuasive response (maximum 3-4 sentences).
+    2. Introduce the top recommended cars from the list provided.
+    3. If a conflict was detected, politely explain that the original budget was adjusted slightly to find the best possible matches.
+    4. Do not list all cars extensively; just highlight the best options seamlessly in your conversational response.
     """
     
     response = client.models.generate_content(
-        model='gemini-3.5-flash',
+        model='gemini-3.1-flash-lite',
         contents=prompt,
     )
     

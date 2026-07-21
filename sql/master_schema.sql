@@ -46,17 +46,12 @@ CREATE TABLE cars (
     year INT NOT NULL,
     engine_hp INT,
     price INT,                  -- MSRP 
-    rating FLOAT,               -- Đánh giá trung bình từ Edmunds
-    review TEXT,                -- Nội dung review tổng hợp
     metadata JSONB,             -- Chứa các thông số phụ (kiểu dáng, hộp số, nhiên liệu,...)
-    embedding VECTOR(768),      -- Vector từ nội dung
     stock_quantity INT DEFAULT 1,
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(make, model, year)
 );
-
--- Tạo Index HNSW cho việc tìm kiếm Vector siêu tốc
-CREATE INDEX ON cars USING hnsw (embedding vector_cosine_ops);
 
 -- Tạo Index GIN cho metadata để truy vấn JSON tốc độ cao
 CREATE INDEX ON cars USING GIN (metadata);
@@ -106,12 +101,17 @@ CREATE TABLE order_items (
 -- Reviews
 CREATE TABLE reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE, -- Có thể NULL cho review từ external source
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
-    rating INT CHECK (rating >= 1 AND rating <= 5),
+    rating FLOAT, -- Hỗ trợ rating float từ file CSV
     comment TEXT,
+    source TEXT DEFAULT 'user', -- 'user' hoặc 'edmunds'
+    embedding VECTOR(768),      -- Vector từ nội dung
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Tạo Index HNSW cho việc tìm kiếm Vector siêu tốc
+CREATE INDEX ON reviews USING hnsw (embedding vector_cosine_ops);
 
 -- Q&A
 CREATE TABLE car_qa (
@@ -216,7 +216,8 @@ CREATE OR REPLACE FUNCTION match_cars(
   match_threshold FLOAT,
   match_count INT,
   filter_make TEXT DEFAULT NULL,
-  filter_max_price INT DEFAULT NULL
+  filter_max_price INT DEFAULT NULL,
+  filter_target_year INT DEFAULT NULL
 )
 RETURNS TABLE (
   id UUID,
@@ -231,20 +232,35 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN QUERY
-  SELECT
-    cars.id,
-    cars.make,
-    cars.model,
-    cars.year,
-    cars.price,
-    cars.review,
-    1 - (cars.embedding <=> query_embedding) AS similarity
-  FROM cars
-  WHERE 
-    (filter_make IS NULL OR cars.make ILIKE filter_make)
-    AND (filter_max_price IS NULL OR cars.price <= filter_max_price)
-    AND 1 - (cars.embedding <=> query_embedding) > match_threshold
-  ORDER BY cars.embedding <=> query_embedding
+  WITH ranked_reviews AS (
+    SELECT 
+      c.id AS car_id,
+      c.make,
+      c.model,
+      c.year,
+      c.price,
+      r.comment AS review,
+      1 - (r.embedding <=> query_embedding) AS similarity,
+      ROW_NUMBER() OVER(PARTITION BY c.id ORDER BY r.embedding <=> query_embedding ASC) as rn
+    FROM reviews r
+    JOIN cars c ON r.car_id = c.id
+    WHERE 
+      (filter_make IS NULL OR c.make ILIKE filter_make)
+      AND (filter_max_price IS NULL OR c.price <= filter_max_price)
+      AND (filter_target_year IS NULL OR c.year >= filter_target_year - 2)
+      AND 1 - (r.embedding <=> query_embedding) > match_threshold
+  )
+  SELECT 
+    car_id AS id,
+    make,
+    model,
+    year,
+    price,
+    review,
+    similarity
+  FROM ranked_reviews
+  WHERE rn = 1
+  ORDER BY similarity DESC
   LIMIT match_count;
 END;
 $$;

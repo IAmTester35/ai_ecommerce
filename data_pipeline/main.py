@@ -60,94 +60,126 @@ def main():
     
     print(f"Selected {len(df)} records for this run...")
     
-    records_to_insert = []
+    CAR_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, 'ai_ecommerce.cars')
+    REVIEW_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, 'ai_ecommerce.reviews')
     
-    for index, row in tqdm(df.iterrows(), total=len(df)):
-        # Extract fields safely
+    # 1. PROCESS AND INSERT UNIQUE CARS
+    print("\n=== STEP 1: Processing unique cars ===")
+    unique_cars = {}
+    for index, row in df.iterrows():
         year = int(row['Year'])
         make = str(row['Make'])
         model = str(row['Model'])
         
-        # Handle MSRP / Price (can be empty)
-        price_val = row['MSRP']
-        price = int(float(price_val)) if pd.notnull(price_val) and str(price_val).strip() != '' else None
+        car_key = f"{make}_{model}_{year}"
+        if car_key not in unique_cars:
+            # Handle MSRP / Price
+            price_val = row['MSRP']
+            price = int(float(price_val)) if pd.notnull(price_val) and str(price_val).strip() != '' else None
+            
+            # Handle HP
+            hp_val = row['Engine_HP']
+            hp = int(float(hp_val)) if pd.notnull(hp_val) and str(hp_val).strip() != '' else None
+            
+            metadata = {
+                "engine_fuel_type": str(row.get('Engine_Fuel_Type', '')).strip(),
+                "engine_cylinders": str(row.get('Engine_Cylinders', '')).strip(),
+                "transmission_type": str(row.get('Transmission_Type', '')).strip(),
+                "driven_wheels": str(row.get('Driven_Wheels', '')).strip(),
+                "number_of_doors": str(row.get('Number_of_Doors', '')).strip(),
+                "market_category": str(row.get('Market_Category', '')).strip(),
+                "vehicle_size": str(row.get('Vehicle_Size', '')).strip(),
+                "vehicle_style": str(row.get('Vehicle_Style', '')).strip()
+            }
+            
+            car_id = str(uuid.uuid5(CAR_NAMESPACE, car_key))
+            unique_cars[car_key] = {
+                "id": car_id,
+                "make": make,
+                "model": model,
+                "year": year,
+                "engine_hp": hp,
+                "price": price,
+                "metadata": metadata
+            }
+
+    cars_to_insert = list(unique_cars.values())
+    print(f"Found {len(cars_to_insert)} unique cars. Upserting to Supabase...")
+    
+    # Upsert cars in batches
+    batch_size = 50
+    for i in range(0, len(cars_to_insert), batch_size):
+        batch = cars_to_insert[i:i+batch_size]
+        try:
+            supabase.table('cars').upsert(batch).execute()
+        except Exception as e:
+            print(f"Error inserting cars to Supabase: {e}")
+
+    # 2. PROCESS AND INSERT REVIEWS
+    print("\n=== STEP 2: Processing and inserting reviews ===")
+    reviews_to_insert = []
+    
+    for index, row in tqdm(df.iterrows(), total=len(df)):
+        year = int(row['Year'])
+        make = str(row['Make'])
+        model = str(row['Model'])
+        car_key = f"{make}_{model}_{year}"
         
-        # Handle HP
-        hp_val = row['Engine_HP']
-        hp = int(float(hp_val)) if pd.notnull(hp_val) and str(hp_val).strip() != '' else None
-        
-        # Handle Rating
-        rating_val = row['Rating']
-        rating = float(rating_val) if pd.notnull(rating_val) and str(rating_val).strip() != '' else None
+        if car_key not in unique_cars:
+            continue
+            
+        car_id = unique_cars[car_key]['id']
+        car_data = unique_cars[car_key]
         
         review = str(row['Review']).strip()
         
-        # Gather metadata
-        metadata = {
-            "engine_fuel_type": str(row.get('Engine_Fuel_Type', '')).strip(),
-            "engine_cylinders": str(row.get('Engine_Cylinders', '')).strip(),
-            "transmission_type": str(row.get('Transmission_Type', '')).strip(),
-            "driven_wheels": str(row.get('Driven_Wheels', '')).strip(),
-            "number_of_doors": str(row.get('Number_of_Doors', '')).strip(),
-            "market_category": str(row.get('Market_Category', '')).strip(),
-            "vehicle_size": str(row.get('Vehicle_Size', '')).strip(),
-            "vehicle_style": str(row.get('Vehicle_Style', '')).strip()
-        }
+        rating_val = row['Rating']
+        rating = float(rating_val) if pd.notnull(rating_val) and str(rating_val).strip() != '' else None
         
-        # Construct a rich text for embedding - THIS IS THE SOUL OF THE RAG
+        # Tích hợp thêm keyword thông số nhẹ vào review text để context embedding phong phú hơn
         rich_text = f"Car: {year} {make} {model}. "
-        if hp: rich_text += f"Engine Power: {hp} HP. "
-        if metadata['engine_cylinders']: rich_text += f"Engine Cylinders: {metadata['engine_cylinders']}. "
-        if metadata['engine_fuel_type']: rich_text += f"Fuel Type: {metadata['engine_fuel_type']}. "
-        if metadata['vehicle_style']: rich_text += f"Style: {metadata['vehicle_style']}. "
-        if metadata['market_category']: rich_text += f"Category: {metadata['market_category']}. "
-        if metadata['transmission_type']: rich_text += f"Transmission: {metadata['transmission_type']}. "
-        if rating: rich_text += f"User Rating: {rating}/5. "
-        rich_text += f"User Reviews and Driving Feel: {review}"
+        if car_data['engine_hp']: rich_text += f"Engine Power: {car_data['engine_hp']} HP. "
+        if rating: rich_text += f"Rating: {rating}/5. "
+        rich_text += f"Review: {review}"
         
-        # Get vector embedding
         embedding = get_embedding(rich_text)
-        
         time.sleep(4) # Rate limit protection
         
         if not embedding:
             continue
             
+        review_unique_string = f"{car_id}_{review}"
+        review_id = str(uuid.uuid5(REVIEW_NAMESPACE, review_unique_string))
+        
         record = {
-            "id": str(uuid.uuid4()), # Generate UUID manually for Supabase upsert
-            "make": make,
-            "model": model,
-            "year": year,
-            "engine_hp": hp,
-            "price": price,
+            "id": review_id,
+            "car_id": car_id,
             "rating": rating,
-            "review": review,
-            "metadata": metadata,
+            "comment": review,
+            "source": "edmunds",
             "embedding": embedding
         }
-        records_to_insert.append(record)
+        reviews_to_insert.append(record)
         
-        # Batch insert
-        if len(records_to_insert) >= 10:
+        if len(reviews_to_insert) >= 10:
             try:
-                supabase.table('cars').upsert(records_to_insert).execute()
+                supabase.table('reviews').upsert(reviews_to_insert).execute()
             except Exception as e:
-                print(f"\nError inserting to Supabase: {e}")
-                with open('failed_records.csv', 'a', newline='', encoding='utf-8') as f:
+                print(f"\nError inserting reviews to Supabase: {e}")
+                with open('failed_reviews.csv', 'a', newline='', encoding='utf-8') as f:
                     writer = csv.writer(f)
-                    for r in records_to_insert:
-                        writer.writerow([r['make'], r['model'], str(e)])
+                    for r in reviews_to_insert:
+                        writer.writerow([r['car_id'], str(e)])
             finally:
-                records_to_insert = []
+                reviews_to_insert = []
                 
-    # Insert remaining
-    if len(records_to_insert) > 0:
+    if len(reviews_to_insert) > 0:
         try:
-            supabase.table('cars').upsert(records_to_insert).execute()
+            supabase.table('reviews').upsert(reviews_to_insert).execute()
         except Exception as e:
-            print(f"\nError inserting to Supabase: {e}")
-            
-    print("Pipeline completed successfully!")
+            print(f"\nError inserting reviews to Supabase: {e}")
+
+    print("\nPipeline completed successfully!")
 
 if __name__ == "__main__":
     main()

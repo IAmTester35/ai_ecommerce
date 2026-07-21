@@ -17,7 +17,7 @@ def get_embedding(text: str) -> list[float]:
     )
     return response.embeddings[0].values
 
-def hybrid_search(soft_intent: str, max_price: int = None, manufacturer: str = None, top_k: int = 5):
+def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, target_year: int = None, top_k: int = 5):
     conflict_detected = False
     
     t_start = time.time()
@@ -33,8 +33,9 @@ def hybrid_search(soft_intent: str, max_price: int = None, manufacturer: str = N
             'query_embedding': query_vector,
             'match_threshold': 0.0,
             'match_count': top_k,
-            'filter_manufacturer': manufacturer,
-            'filter_max_price': max_price
+            'filter_make': make,
+            'filter_max_price': max_price,
+            'filter_target_year': target_year
         }
     ).execute()
     
@@ -54,8 +55,9 @@ def hybrid_search(soft_intent: str, max_price: int = None, manufacturer: str = N
                 'query_embedding': query_vector,
                 'match_threshold': 0.0,
                 'match_count': top_k,
-                'filter_manufacturer': manufacturer,
-                'filter_max_price': relaxed_price
+                'filter_make': make,
+                'filter_max_price': relaxed_price,
+                'filter_target_year': target_year
             }
         ).execute()
         results = response.data

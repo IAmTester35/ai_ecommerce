@@ -23,7 +23,8 @@ async def search_cars(request: QueryRequest):
         cars_data, conflict = hybrid_search(
             soft_intent=constraints.soft_intent,
             max_price=constraints.max_price,
-            manufacturer=constraints.manufacturer,
+            make=constraints.make,
+            target_year=constraints.target_year,
             top_k=3
         )
         t2 = time.time()
