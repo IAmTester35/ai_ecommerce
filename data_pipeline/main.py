@@ -31,7 +31,7 @@ def get_embedding(text: str) -> list[float]:
     for attempt in range(max_retries):
         try:
             response = ai_client.models.embed_content(
-                model='gemini-embedding-2',
+                model='text-embedding-004',
                 contents=text,
                 config={'output_dimensionality': 768}
             )
@@ -115,8 +115,8 @@ def main():
         except Exception as e:
             print(f"Error inserting cars to Supabase: {e}")
 
-    # 2. PROCESS AND INSERT REVIEWS
-    print("\n=== STEP 2: Processing and inserting reviews ===")
+    # 2. PROCESS REVIEWS
+    print("\n=== STEP 2: Inserting reviews ===")
     reviews_to_insert = []
     
     for index, row in tqdm(df.iterrows(), total=len(df)):
@@ -131,48 +131,46 @@ def main():
         car_id = unique_cars[car_key]['id']
         car_data = unique_cars[car_key]
         
-        review = str(row['Review']).strip()
+        review_text = str(row['Review']).strip()
         
         rating_val = row['Rating']
         rating = float(rating_val) if pd.notnull(rating_val) and str(rating_val).strip() != '' else None
         
-        # Tích hợp thêm keyword thông số nhẹ vào review text để context embedding phong phú hơn
+        source = str(row.get('Source', 'edmunds')).strip()
+        
         rich_text = f"Car: {year} {make} {model}. "
         if car_data['engine_hp']: rich_text += f"Engine Power: {car_data['engine_hp']} HP. "
         if rating: rich_text += f"Rating: {rating}/5. "
-        rich_text += f"Review: {review}"
+        rich_text += f"Review: {review_text}"
         
         embedding = get_embedding(rich_text)
-        time.sleep(4) # Rate limit protection
+        time.sleep(1) # Tránh Rate limit embedding
         
         if not embedding:
             continue
             
-        review_unique_string = f"{car_id}_{review}"
+        review_unique_string = f"{car_id}_{review_text[:50]}"
         review_id = str(uuid.uuid5(REVIEW_NAMESPACE, review_unique_string))
         
         record = {
             "id": review_id,
             "car_id": car_id,
             "rating": rating,
-            "comment": review,
-            "source": "edmunds",
+            "comment": review_text,
+            "source": source,
             "embedding": embedding
         }
         reviews_to_insert.append(record)
         
-        if len(reviews_to_insert) >= 10:
+        if len(reviews_to_insert) >= 20:
             try:
                 supabase.table('reviews').upsert(reviews_to_insert).execute()
             except Exception as e:
                 print(f"\nError inserting reviews to Supabase: {e}")
-                with open('failed_reviews.csv', 'a', newline='', encoding='utf-8') as f:
-                    writer = csv.writer(f)
-                    for r in reviews_to_insert:
-                        writer.writerow([r['car_id'], str(e)])
             finally:
                 reviews_to_insert = []
                 
+    # Insert remaining
     if len(reviews_to_insert) > 0:
         try:
             supabase.table('reviews').upsert(reviews_to_insert).execute()
