@@ -1,6 +1,7 @@
 .venv
 */.env
-car/*.csv
+car/data/*.csv
+car/review/*.csv
 backend/__pycache__
 
 web/node_modules
