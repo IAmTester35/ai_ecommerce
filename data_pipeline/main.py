@@ -6,6 +6,7 @@ from google import genai
 from tqdm import tqdm
 import time
 import csv
+import uuid
 
 # Load env variables
 load_dotenv()
@@ -21,8 +22,8 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 ai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Configuration
-CSV_PATH = "../car/vehicles.csv"
-SAMPLE_SIZE = 1000  # Small sample size for testing
+CSV_PATH = "../car/data/merged_golden_reviews.csv"
+SAMPLE_SIZE = 100  # Small sample size for testing initial runs
 
 def get_embedding(text: str) -> list[float]:
     """Generate 768-dimensional embedding"""
@@ -45,34 +46,15 @@ def get_embedding(text: str) -> list[float]:
     return None
 
 def main():
-    print("Loading data...")
-    # Load data in chunks to save memory
-    df = pd.read_csv(CSV_PATH, usecols=['id', 'price', 'year', 'manufacturer', 'model', 
-                                        'condition', 'cylinders', 'fuel', 'odometer', 
-                                        'title_status', 'transmission', 'drive', 'size', 
-                                        'type', 'paint_color', 'description'])
+    print("Loading golden dataset...")
+    df = pd.read_csv(CSV_PATH)
     
-    # Filter missing essential data
-    df = df.dropna(subset=['id', 'price', 'year', 'manufacturer', 'model', 'description'])
-    df['manufacturer'] = df['manufacturer'].str.lower()
+    # Drop rows without essential data
+    df = df.dropna(subset=['Year', 'Make', 'Model', 'Review'])
     
-    print("Fetching existing IDs from Supabase to avoid reprocessing...")
-    existing_ids = set()
-    try:
-        # Fetch existing IDs to resume progress
-        response = supabase.table('cars').select('id').execute()
-        existing_ids = {row['id'] for row in response.data}
-        print(f"Found {len(existing_ids)} existing records in Supabase. These will be skipped.")
-    except Exception as e:
-        print(f"Could not fetch existing IDs: {e}")
-        
-    # Remove records that are already in database
-    if existing_ids:
-        df = df[~df['id'].isin(existing_ids)]
-        
-    print(f"Remaining new records to process: {len(df)}")
+    print(f"Total valid records: {len(df)}")
     
-    # Sample data
+    # Optionally sample for testing
     if len(df) > SAMPLE_SIZE:
         df = df.sample(n=SAMPLE_SIZE)
     
@@ -81,63 +63,80 @@ def main():
     records_to_insert = []
     
     for index, row in tqdm(df.iterrows(), total=len(df)):
-        car_id = int(row['id'])
-        if car_id in existing_ids:
-            continue
-            
-        # Construct a rich text for embedding
-        year = int(row['year']) if pd.notnull(row['year']) else ""
-        price = row['price']
-        mfg = str(row['manufacturer']).title()
-        model = str(row['model']).title()
-        desc = str(row['description'])
+        # Extract fields safely
+        year = int(row['Year'])
+        make = str(row['Make'])
+        model = str(row['Model'])
         
-        rich_text = f"{year} {mfg} {model}. Price: ${price}. Description: {desc}"
+        # Handle MSRP / Price (can be empty)
+        price_val = row['MSRP']
+        price = int(float(price_val)) if pd.notnull(price_val) and str(price_val).strip() != '' else None
+        
+        # Handle HP
+        hp_val = row['Engine_HP']
+        hp = int(float(hp_val)) if pd.notnull(hp_val) and str(hp_val).strip() != '' else None
+        
+        # Handle Rating
+        rating_val = row['Rating']
+        rating = float(rating_val) if pd.notnull(rating_val) and str(rating_val).strip() != '' else None
+        
+        review = str(row['Review']).strip()
+        
+        # Gather metadata
+        metadata = {
+            "engine_fuel_type": str(row.get('Engine_Fuel_Type', '')).strip(),
+            "engine_cylinders": str(row.get('Engine_Cylinders', '')).strip(),
+            "transmission_type": str(row.get('Transmission_Type', '')).strip(),
+            "driven_wheels": str(row.get('Driven_Wheels', '')).strip(),
+            "number_of_doors": str(row.get('Number_of_Doors', '')).strip(),
+            "market_category": str(row.get('Market_Category', '')).strip(),
+            "vehicle_size": str(row.get('Vehicle_Size', '')).strip(),
+            "vehicle_style": str(row.get('Vehicle_Style', '')).strip()
+        }
+        
+        # Construct a rich text for embedding - THIS IS THE SOUL OF THE RAG
+        rich_text = f"Car: {year} {make} {model}. "
+        if hp: rich_text += f"Engine Power: {hp} HP. "
+        if metadata['engine_cylinders']: rich_text += f"Engine Cylinders: {metadata['engine_cylinders']}. "
+        if metadata['engine_fuel_type']: rich_text += f"Fuel Type: {metadata['engine_fuel_type']}. "
+        if metadata['vehicle_style']: rich_text += f"Style: {metadata['vehicle_style']}. "
+        if metadata['market_category']: rich_text += f"Category: {metadata['market_category']}. "
+        if metadata['transmission_type']: rich_text += f"Transmission: {metadata['transmission_type']}. "
+        if rating: rich_text += f"User Rating: {rating}/5. "
+        rich_text += f"User Reviews and Driving Feel: {review}"
         
         # Get vector embedding
         embedding = get_embedding(rich_text)
         
-        # To avoid hitting API rate limits for free tier (~15 RPM)
-        time.sleep(4) 
+        time.sleep(4) # Rate limit protection
         
         if not embedding:
             continue
             
         record = {
-            "id": car_id,
-            "price": int(row['price']),
-            "year": year,
-            "manufacturer": mfg,
+            "id": str(uuid.uuid4()), # Generate UUID manually for Supabase upsert
+            "make": make,
             "model": model,
-            "condition": str(row['condition']) if pd.notnull(row['condition']) else None,
-            "cylinders": str(row['cylinders']) if pd.notnull(row['cylinders']) else None,
-            "fuel": str(row['fuel']) if pd.notnull(row['fuel']) else None,
-            "odometer": int(row['odometer']) if pd.notnull(row['odometer']) else None,
-            "title_status": str(row['title_status']) if pd.notnull(row['title_status']) else None,
-            "transmission": str(row['transmission']) if pd.notnull(row['transmission']) else None,
-            "drive": str(row['drive']) if pd.notnull(row['drive']) else None,
-            "size": str(row['size']) if pd.notnull(row['size']) else None,
-            "type": str(row['type']) if pd.notnull(row['type']) else None,
-            "paint_color": str(row['paint_color']) if pd.notnull(row['paint_color']) else None,
-            "description": desc,
+            "year": year,
+            "engine_hp": hp,
+            "price": price,
+            "rating": rating,
+            "review": review,
+            "metadata": metadata,
             "embedding": embedding
         }
         records_to_insert.append(record)
         
-        # Batch insert every 10 records to save progress frequently
+        # Batch insert
         if len(records_to_insert) >= 10:
             try:
                 supabase.table('cars').upsert(records_to_insert).execute()
-                # Thêm id vào set để tránh trùng nếu script lỗi ngay sau đó
-                for r in records_to_insert:
-                    existing_ids.add(r['id'])
             except Exception as e:
                 print(f"\nError inserting to Supabase: {e}")
-                # Ghi log các ID lỗi ra file csv
-                with open('failed_ids.csv', 'a', newline='') as f:
+                with open('failed_records.csv', 'a', newline='', encoding='utf-8') as f:
                     writer = csv.writer(f)
                     for r in records_to_insert:
-                        writer.writerow([r['id'], str(e)])
+                        writer.writerow([r['make'], r['model'], str(e)])
             finally:
                 records_to_insert = []
                 
@@ -147,10 +146,6 @@ def main():
             supabase.table('cars').upsert(records_to_insert).execute()
         except Exception as e:
             print(f"\nError inserting to Supabase: {e}")
-            with open('failed_ids.csv', 'a', newline='') as f:
-                writer = csv.writer(f)
-                for r in records_to_insert:
-                    writer.writerow([r['id'], str(e)])
             
     print("Pipeline completed successfully!")
 

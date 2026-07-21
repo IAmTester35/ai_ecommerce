@@ -10,7 +10,7 @@ class ExtractedConstraints(BaseModel):
     soft_intent: str = Field(..., description="Các yêu cầu mềm về cảm giác lái, phong cách, mục đích sử dụng, v.v.")
     
 class CarResponse(BaseModel):
-    id: int
+    id: str
     manufacturer: Optional[str] = None
     model: Optional[str] = None
     year: Optional[int] = None

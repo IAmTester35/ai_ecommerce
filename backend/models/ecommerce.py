@@ -30,3 +30,32 @@ class ReviewCreate(BaseModel):
 
 class QACreate(BaseModel):
     question: str
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+class QAAnswerUpdate(BaseModel):
+    answer: str
+
+class CarCreate(BaseModel):
+    manufacturer: str
+    model: str
+    year: int
+    price: int
+    description: Optional[str] = None
+    type: Optional[str] = None
+    stock_quantity: int = 1
+    is_active: bool = True
+
+class CarUpdate(BaseModel):
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    year: Optional[int] = None
+    price: Optional[int] = None
+    description: Optional[str] = None
+    type: Optional[str] = None
+    stock_quantity: Optional[int] = None
+    is_active: Optional[bool] = None
+
+class UserRoleUpdate(BaseModel):
+    role: str

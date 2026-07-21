@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from dependencies import get_supabase, get_current_user_id
+from core.dependencies import get_supabase, get_optional_user_id
 from typing import Optional
 
 router = APIRouter(prefix="/api/cars", tags=["Cars"])
@@ -30,7 +30,7 @@ async def list_cars(
 @router.get("/{car_id}")
 async def get_car_details(
     car_id: int,
-    user_id: Optional[str] = Depends(get_current_user_id), # Optional dependency could be tricky, better to fetch from Header manually if we want it optional.
+    user_id: Optional[str] = Depends(get_optional_user_id),
     db=Depends(get_supabase)
 ):
     # Fetch car
@@ -39,9 +39,13 @@ async def get_car_details(
         raise HTTPException(status_code=404, detail="Car not found")
         
     # If user_id is provided, log to viewed_cars
-    # But Depends(get_current_user_id) throws 401 if missing. 
-    # For now, assume this endpoint requires auth to track history, or we don't track.
-    
+    if user_id:
+        try:
+            db.table("viewed_cars").insert({"user_id": user_id, "car_id": car_id}).execute()
+        except Exception as e:
+            import logging
+            logging.warning(f"Failed to log viewed car: {e}")
+            
     return res.data[0]
 
 @router.get("/{car_id}/related")

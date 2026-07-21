@@ -1,6 +1,6 @@
 import os
 from google import genai
-from schemas import ExtractedConstraints
+from models.schemas import ExtractedConstraints
 
 # Khởi tạo Client theo chuẩn google-genai
 client = genai.Client(

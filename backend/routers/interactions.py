@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from dependencies import get_supabase, get_current_user_id
+from core.dependencies import get_supabase, get_current_user_id
 from models.ecommerce import ReviewCreate, QACreate
 
 router = APIRouter(prefix="/api/cars", tags=["Interactions (Reviews, Q&A)"])

@@ -38,3 +38,20 @@ async def get_admin_user_id(user_id: str = Depends(get_current_user_id)) -> str:
     if not response.data or response.data[0].get("role") != "admin":
         raise HTTPException(status_code=403, detail="Forbidden: Admins only")
     return user_id
+
+async def get_optional_user_id(authorization: str = Header(None)) -> str | None:
+    """
+    Tương tự get_current_user_id nhưng trả về None thay vì lỗi 401 nếu không có token hoặc token không hợp lệ.
+    Dành cho các API cho phép khách vãng lai.
+    """
+    if not authorization:
+        return None
+        
+    try:
+        token = authorization.split(" ")[1]
+        user_resp = supabase.auth.get_user(token)
+        if not user_resp or not user_resp.user:
+            return None
+        return user_resp.user.id
+    except Exception:
+        return None
