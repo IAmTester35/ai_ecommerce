@@ -1,13 +1,14 @@
+from random import random
 import csv
 import re
 import random
 import glob
 import os
-import time
 from collections import defaultdict
 from dotenv import load_dotenv
 from google import genai
 from tqdm import tqdm
+import time
 
 load_dotenv()
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
@@ -101,7 +102,9 @@ for file_path in review_files:
                     car_year = str(car_data['Year']).strip()
                     car_key_str = f"{car_year}_{car_make}_{car_model}"
                     
-                    review_text = str(row.get('Review', '')).strip()
+                    review_text = str(row.get('Review', '')).replace('\n', ' ').replace('\r', '').strip()
+                    # Clean up multiple spaces
+                    review_text = ' '.join(review_text.split())
                     word_count = len(review_text.split())
                     
                     # Heuristic 1: Filter out short reviews (< 15 words)
@@ -131,43 +134,55 @@ final_dataset = []
 for car_key_str, car_data in tqdm(car_info_dict.items(), desc="Processing cars"):
     reviews = car_reviews_dict.get(car_key_str, [])
     
-    # Heuristic 2 & 3: Sort by length and limit to 30
+    # Heuristic 2 & 3: Sort by length and limit to 10
     reviews.sort(key=lambda x: x['word_count'], reverse=True)
-    reviews = reviews[:30]
+    reviews = reviews[:10]
     
-    # Heuristic 4: Generate fake reviews if < 5
-    if len(reviews) < 5 and GEMINI_API_KEY:
-        needed = 5 - len(reviews)
+    # Heuristic 4: Generate fake reviews if < 2
+    if len(reviews) < 2 and GEMINI_API_KEY:
+        needed = 2 - len(reviews)
         make = car_data['Make']
         model = car_data['Model']
         year = car_data['Year']
         hp = car_data.get('Engine HP', '')
         
-        prompt = f"Write {needed} distinct, realistic, and short customer reviews (each around 30-50 words) for a {year} {make} {model}"
+        prompt = f"Write {needed} distinct, realistic, and short customer reviews (each around 30 words) for a {year} {make} {model}"
         if hp:
             prompt += f" with {hp} HP engine"
         prompt += ".\nSeparate each review with exactly '---'."
         
-        try:
-            response = ai_client.models.generate_content(
-                model='gemma-4-31b-it', 
-                contents=prompt,
-            )
-            generated_text = response.text
-            fake_reviews = [r.strip() for r in generated_text.split('---') if len(r.strip()) > 10]
+        # Chỉ có 30% cơ hội chạy lệnh tạo review giả
+        if random.random() < 0.7:
+            continue
             
-            for fake_review in fake_reviews[:needed]:
-                reviews.append({
-                    'review': fake_review,
-                    'rating': '4.0', 
-                    'match_type': 'Exact',
-                    'source': 'ai_generated',
-                    'word_count': len(fake_review.split())
-                })
-            time.sleep(2)
-        except Exception as e:
-            # Lỗi API hoặc model gemma-4-31b-it không tồn tại thì sẽ bypass luôn
-            pass
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                response = ai_client.models.generate_content(
+                    model='gemini-3.1-flash-lite', 
+                    contents=prompt,
+                )
+                generated_text = response.text
+                fake_reviews = [r.replace('\n', ' ').replace('\r', '').strip() for r in generated_text.split('---') if len(r.strip()) > 10]
+                # Clean up multiple spaces
+                fake_reviews = [' '.join(r.split()) for r in fake_reviews]
+                
+                for fake_review in fake_reviews[:needed]:
+                    reviews.append({
+                        'review': fake_review,
+                        'rating': '4.0', 
+                        'match_type': 'Exact',
+                        'source': 'ai_generated',
+                        'word_count': len(fake_review.split())
+                    })
+                break # Thoát vòng lặp retry nếu thành công
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    print(f"\n[Rate Limit 429] Vượt quá giới hạn của API. Chờ 60s (Lần {attempt+1}/{max_retries})...")
+                    time.sleep(60)
+                else:
+                    print(f"\n[Lỗi API] Không thể tạo review giả cho {car_key_str}: {e}")
+                    break
             
     # Add to final dataset
     for rev in reviews:
