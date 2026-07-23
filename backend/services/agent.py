@@ -12,14 +12,18 @@ def extract_constraints(query: str) -> ExtractedConstraints:
     Sử dụng LLM để bóc tách yêu cầu cứng và yêu cầu mềm từ câu lệnh người dùng.
     """
     prompt = f"""
-    You are an AI assistant specialized in analyzing car purchase intents.
-    Extract the constraints from the user's query: "{query}"
+    You are an expert AI automotive query analyzer specializing in multi-layered intent extraction and semantic expansion.
+    Analyze the user query: "{query}"
 
-    Extract the information based on the following rules:
-    - max_price: The maximum budget mentioned (e.g., "under 20000" -> 20000, "20k" -> 20000). If not mentioned, return null.
-    - make: The car brand mentioned (e.g., "Toyota", "BMW"). Convert to lowercase. If not mentioned, return null.
-    - target_year: The specific car year mentioned (e.g., "đời 2020" -> 2020, "2018 model" -> 2018). If not mentioned, return null.
-    - soft_intent: Summarize all other preferences, requirements, and sentiments into a concise string (e.g., "red sports car", "spacious family SUV", "reliable and fuel-efficient"). This will be used for vector semantic search.
+    Extract constraints and perform Semantic Expansion according to these rules:
+    - max_price: Maximum budget integer mentioned (e.g. "under 30000" -> 30000). Return null if not specified.
+    - min_hp: Minimum engine horsepower constraint. If user demands a powerful engine (e.g. "động cơ mạnh", "xe khỏe", "high horsepower"), set a reasonable threshold (e.g. 200), otherwise null.
+    - make: Car brand in lowercase (e.g. "toyota", "ford"). Return null if not specified.
+    - target_year: Specific year integer mentioned (e.g. 2020). Return null if not specified.
+    - soft_intent: Perform SEMANTIC EXPANSION in ENGLISH.
+      1. Translate core desires into rich English automotive concepts.
+      2. Infer implicit requirements: Expand contextual phrases like "đi đường núi" into implicit features like "mountain driving, high ground clearance, off-road capability, durable suspension, steep incline hill climb, 4WD/AWD traction control".
+      3. Capture soft preferences (e.g. "tốt nhất là 4WD" -> "prefer 4WD/AWD four-wheel drive over RWD/FWD").
     """
     
     # Dùng tính năng response_schema của google-genai
@@ -41,7 +45,18 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
     """
     cars_info = ""
     for idx, c in enumerate(cars):
-        cars_info += f"- {c['year']} {c['make']} {c['model']} (Price: ${c['price']})\n"
+        review_snippet = c.get('review', '')
+        engine_hp = c.get('engine_hp')
+        meta = c.get('metadata') or {}
+        
+        hp_str = f", Engine: {engine_hp} HP" if engine_hp else ""
+        meta_str = ", ".join([f"{k}: {v}" for k, v in meta.items() if v]) if isinstance(meta, dict) else ""
+        
+        cars_info += f"- Option {idx+1}: {c['year']} {c['make']} {c['model']} (Price: ${c['price']}{hp_str})\n"
+        if meta_str:
+            cars_info += f"  Technical Specs/Metadata: {meta_str}\n"
+        if review_snippet:
+            cars_info += f"  Highlight/User Review: \"{review_snippet}\"\n"
     
     prompt = f"""
     You are a premium automotive sales consultant. 
@@ -55,13 +70,13 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
     
     Instructions:
     1. Write a friendly, professional, and persuasive response (maximum 3-4 sentences).
-    2. Introduce the top recommended cars from the list provided.
+    2. Introduce the top recommended cars and SPECIFICALLY explain WHY they fit the user's needs based on the provided highlights/reviews (e.g., mention key features like Hill Descent Control, torque, off-road durability, or smooth ride).
     3. If a conflict was detected, politely explain that the original budget was adjusted slightly to find the best possible matches.
     4. Do not list all cars extensively; just highlight the best options seamlessly in your conversational response.
     """
     
     response = client.models.generate_content(
-        model='gemini-3.1-flash-lite',
+        model='gemini-3.6-flash',
         contents=prompt,
     )
     

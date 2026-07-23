@@ -217,14 +217,17 @@ CREATE OR REPLACE FUNCTION match_cars(
   match_count INT,
   filter_make TEXT DEFAULT NULL,
   filter_max_price INT DEFAULT NULL,
-  filter_target_year INT DEFAULT NULL
+  filter_target_year INT DEFAULT NULL,
+  filter_min_hp INT DEFAULT NULL
 )
 RETURNS TABLE (
   id UUID,
   make TEXT,
   model TEXT,
   year INT,
+  engine_hp INT,
   price INT,
+  metadata JSONB,
   review TEXT,
   similarity FLOAT
 )
@@ -238,7 +241,9 @@ BEGIN
       c.make,
       c.model,
       c.year,
+      c.engine_hp,
       c.price,
+      c.metadata,
       r.comment AS review,
       1 - (r.embedding <=> query_embedding) AS similarity,
       ROW_NUMBER() OVER(PARTITION BY c.id ORDER BY r.embedding <=> query_embedding ASC) as rn
@@ -248,16 +253,19 @@ BEGIN
       (filter_make IS NULL OR c.make ILIKE filter_make)
       AND (filter_max_price IS NULL OR c.price <= filter_max_price)
       AND (filter_target_year IS NULL OR c.year >= filter_target_year - 2)
+      AND (filter_min_hp IS NULL OR c.engine_hp >= filter_min_hp)
       AND 1 - (r.embedding <=> query_embedding) > match_threshold
   )
   SELECT 
-    car_id AS id,
-    make,
-    model,
-    year,
-    price,
-    review,
-    similarity
+    ranked_reviews.car_id AS id,
+    ranked_reviews.make,
+    ranked_reviews.model,
+    ranked_reviews.year,
+    ranked_reviews.engine_hp,
+    ranked_reviews.price,
+    ranked_reviews.metadata,
+    ranked_reviews.review,
+    ranked_reviews.similarity
   FROM ranked_reviews
   WHERE rn = 1
   ORDER BY similarity DESC

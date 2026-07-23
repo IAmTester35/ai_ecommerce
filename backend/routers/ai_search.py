@@ -25,6 +25,7 @@ async def search_cars(request: QueryRequest):
             max_price=constraints.max_price,
             make=constraints.make,
             target_year=constraints.target_year,
+            min_hp=constraints.min_hp,
             top_k=3
         )
         t2 = time.time()

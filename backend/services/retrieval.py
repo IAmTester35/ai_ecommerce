@@ -14,10 +14,11 @@ def get_embedding(text: str) -> list[float]:
     response = ai_client.models.embed_content(
         model='gemini-embedding-2',
         contents=text,
+        config={'output_dimensionality': 768}
     )
     return response.embeddings[0].values
 
-def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, target_year: int = None, top_k: int = 5):
+def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, target_year: int = None, min_hp: int = None, top_k: int = 5):
     conflict_detected = False
     
     t_start = time.time()
@@ -35,7 +36,8 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
             'match_count': top_k,
             'filter_make': make,
             'filter_max_price': max_price,
-            'filter_target_year': target_year
+            'filter_target_year': target_year,
+            'filter_min_hp': min_hp
         }
     ).execute()
     
@@ -44,10 +46,11 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
     
     results = response.data
     
-    # 2. Conflict Resolution (Nếu không tìm thấy, nới lỏng ngân sách)
-    if not results and max_price is not None:
+    # 2. Conflict Resolution (Nếu không tìm thấy, nới lỏng ngân sách / mã lực)
+    if not results and (max_price is not None or min_hp is not None):
         conflict_detected = True
-        relaxed_price = int(max_price * 1.5)  # Nới lỏng giá lên 50%
+        relaxed_price = int(max_price * 1.5) if max_price is not None else None
+        relaxed_hp = int(min_hp * 0.8) if min_hp is not None else None
         
         response = supabase.rpc(
             'match_cars',
@@ -57,7 +60,8 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
                 'match_count': top_k,
                 'filter_make': make,
                 'filter_max_price': relaxed_price,
-                'filter_target_year': target_year
+                'filter_target_year': target_year,
+                'filter_min_hp': relaxed_hp
             }
         ).execute()
         results = response.data

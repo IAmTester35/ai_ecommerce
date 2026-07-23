@@ -18,7 +18,8 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 keys = [
     os.environ.get("GEMINI_API_KEY_1"),
     os.environ.get("GEMINI_API_KEY_2"),
-    os.environ.get("GEMINI_API_KEY_3")
+    os.environ.get("GEMINI_API_KEY_3"),
+    os.environ.get("GEMINI_API_KEY_4"),
 ]
 keys = [k for k in keys if k]
 

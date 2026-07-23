@@ -1,14 +1,20 @@
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from routers import ai_search
 
 # Load biến môi trường trước khi import các module khác
 load_dotenv()
 
+from routers import ai_search
+
 # Import routers
 
 app = FastAPI(title="AutoMatch AI Backend", version="1.0.0")
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
 
 app.add_middleware(
     CORSMiddleware,
