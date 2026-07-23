@@ -236,18 +236,11 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN QUERY
-  WITH ranked_reviews AS (
+  WITH nearest AS (
     SELECT 
+      r.id AS review_id,
       c.id AS car_id,
-      c.make,
-      c.model,
-      c.year,
-      c.engine_hp,
-      c.price,
-      c.metadata,
-      r.comment AS review,
-      1 - (r.embedding <=> query_embedding) AS similarity,
-      ROW_NUMBER() OVER(PARTITION BY c.id ORDER BY r.embedding <=> query_embedding ASC) as rn
+      1 - (r.embedding <=> query_embedding) AS similarity
     FROM reviews r
     JOIN cars c ON r.car_id = c.id
     WHERE 
@@ -257,20 +250,32 @@ BEGIN
       AND (filter_min_hp IS NULL OR c.engine_hp >= filter_min_hp)
       AND (filter_fuel_type IS NULL OR c.metadata->>'engine_fuel_type' ILIKE '%' || filter_fuel_type || '%')
       AND 1 - (r.embedding <=> query_embedding) > match_threshold
+    ORDER BY r.embedding <=> query_embedding ASC
+    LIMIT match_count * 5 -- Fetch buffer for deduplication
+  ),
+  deduplicated AS (
+    SELECT 
+      review_id,
+      car_id,
+      similarity,
+      ROW_NUMBER() OVER(PARTITION BY car_id ORDER BY similarity DESC) as rn
+    FROM nearest
   )
   SELECT 
-    ranked_reviews.car_id AS id,
-    ranked_reviews.make,
-    ranked_reviews.model,
-    ranked_reviews.year,
-    ranked_reviews.engine_hp,
-    ranked_reviews.price,
-    ranked_reviews.metadata,
-    ranked_reviews.review,
-    ranked_reviews.similarity
-  FROM ranked_reviews
-  WHERE rn = 1
-  ORDER BY similarity DESC
+    c.id,
+    c.make,
+    c.model,
+    c.year,
+    c.engine_hp,
+    c.price,
+    c.metadata,
+    r.comment AS review,
+    d.similarity
+  FROM deduplicated d
+  JOIN cars c ON d.car_id = c.id
+  JOIN reviews r ON d.review_id = r.id
+  WHERE d.rn = 1
+  ORDER BY d.similarity DESC
   LIMIT match_count;
 END;
 $$;

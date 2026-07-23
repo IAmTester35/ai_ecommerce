@@ -36,22 +36,17 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
         'filter_make': make,
         'filter_max_price': max_price,
         'filter_target_year': target_year,
-        'filter_min_hp': min_hp
+        'filter_min_hp': min_hp,
+        'filter_fuel_type': fuel_type
     }
-    if fuel_type:
-        rpc_params['filter_fuel_type'] = fuel_type
     
     # 1. Strict Search (Thử tìm với yêu cầu nghiêm ngặt)
     try:
         response = supabase.rpc('match_cars', rpc_params).execute()
         results = response.data or []
-    except Exception:
-        if fuel_type and 'filter_fuel_type' in rpc_params:
-            del rpc_params['filter_fuel_type']
-            response = supabase.rpc('match_cars', rpc_params).execute()
-            results = response.data or []
-        else:
-            results = []
+    except Exception as e:
+        print("  -> [Error] Supabase RPC (Strict) failed:", e)
+        results = []
     
     t_rpc = time.time()
     print(f"  -> [Timer] Supabase RPC (Strict) took {t_rpc - t_embed:.2f}s")
@@ -77,19 +72,16 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
             'filter_make': make,
             'filter_max_price': relaxed_price,
             'filter_target_year': target_year,
-            'filter_min_hp': relaxed_hp
+            'filter_min_hp': relaxed_hp,
+            'filter_fuel_type': fuel_type
         }
-        if fuel_type:
-            rpc_params_relaxed['filter_fuel_type'] = fuel_type
 
         try:
             response = supabase.rpc('match_cars', rpc_params_relaxed).execute()
             results = response.data or []
-        except Exception:
-            if fuel_type and 'filter_fuel_type' in rpc_params_relaxed:
-                del rpc_params_relaxed['filter_fuel_type']
-                response = supabase.rpc('match_cars', rpc_params_relaxed).execute()
-                results = response.data or []
+        except Exception as e:
+            print("  -> [Error] Supabase RPC (Relaxed) failed:", e)
+            results = []
 
         if fuel_type and results:
             filtered = [
