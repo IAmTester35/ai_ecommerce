@@ -20,14 +20,18 @@ async def search_cars(request: QueryRequest):
         t1 = time.time()
         
         # 2. Truy xuất dữ liệu & Kiểm tra mâu thuẫn
-        cars_data, conflict = hybrid_search(
-            soft_intent=constraints.soft_intent,
-            max_price=constraints.max_price,
-            make=constraints.make,
-            target_year=constraints.target_year,
-            min_hp=constraints.min_hp,
-            top_k=3
-        )
+        if constraints.is_out_of_scope:
+            cars_data, conflict = [], False
+        else:
+            cars_data, conflict = hybrid_search(
+                soft_intent=constraints.soft_intent,
+                max_price=constraints.max_price,
+                make=constraints.make,
+                target_year=constraints.target_year,
+                min_hp=constraints.min_hp,
+                fuel_type=constraints.fuel_type,
+                top_k=3
+            )
         t2 = time.time()
         
         # 3. Tạo câu trả lời tự nhiên

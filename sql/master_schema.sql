@@ -218,7 +218,8 @@ CREATE OR REPLACE FUNCTION match_cars(
   filter_make TEXT DEFAULT NULL,
   filter_max_price INT DEFAULT NULL,
   filter_target_year INT DEFAULT NULL,
-  filter_min_hp INT DEFAULT NULL
+  filter_min_hp INT DEFAULT NULL,
+  filter_fuel_type TEXT DEFAULT NULL
 )
 RETURNS TABLE (
   id UUID,
@@ -254,6 +255,7 @@ BEGIN
       AND (filter_max_price IS NULL OR c.price <= filter_max_price)
       AND (filter_target_year IS NULL OR c.year >= filter_target_year - 2)
       AND (filter_min_hp IS NULL OR c.engine_hp >= filter_min_hp)
+      AND (filter_fuel_type IS NULL OR c.metadata->>'engine_fuel_type' ILIKE '%' || filter_fuel_type || '%')
       AND 1 - (r.embedding <=> query_embedding) > match_threshold
   )
   SELECT 

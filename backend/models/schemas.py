@@ -9,6 +9,8 @@ class ExtractedConstraints(BaseModel):
     min_hp: Optional[int] = Field(None, description="Mã lực tối thiểu nếu yêu cầu động cơ mạnh (nếu có)")
     make: Optional[str] = Field(None, description="Hãng xe khách hàng muốn (nếu có)")
     target_year: Optional[int] = Field(None, description="Năm sản xuất mục tiêu")
+    fuel_type: Optional[str] = Field(None, description="Loại nhiên liệu/động cơ bắt buộc: 'electric', 'hybrid', hoặc 'gasoline' (nếu có)")
+    is_out_of_scope: bool = Field(False, description="True nếu truy vấn không liên quan tới lĩnh vực ô tô/xe hơi (ví dụ: máy bay, đồ ăn, thời tiết, điện thoại)")
     soft_intent: str = Field(..., description="Các yêu cầu mềm và ngữ cảnh được mở rộng (Semantic Expansion)")
     
 class CarResponse(BaseModel):
