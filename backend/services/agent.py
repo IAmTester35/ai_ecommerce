@@ -44,7 +44,7 @@ def extract_constraints(query: str) -> ExtractedConstraints:
 
 def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: list, conflict_detected: bool) -> str:
     """
-    Sinh ra câu trả lời tư vấn mềm mỏng cho khách hàng.
+    Sinh ra câu trả lời tư vấn cho khách hàng.
     """
     if constraints.is_out_of_scope:
         prompt = f"""
@@ -78,22 +78,33 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
             cars_info += f"  Highlight/User Review: \"{review_snippet}\"\n"
     
     prompt = f"""
-    You are a premium automotive sales consultant. 
-    The user is looking for a car with the following query: "{query}"
+    You are an expert, objective, and premium automotive sales consultant. 
+    The user submitted the query: "{query}"
     
-    Based on their query, you have retrieved the following options from the database:
-    {cars_info if cars_info else "No exact matches found."}
+    Database search results:
+    {cars_info if cars_info else "NO MATCHING CARS FOUND IN DATABASE INVENTORY."}
     
     Context about the search:
-    Conflict detected (e.g., unrealistic budget): {"Yes. The budget was relaxed to find alternative options." if conflict_detected else "No."}
+    Conflict detected: {"Yes. The budget/constraints were relaxed to find alternative options." if conflict_detected else "No."}
     Extracted Constraints: {constraints.model_dump_json()}
 
     Instructions:
-    1. Write a friendly, professional, and persuasive response (maximum 3-4 sentences).
-    2. Introduce the top recommended cars and SPECIFICALLY explain WHY they fit the user's needs based on the provided highlights/reviews.
-    3. STRICT HARD CONSTRAINT ADHERENCE: Never recommend or suggest a vehicle that violates the user's hard constraints (e.g., if fuel_type is electric, NEVER present a hybrid or gasoline vehicle as an option).
-    4. If a conflict was detected, politely explain that the original budget was adjusted slightly to find the best possible matches.
-    5. Do not list all cars extensively; just highlight the best options seamlessly in your conversational response.
+    1. GROUNDING DISCIPLINE & TRANSPARENCY:
+       - If NO MATCHING CARS WERE FOUND in the database (`cars` is empty):
+         * Explicitly state in Vietnamese that the requested vehicle or brand is currently NOT available in our database inventory.
+         * Do NOT pretend the car is available or in stock.
+         * If the user asked for consultation on a specific model not in stock (e.g. Rolls-Royce Phantom), you may provide a brief, objective evaluation based on general automotive knowledge, but MUST clearly declare that it is not currently in our database inventory.
+
+    2. OBJECTIVE ADVISORY & NO CONFIRMATION BIAS:
+       - Avoid blind validation (e.g., NEVER say "You absolutely right" or blindly agree).
+       - Provide a balanced, objective consultation: highlight key advantages (e.g., luxury, executive rear comfort, status) alongside important trade-offs or considerations (e.g., suited for chauffeur-driven vs self-driven, size/maneuverability, operating cost).
+
+    3. STRICT HARD CONSTRAINT ADHERENCE:
+       - Never recommend a vehicle that violates the user's hard constraints (e.g., if fuel_type is electric, NEVER suggest hybrid or gasoline cars).
+
+    4. PERSUASIVE & CONCISE STYLE:
+       - Explain WHY retrieved cars fit the user's needs based on provided metadata and highlights.
+       - If budget/constraints were relaxed due to conflict, explain politely.
     """
     
     response = client.models.generate_content(
