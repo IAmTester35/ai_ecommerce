@@ -38,7 +38,7 @@ in_flight_ids = set()
 
 def get_embedding(client: genai.Client, text: str, thread_id: int) -> list[float]:
     """Generate 768-dimensional embedding"""
-    max_retries = 5
+    max_retries = 3
     for attempt in range(max_retries):
         if stop_event.is_set():
             raise Exception("STOP_EVENT_SET")
@@ -135,7 +135,7 @@ def worker_thread(thread_id: int, api_key: str):
                 data_queue.task_done()
                 break
             elif err_msg == "API_QUOTA_EXHAUSTED":
-                print(f"\n[Luồng {thread_id}] Google API lỗi 5 lần liên tiếp (Hết Quota). Dừng luồng.")
+                print(f"\n[Luồng {thread_id}] Google API lỗi 3 lần liên tiếp (Hết Quota). Dừng luồng.")
                 # Trả lại item vào queue cho các luồng khác xử lý
                 data_queue.put(review)
                 data_queue.task_done()
