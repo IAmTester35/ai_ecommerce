@@ -32,8 +32,9 @@ stop_event = threading.Event()
 counters = {'processed': 0, 'failed': 0}
 counter_lock = threading.Lock()
 
-# Lưu ID các dòng bị lỗi (tránh lặp vô tận khi fetch data mới)
+# Lưu ID các dòng bị lỗi và đang xử lý (tránh lặp vô tận và trùng lặp batch)
 failed_record_ids = set()
+in_flight_ids = set()
 
 def get_embedding(client: genai.Client, text: str, thread_id: int) -> list[float]:
     """Generate 768-dimensional embedding"""
@@ -64,18 +65,30 @@ def get_embedding(client: genai.Client, text: str, thread_id: int) -> list[float
     raise Exception("API_QUOTA_EXHAUSTED")
 
 def upsert_batch(supabase_local: Client, batch: list, thread_id: int):
+    # Loại bỏ duplicate theo ID trong batch trước khi upsert
+    dedup_dict = {}
+    for item in batch:
+        item_id = item.get('id', hash(str(item)))
+        dedup_dict[item_id] = item
+    unique_batch = list(dedup_dict.values())
+
     try:
-        supabase_local.table('reviews').upsert(batch).execute()
+        supabase_local.table('reviews').upsert(unique_batch).execute()
         with counter_lock:
-            counters['processed'] += len(batch)
-        batch_ids = [str(item.get('id', 'Unknown')) for item in batch]
-        print(f"[Luồng {thread_id}] Đã upsert {len(batch)} dòng. IDs: {', '.join(batch_ids[:5])}{'...' if len(batch_ids) > 5 else ''}")
+            counters['processed'] += len(unique_batch)
+            for item in unique_batch:
+                item_id = item.get('id', hash(str(item)))
+                in_flight_ids.discard(item_id)
+        batch_ids = [str(item.get('id', 'Unknown')) for item in unique_batch]
+        print(f"[Luồng {thread_id}] Đã upsert {len(unique_batch)} dòng. IDs: {', '.join(batch_ids[:5])}{'...' if len(batch_ids) > 5 else ''}")
     except Exception as e:
         print(f"\n[Luồng {thread_id}] Error bulk upserting: {e}")
         with counter_lock:
-            for item in batch:
-                failed_record_ids.add(item.get('id', hash(str(item))))
-            counters['failed'] += len(batch)
+            for item in unique_batch:
+                item_id = item.get('id', hash(str(item)))
+                failed_record_ids.add(item_id)
+                in_flight_ids.discard(item_id)
+            counters['failed'] += len(unique_batch)
 
 def worker_thread(thread_id: int, api_key: str):
     # Khởi tạo Supabase client riêng cho luồng (Thread-Safety)
@@ -132,6 +145,7 @@ def worker_thread(thread_id: int, api_key: str):
                 # Lưu ID lại để không fetch ở những lần lặp tiếp theo
                 with counter_lock:
                     failed_record_ids.add(review_id)
+                    in_flight_ids.discard(review_id)
                     counters['failed'] += 1
                 data_queue.task_done()
                 continue # Bỏ qua item này để tiếp tục
@@ -192,13 +206,15 @@ def main():
                 print(f"\nKhông còn reviews nào cần xử lý. Hoàn tất!")
                 break
 
-            # Lọc bỏ những dòng đã từng lỗi trước đó để tránh lặp vô tận
+            # Lọc bỏ những dòng đã từng lỗi hoặc đang được xử lý trước đó
             added = 0
-            for r in reviews:
-                r_id = r.get('id', hash(str(r)))
-                if r_id not in failed_record_ids:
-                    data_queue.put(r)
-                    added += 1
+            with counter_lock:
+                for r in reviews:
+                    r_id = r.get('id', hash(str(r)))
+                    if r_id not in failed_record_ids and r_id not in in_flight_ids:
+                        in_flight_ids.add(r_id)
+                        data_queue.put(r)
+                        added += 1
             
             if added == 0:
                 print("\n[Producer] Chỉ lấy được các reviews đã gặp lỗi nghiêm trọng trước đó. Dừng tiến trình để tránh lặp vô tận.")
