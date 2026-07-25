@@ -2,6 +2,8 @@ import os
 import time
 import threading
 import queue
+import json
+import sqlite3
 from dotenv import load_dotenv
 from supabase import create_client, Client
 from google import genai
@@ -31,6 +33,54 @@ data_queue = queue.Queue(maxsize=1000)
 stop_event = threading.Event()
 counters = {'processed': 0, 'failed': 0}
 counter_lock = threading.Lock()
+backup_lock = threading.Lock()
+db_lock = threading.Lock()
+CACHE_DB_PATH = "embeddings_cache.db"
+
+def init_cache_db():
+    with db_lock:
+        with sqlite3.connect(CACHE_DB_PATH) as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS review_embeddings (
+                    id TEXT PRIMARY KEY,
+                    embedding TEXT NOT NULL
+                )
+            """)
+
+def get_cached_embedding(review_id: str) -> list[float] | None:
+    with db_lock:
+        try:
+            with sqlite3.connect(CACHE_DB_PATH) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT embedding FROM review_embeddings WHERE id = ?", (review_id,))
+                row = cursor.fetchone()
+                if row:
+                    return json.loads(row[0])
+        except Exception:
+            pass
+    return None
+
+def save_cached_embedding(review_id: str, embedding: list[float]):
+    with db_lock:
+        try:
+            with sqlite3.connect(CACHE_DB_PATH) as conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO review_embeddings (id, embedding) VALUES (?, ?)",
+                    (review_id, json.dumps(embedding))
+                )
+        except Exception as e:
+            print(f"Lỗi khi lưu cache SQLite: {e}")
+
+def save_failed_batch(batch: list):
+    filename = "failed_embeddings_backup.jsonl"
+    with backup_lock:
+        with open(filename, "a", encoding="utf-8") as f:
+            for item in batch:
+                item_id = item.get("id")
+                embedding = item.get("embedding")
+                if item_id and embedding:
+                    f.write(json.dumps({"id": item_id, "embedding": embedding}) + "\n")
+            f.flush()
 
 # Lưu ID các dòng bị lỗi và đang xử lý (tránh lặp vô tận và trùng lặp batch)
 failed_record_ids = set()
@@ -68,27 +118,35 @@ def upsert_batch(supabase_local: Client, batch: list, thread_id: int):
     # Loại bỏ duplicate theo ID trong batch trước khi upsert
     dedup_dict = {}
     for item in batch:
-        item_id = item.get('id', hash(str(item)))
+        item_id = item.get('id')
         dedup_dict[item_id] = item
     unique_batch = list(dedup_dict.values())
 
-    try:
-        supabase_local.table('reviews').upsert(unique_batch).execute()
-        with counter_lock:
-            counters['processed'] += len(unique_batch)
-            for item in unique_batch:
-                item_id = item.get('id', hash(str(item)))
-                in_flight_ids.discard(item_id)
-        batch_ids = [str(item.get('id', 'Unknown')) for item in unique_batch]
-        print(f"[Luồng {thread_id}] Đã upsert {len(unique_batch)} dòng. IDs: {', '.join(batch_ids[:5])}{'...' if len(batch_ids) > 5 else ''}")
-    except Exception as e:
-        print(f"\n[Luồng {thread_id}] Error bulk upserting: {e}")
-        with counter_lock:
-            for item in unique_batch:
-                item_id = item.get('id', hash(str(item)))
-                failed_record_ids.add(item_id)
-                in_flight_ids.discard(item_id)
-            counters['failed'] += len(unique_batch)
+    max_upsert_retries = 3
+    for attempt in range(max_upsert_retries):
+        try:
+            supabase_local.table('reviews').upsert(unique_batch).execute()
+            with counter_lock:
+                counters['processed'] += len(unique_batch)
+                for item in unique_batch:
+                    in_flight_ids.discard(item.get('id'))
+            batch_ids = [str(item.get('id', 'Unknown')) for item in unique_batch]
+            print(f"[Luồng {thread_id}] Đã upsert {len(unique_batch)} dòng. IDs: {', '.join(batch_ids[:5])}{'...' if len(batch_ids) > 5 else ''}")
+            return
+        except Exception as e:
+            if attempt < max_upsert_retries - 1:
+                print(f"\n[Luồng {thread_id}] Thử upsert lần {attempt+1}/{max_upsert_retries} thất bại ({e}). Thử lại sau 3s...")
+                time.sleep(3)
+            else:
+                print(f"\n[Luồng {thread_id}] Error bulk upserting sau {max_upsert_retries} lần thử: {e}")
+                print(f"[Luồng {thread_id}] Đang sao lưu {len(unique_batch)} dòng vào file 'failed_embeddings_backup.jsonl'...")
+                save_failed_batch(unique_batch)
+                with counter_lock:
+                    for item in unique_batch:
+                        item_id = item.get('id')
+                        failed_record_ids.add(item_id)
+                        in_flight_ids.discard(item_id)
+                    counters['failed'] += len(unique_batch)
 
 def worker_thread(thread_id: int, api_key: str):
     # Khởi tạo Supabase client riêng cho luồng (Thread-Safety)
@@ -109,7 +167,7 @@ def worker_thread(thread_id: int, api_key: str):
             data_queue.task_done()
             break
 
-        review_id = review.get('id', hash(str(review)))
+        review_id = review.get('id')
         car_data = review.get('cars', {})
         
         if not car_data:
@@ -126,31 +184,37 @@ def worker_thread(thread_id: int, api_key: str):
             if rating: rich_text += f"Rating: {rating}/5. "
             rich_text += f"Review: {review['comment']}"
 
-        try:
-            print(f"[Luồng {thread_id}] Đang lấy embedding cho review ID: {review_id}")
-            embedding = get_embedding(gemini_client, rich_text, thread_id)
-        except Exception as e:
-            err_msg = str(e)
-            if err_msg == "STOP_EVENT_SET":
-                data_queue.task_done()
-                break
-            elif err_msg == "API_QUOTA_EXHAUSTED":
-                print(f"\n[Luồng {thread_id}] Google API lỗi 3 lần liên tiếp (Hết Quota). Dừng luồng.")
-                # Trả lại item vào queue cho các luồng khác xử lý
-                data_queue.put(review)
-                data_queue.task_done()
-                break
-            else:
-                print(f"\n[Luồng {thread_id}] Unhandled error for review ID {review_id}: {e}")
-                # Lưu ID lại để không fetch ở những lần lặp tiếp theo
-                with counter_lock:
-                    failed_record_ids.add(review_id)
-                    in_flight_ids.discard(review_id)
-                    counters['failed'] += 1
-                data_queue.task_done()
-                continue # Bỏ qua item này để tiếp tục
-                
-        time.sleep(1) # Tránh Rate limit embedding
+        cached_emb = get_cached_embedding(review_id)
+        if cached_emb:
+            embedding = cached_emb
+        else:
+            try:
+                print(f"[Luồng {thread_id}] Đang lấy embedding từ API cho review ID: {review_id}")
+                embedding = get_embedding(gemini_client, rich_text, thread_id)
+                save_cached_embedding(review_id, embedding)
+                time.sleep(1) # Tránh Rate limit API Gemini
+            except Exception as e:
+                err_msg = str(e)
+                if err_msg == "STOP_EVENT_SET":
+                    with counter_lock:
+                        in_flight_ids.discard(review_id)
+                    data_queue.task_done()
+                    break
+                elif err_msg == "API_QUOTA_EXHAUSTED":
+                    print(f"\n[Luồng {thread_id}] Google API lỗi 3 lần liên tiếp (Hết Quota). Dừng luồng.")
+                    # Trả lại item vào queue cho các luồng khác xử lý
+                    data_queue.put(review)
+                    data_queue.task_done()
+                    break
+                else:
+                    print(f"\n[Luồng {thread_id}] Unhandled error for review ID {review_id}: {e}")
+                    # Lưu ID lại để không fetch ở những lần lặp tiếp theo
+                    with counter_lock:
+                        failed_record_ids.add(review_id)
+                        in_flight_ids.discard(review_id)
+                        counters['failed'] += 1
+                    data_queue.task_done()
+                    continue # Bỏ qua item này để tiếp tục
         
         row_to_upsert = review.copy()
         row_to_upsert.pop('cars', None)
@@ -170,6 +234,7 @@ def worker_thread(thread_id: int, api_key: str):
 
 
 def main():
+    init_cache_db()
     print(f"Starting embedding update process with {len(keys)} threads (Producer-Consumer)...")
     
     threads = []
@@ -208,13 +273,14 @@ def main():
 
             # Lọc bỏ những dòng đã từng lỗi hoặc đang được xử lý trước đó
             added = 0
-            with counter_lock:
-                for r in reviews:
-                    r_id = r.get('id', hash(str(r)))
-                    if r_id not in failed_record_ids and r_id not in in_flight_ids:
-                        in_flight_ids.add(r_id)
-                        data_queue.put(r)
-                        added += 1
+            for r in reviews:
+                r_id = r.get('id')
+                with counter_lock:
+                    if r_id in failed_record_ids or r_id in in_flight_ids:
+                        continue
+                    in_flight_ids.add(r_id)
+                data_queue.put(r)
+                added += 1
             
             if added == 0:
                 print("\n[Producer] Chỉ lấy được các reviews đã gặp lỗi nghiêm trọng trước đó. Dừng tiến trình để tránh lặp vô tận.")
@@ -231,9 +297,10 @@ def main():
         print("\n\nNhận lệnh dừng từ người dùng. Đang chờ các luồng hiện tại hoàn thành việc lưu dữ liệu...")
         stop_event.set()
 
-    # Gửi tín hiệu báo dừng (poison pill) cho từng luồng
-    for _ in threads:
-        data_queue.put(None)
+    # Gửi tín hiệu báo dừng (poison pill) cho từng luồng đang còn hoạt động
+    for t in threads:
+        if t.is_alive():
+            data_queue.put(None)
 
     # Đợi tất cả hoàn thành thao tác cuối cùng
     for t in threads:
