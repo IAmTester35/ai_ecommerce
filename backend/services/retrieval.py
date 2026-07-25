@@ -31,7 +31,7 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
 
     rpc_params = {
         'query_embedding': query_vector,
-        'match_threshold': 0.0,
+        'match_threshold': 0.3,
         'match_count': fetch_count,
         'filter_make': make,
         'filter_max_price': max_price,
@@ -67,7 +67,7 @@ def hybrid_search(soft_intent: str, max_price: int = None, make: str = None, tar
         
         rpc_params_relaxed = {
             'query_embedding': query_vector,
-            'match_threshold': 0.0,
+            'match_threshold': 0.3,
             'match_count': fetch_count,
             'filter_make': make,
             'filter_max_price': relaxed_price,

@@ -113,6 +113,9 @@ CREATE TABLE reviews (
 -- Tạo Index HNSW cho việc tìm kiếm Vector siêu tốc
 CREATE INDEX ON reviews USING hnsw (embedding vector_cosine_ops);
 
+-- Index hỗ trợ JOIN reviews → cars trong post-filter phase
+CREATE INDEX idx_reviews_car_id ON reviews (car_id);
+
 -- Q&A
 CREATE TABLE car_qa (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -210,11 +213,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Function: Match Cars (Vector Search RAG)
+-- Function: Match Cars (Vector Search RAG) — Post-filter architecture
 CREATE OR REPLACE FUNCTION match_cars(
   query_embedding VECTOR(768),
-  match_threshold FLOAT,
-  match_count INT,
+  match_threshold FLOAT DEFAULT 0.3,
+  match_count INT DEFAULT 5,
   filter_make TEXT DEFAULT NULL,
   filter_max_price INT DEFAULT NULL,
   filter_target_year INT DEFAULT NULL,
@@ -230,38 +233,56 @@ RETURNS TABLE (
   price INT,
   metadata JSONB,
   review TEXT,
-  similarity FLOAT
+  similarity DOUBLE PRECISION
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
   RETURN QUERY
-  WITH nearest AS (
-    SELECT 
+
+  -- Phase 1: Pure vector search (HNSW index hoạt động)
+  WITH vector_matches AS (
+    SELECT
       r.id AS review_id,
-      c.id AS car_id,
+      r.car_id,
+      r.comment,
       1 - (r.embedding <=> query_embedding) AS similarity
     FROM reviews r
-    JOIN cars c ON r.car_id = c.id
-    WHERE 
-      (filter_make IS NULL OR c.make ILIKE filter_make)
+    WHERE r.embedding IS NOT NULL
+    ORDER BY r.embedding <=> query_embedding ASC
+    LIMIT match_count * 20
+  ),
+
+  -- Phase 2: JOIN + filter trên cars
+  filtered AS (
+    SELECT
+      vm.review_id,
+      vm.car_id,
+      vm.comment,
+      vm.similarity
+    FROM vector_matches vm
+    JOIN cars c ON vm.car_id = c.id
+    WHERE
+      vm.similarity > match_threshold
+      AND (filter_make IS NULL OR c.make ILIKE filter_make)
       AND (filter_max_price IS NULL OR c.price <= filter_max_price)
       AND (filter_target_year IS NULL OR c.year >= filter_target_year - 2)
       AND (filter_min_hp IS NULL OR c.engine_hp >= filter_min_hp)
       AND (filter_fuel_type IS NULL OR c.metadata->>'engine_fuel_type' ILIKE '%' || filter_fuel_type || '%')
-      AND 1 - (r.embedding <=> query_embedding) > match_threshold
-    ORDER BY r.embedding <=> query_embedding ASC
-    LIMIT match_count * 5 -- Fetch buffer for deduplication
   ),
+
+  -- Phase 3: Deduplicate (1 review/car, giữ similarity cao nhất)
   deduplicated AS (
-    SELECT 
+    SELECT
       review_id,
       car_id,
+      comment,
       similarity,
-      ROW_NUMBER() OVER(PARTITION BY car_id ORDER BY similarity DESC) as rn
-    FROM nearest
+      ROW_NUMBER() OVER(PARTITION BY car_id ORDER BY similarity DESC) AS rn
+    FROM filtered
   )
-  SELECT 
+
+  SELECT
     c.id,
     c.make,
     c.model,
@@ -269,13 +290,13 @@ BEGIN
     c.engine_hp,
     c.price,
     c.metadata,
-    r.comment AS review,
+    d.comment AS review,
     d.similarity
   FROM deduplicated d
   JOIN cars c ON d.car_id = c.id
-  JOIN reviews r ON d.review_id = r.id
   WHERE d.rn = 1
   ORDER BY d.similarity DESC
   LIMIT match_count;
+
 END;
 $$;

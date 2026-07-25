@@ -283,14 +283,21 @@ def main():
                 added += 1
             
             if added == 0:
-                print("\n[Producer] Chỉ lấy được các reviews đã gặp lỗi nghiêm trọng trước đó. Dừng tiến trình để tránh lặp vô tận.")
-                break
+                with counter_lock:
+                    all_failed = all(r.get('id') in failed_record_ids for r in reviews)
+                
+                if all_failed:
+                    print("\n[Producer] Chỉ lấy được các reviews đã gặp lỗi nghiêm trọng trước đó. Dừng tiến trình để tránh lặp vô tận.")
+                    break
+                else:
+                    time.sleep(3)
+                    continue
 
             print(f"\n[Producer] Fetch được {len(reviews)} dòng. Đã thêm {added} reviews mới vào Queue.")
             print(f"[Producer] Kích thước Queue hiện tại: {data_queue.qsize()}. Đang phân bổ cho các luồng...")
             
             # Đợi cho Queue được tiêu thụ bớt rồi mới fetch vòng tiếp theo
-            while data_queue.qsize() > 100 and not stop_event.is_set() and any(t.is_alive() for t in threads):
+            while data_queue.qsize() > 50 and not stop_event.is_set() and any(t.is_alive() for t in threads):
                 time.sleep(2)
 
     except KeyboardInterrupt:
