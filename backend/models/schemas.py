@@ -29,4 +29,5 @@ class SearchResponse(BaseModel):
     constraints: ExtractedConstraints
     results: List[CarResponse]
     conflict_detected: bool
+    relaxed_terms: Optional[List[str]] = Field(default_factory=list, description="Danh sách các điều kiện đã bị nới lỏng (vd: 'price', 'make')")
     ai_message: str

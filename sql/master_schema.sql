@@ -240,30 +240,36 @@ AS $$
 BEGIN
   RETURN QUERY
 
-  -- Phase 1: Pure vector search (HNSW index hoạt động)
-  WITH vector_matches AS (
+  -- Phase 1: Pure vector search, ÉP Postgres phải chạy riêng bước này với HNSW Index
+  WITH vector_matches AS MATERIALIZED (
     SELECT
       r.id AS review_id,
       r.car_id,
       r.comment,
-      1 - (r.embedding <=> query_embedding) AS similarity
+      1 - (r.embedding <=> query_embedding) AS sim
     FROM reviews r
     WHERE r.embedding IS NOT NULL
     ORDER BY r.embedding <=> query_embedding ASC
     LIMIT match_count * 20
   ),
 
-  -- Phase 2: JOIN + filter trên cars
+  -- Phase 2: JOIN + filter trên cars và lấy luôn data để khỏi JOIN lại
   filtered AS (
     SELECT
       vm.review_id,
       vm.car_id,
       vm.comment,
-      vm.similarity
+      vm.sim,
+      c.make AS car_make,
+      c.model AS car_model,
+      c.year AS car_year,
+      c.engine_hp AS car_engine_hp,
+      c.price AS car_price,
+      c.metadata AS car_metadata
     FROM vector_matches vm
     JOIN cars c ON vm.car_id = c.id
     WHERE
-      vm.similarity > match_threshold
+      vm.sim > match_threshold
       AND (filter_make IS NULL OR c.make ILIKE filter_make)
       AND (filter_max_price IS NULL OR c.price <= filter_max_price)
       AND (filter_target_year IS NULL OR c.year >= filter_target_year - 2)
@@ -274,28 +280,25 @@ BEGIN
   -- Phase 3: Deduplicate (1 review/car, giữ similarity cao nhất)
   deduplicated AS (
     SELECT
-      review_id,
-      car_id,
-      comment,
-      similarity,
-      ROW_NUMBER() OVER(PARTITION BY car_id ORDER BY similarity DESC) AS rn
+      *,
+      ROW_NUMBER() OVER(PARTITION BY car_id ORDER BY sim DESC) AS rn
     FROM filtered
   )
 
+  -- Phase 4: Trả về kết quả, không JOIN lại bảng cars
   SELECT
-    c.id,
-    c.make,
-    c.model,
-    c.year,
-    c.engine_hp,
-    c.price,
-    c.metadata,
+    d.car_id AS id,
+    d.car_make AS make,
+    d.car_model AS model,
+    d.car_year AS year,
+    d.car_engine_hp AS engine_hp,
+    d.car_price AS price,
+    d.car_metadata AS metadata,
     d.comment AS review,
-    d.similarity
+    d.sim AS similarity
   FROM deduplicated d
-  JOIN cars c ON d.car_id = c.id
   WHERE d.rn = 1
-  ORDER BY d.similarity DESC
+  ORDER BY d.sim DESC
   LIMIT match_count;
 
 END;

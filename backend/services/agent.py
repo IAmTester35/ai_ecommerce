@@ -42,7 +42,7 @@ def extract_constraints(query: str) -> ExtractedConstraints:
     
     return response.parsed
 
-def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: list, conflict_detected: bool) -> str:
+def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: list, conflict_detected: bool, relaxed_terms: list = None) -> str:
     """
     Sinh ra câu trả lời tư vấn cho khách hàng.
     """
@@ -52,7 +52,7 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
         The user submitted an out-of-scope query: "{query}"
 
         Instructions:
-        1. Write a polite, concise response in Vietnamese (2-3 sentences).
+        1. Write a polite, concise response.
         2. Inform the user that your system specialized exclusively in searching and recommending cars/automobiles.
         3. Politely invite them to rephrase their query with car preferences (e.g., budget, body style, or car requirements).
         """
@@ -76,6 +76,14 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
             cars_info += f"  Technical Specs/Metadata: {meta_str}\n"
         if review_snippet:
             cars_info += f"  Highlight/User Review: \"{review_snippet}\"\n"
+            
+    relaxed_context = ""
+    if conflict_detected and relaxed_terms:
+        relaxed_context = f"Yes. We relaxed these specific constraints: {', '.join(relaxed_terms)}."
+    elif conflict_detected:
+        relaxed_context = "Yes. The budget/constraints were relaxed to find alternative options."
+    else:
+        relaxed_context = "No."
     
     prompt = f"""
     You are an expert, objective, and premium automotive sales consultant. 
@@ -85,13 +93,13 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
     {cars_info if cars_info else "NO MATCHING CARS FOUND IN DATABASE INVENTORY."}
     
     Context about the search:
-    Conflict detected: {"Yes. The budget/constraints were relaxed to find alternative options." if conflict_detected else "No."}
+    Conflict detected: {relaxed_context}
     Extracted Constraints: {constraints.model_dump_json()}
 
     Instructions:
     1. GROUNDING DISCIPLINE & TRANSPARENCY:
        - If NO MATCHING CARS WERE FOUND in the database (`cars` is empty):
-         * Explicitly state in Vietnamese that the requested vehicle or brand is currently NOT available in our database inventory.
+         * Explicitly state that the requested vehicle or brand is currently NOT available in our database inventory.
          * Do NOT pretend the car is available or in stock.
          * If the user asked for consultation on a specific model not in stock (e.g. Rolls-Royce Phantom), you may provide a brief, objective evaluation based on general automotive knowledge, but MUST clearly declare that it is not currently in our database inventory.
 
@@ -104,7 +112,7 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
 
     4. PERSUASIVE & CONCISE STYLE:
        - Explain WHY retrieved cars fit the user's needs based on provided metadata and highlights.
-       - If budget/constraints were relaxed due to conflict, explain politely.
+       - If budget/constraints were relaxed due to conflict (e.g. budget expanded, make dropped), transparently but politely explain to the user what exactly was compromised to find these alternative options.
     """
     
     response = client.models.generate_content(

@@ -21,9 +21,9 @@ async def search_cars(request: QueryRequest):
         
         # 2. Truy xuất dữ liệu & Kiểm tra mâu thuẫn
         if constraints.is_out_of_scope:
-            cars_data, conflict = [], False
+            cars_data, conflict, relaxed_terms = [], False, []
         else:
-            cars_data, conflict = hybrid_search(
+            cars_data, conflict, relaxed_terms = hybrid_search(
                 soft_intent=constraints.soft_intent,
                 max_price=constraints.max_price,
                 make=constraints.make,
@@ -46,6 +46,7 @@ async def search_cars(request: QueryRequest):
             constraints=constraints,
             results=results,
             conflict_detected=conflict,
+            relaxed_terms=relaxed_terms,
             ai_message=ai_message
         )
         
