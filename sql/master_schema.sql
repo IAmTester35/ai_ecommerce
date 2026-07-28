@@ -45,7 +45,7 @@ CREATE TABLE cars (
     model TEXT NOT NULL,
     year INT NOT NULL,
     engine_hp INT,
-    price INT,                  -- MSRP 
+    price BIGINT,                  -- MSRP 
     metadata JSONB,             -- Chứa các thông số phụ (kiểu dáng, hộp số, nhiên liệu,...)
     stock_quantity INT DEFAULT 1,
     is_active BOOLEAN DEFAULT TRUE,
@@ -95,6 +95,7 @@ CREATE TABLE order_items (
     order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE SET NULL,
     price BIGINT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -166,6 +167,21 @@ CREATE TABLE cart_items (
 );
 
 
+-- 3.5. PERFORMANCE INDEXES
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_test_drives_user_id ON test_drives(user_id);
+CREATE INDEX IF NOT EXISTS idx_test_drives_car_id ON test_drives(car_id);
+CREATE INDEX IF NOT EXISTS idx_viewed_cars_user_id_viewed_at ON viewed_cars(user_id, viewed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_search_history_user_id ON search_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_car_id ON order_items(car_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_car_qa_car_id ON car_qa(car_id);
+CREATE INDEX IF NOT EXISTS idx_car_qa_user_id ON car_qa(user_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_cars_car_id ON saved_cars(car_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_car_id ON cart_items(car_id);
+
 -- 4. FUNCTIONS & TRIGGERS
 
 -- Trigger Function: Update `updated_at`
@@ -187,26 +203,58 @@ RETURNS UUID AS $$
 DECLARE
     v_order_id UUID;
     v_total_amount BIGINT := 0;
+    cart_item RECORD;
 BEGIN
-    SELECT COALESCE(SUM(c.price * ci.quantity), 0) INTO v_total_amount
-    FROM cart_items ci
-    JOIN cars c ON ci.car_id = c.id
-    WHERE ci.user_id = p_user_id;
-
-    IF v_total_amount = 0 THEN
-        RAISE EXCEPTION 'Cart is empty or items have no price';
+    -- Kiểm tra giỏ hàng
+    IF NOT EXISTS (SELECT 1 FROM cart_items WHERE user_id = p_user_id) THEN
+        RAISE EXCEPTION 'Cart is empty';
     END IF;
 
+    -- Tạo order với tổng tiền = 0 trước
     INSERT INTO orders (user_id, total_amount, payment_method, status)
-    VALUES (p_user_id, v_total_amount, p_payment_method, 'pending')
+    VALUES (p_user_id, 0, p_payment_method, 'pending')
     RETURNING id INTO v_order_id;
 
-    INSERT INTO order_items (order_id, car_id, price)
-    SELECT v_order_id, ci.car_id, c.price
-    FROM cart_items ci
-    JOIN cars c ON ci.car_id = c.id
-    WHERE ci.user_id = p_user_id;
+    -- Khóa (Lock) các xe trong giỏ hàng để tránh race condition
+    FOR cart_item IN
+        SELECT ci.car_id, ci.quantity AS order_qty, c.price, c.stock_quantity 
+        FROM cart_items ci
+        JOIN cars c ON ci.car_id = c.id
+        WHERE ci.user_id = p_user_id
+        ORDER BY ci.car_id
+        FOR UPDATE OF c
+    LOOP
+        -- Kiểm tra tồn kho
+        IF cart_item.stock_quantity < cart_item.order_qty THEN
+            RAISE EXCEPTION 'Car ID % out of stock or not enough stock', cart_item.car_id;
+        END IF;
 
+        -- Trừ tồn kho
+        UPDATE cars 
+        SET stock_quantity = stock_quantity - cart_item.order_qty
+        WHERE id = cart_item.car_id;
+
+        -- Lưu vào order_items
+        INSERT INTO order_items (order_id, car_id, price, quantity)
+        VALUES (v_order_id, cart_item.car_id, cart_item.price, cart_item.order_qty);
+
+        -- Kiểm tra giá xe (chống lỗi NULL price biến tổng tiền thành NULL)
+        IF cart_item.price IS NULL THEN
+            RAISE EXCEPTION 'Car ID % has no price set', cart_item.car_id;
+        END IF;
+
+        -- Cộng dồn tổng tiền
+        v_total_amount := v_total_amount + (cart_item.price * cart_item.order_qty);
+    END LOOP;
+
+    IF v_total_amount = 0 THEN
+        RAISE EXCEPTION 'Cart items have no price';
+    END IF;
+
+    -- Cập nhật tổng tiền chính thức
+    UPDATE orders SET total_amount = v_total_amount WHERE id = v_order_id;
+
+    -- Xóa giỏ hàng
     DELETE FROM cart_items WHERE user_id = p_user_id;
 
     RETURN v_order_id;
@@ -219,7 +267,7 @@ CREATE OR REPLACE FUNCTION match_cars(
   match_threshold FLOAT DEFAULT 0.3,
   match_count INT DEFAULT 5,
   filter_make TEXT DEFAULT NULL,
-  filter_max_price INT DEFAULT NULL,
+  filter_max_price BIGINT DEFAULT NULL,
   filter_target_year INT DEFAULT NULL,
   filter_min_hp INT DEFAULT NULL,
   filter_fuel_type TEXT DEFAULT NULL
@@ -230,7 +278,7 @@ RETURNS TABLE (
   model TEXT,
   year INT,
   engine_hp INT,
-  price INT,
+  price BIGINT,
   metadata JSONB,
   review TEXT,
   similarity DOUBLE PRECISION

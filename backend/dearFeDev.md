@@ -57,7 +57,110 @@ const { data, error } = await supabase
 // Trả về order_id nếu giao dịch thành công
 ```
 
-### 2.4. Quản trị (Admin)
+### 2.4. Lịch sử mua hàng (Orders)
+```javascript
+// Lấy danh sách đơn hàng và chi tiết các xe đã mua
+const { data, error } = await supabase
+  .from('orders')
+  .select('*, order_items(*, cars(*))')
+  .order('created_at', { ascending: false });
+```
+
+### 2.5. Xe đã lưu (Wishlist)
+```javascript
+// Lưu một xe vào Wishlist
+const { data, error } = await supabase
+  .from('saved_cars')
+  .insert([{ car_id: 'UUID_CỦA_XE' }]);
+
+// Lấy danh sách xe đã lưu
+const { data: savedCars, error: getError } = await supabase
+  .from('saved_cars')
+  .select('*, cars(*)')
+  .order('created_at', { ascending: false });
+```
+
+### 2.6. Lịch sử xem xe (Recently Viewed)
+```javascript
+// Ghi nhận khi user xem chi tiết xe
+const { data, error } = await supabase
+  .from('viewed_cars')
+  .insert([{ car_id: 'UUID_CỦA_XE' }]);
+
+// Lấy danh sách xe vừa xem
+const { data: viewedCars, error: getError } = await supabase
+  .from('viewed_cars')
+  .select('*, cars(*)')
+  .order('viewed_at', { ascending: false })
+  .limit(10);
+```
+
+### 2.7. Đặt lịch lái thử (Test Drives)
+```javascript
+// Lên lịch lái thử
+const { data, error } = await supabase
+  .from('test_drives')
+  .insert([{ 
+    car_id: 'UUID_CỦA_XE', 
+    scheduled_date: '2026-08-01T10:00:00Z',
+    notes: 'Vui lòng chuẩn bị xe trước 15 phút' 
+  }]);
+```
+
+### 2.8. Hỏi đáp xe (Q&A)
+```javascript
+// Gửi câu hỏi về xe
+const { data, error } = await supabase
+  .from('car_qa')
+  .insert([{ 
+    car_id: 'UUID_CỦA_XE', 
+    question: 'Xe này có hỗ trợ trả góp không?' 
+  }]);
+
+// Lấy danh sách câu hỏi của một xe (kèm tên và avatar người trả lời nếu có)
+const { data: qaData, error: qaError } = await supabase
+  .from('car_qa')
+  .select('*, profiles(full_name, avatar_url)')
+  .eq('car_id', 'UUID_CỦA_XE')
+  .order('created_at', { ascending: false });
+```
+
+### 2.9. Đánh giá xe (Reviews)
+```javascript
+// Đăng đánh giá
+const { data, error } = await supabase
+  .from('reviews')
+  .insert([{ 
+    car_id: 'UUID_CỦA_XE', 
+    rating: 5,
+    comment: 'Xe chạy bốc, máy êm!' 
+  }]);
+```
+
+### 2.10. Lịch sử tìm kiếm (Search History)
+```javascript
+// Lưu lịch sử tìm kiếm text
+const { data, error } = await supabase
+  .from('search_history')
+  .insert([{ query_text: 'Xe SUV dưới 1 tỷ' }]);
+```
+
+### 2.11. Thông báo (Notifications)
+```javascript
+// Lấy danh sách thông báo
+const { data, error } = await supabase
+  .from('notifications')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+// Đánh dấu đã đọc
+const { data: updateData, error: updateError } = await supabase
+  .from('notifications')
+  .update({ is_read: true })
+  .eq('id', 'UUID_CỦA_THÔNG_BÁO');
+```
+
+### 2.12. Quản trị (Admin)
 Chỉ người dùng có `role = 'admin'` mới có quyền Insert/Update trên bảng `cars`. Bất kỳ nỗ lực thay đổi dữ liệu từ người dùng không có quyền sẽ bị từ chối với lỗi 403 Forbidden.
 ```javascript
 const { data, error } = await supabase
