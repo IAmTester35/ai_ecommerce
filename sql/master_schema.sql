@@ -259,7 +259,7 @@ BEGIN
 
     RETURN v_order_id;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Function: Match Cars (Vector Search RAG) — Post-filter architecture
 CREATE OR REPLACE FUNCTION match_cars(
@@ -351,3 +351,183 @@ BEGIN
 
 END;
 $$;
+
+
+-- ==============================================================================
+-- 5. ROW LEVEL SECURITY (RLS) & ACCESS CONTROL
+-- ==============================================================================
+
+-- Helper Function: Get User Role safely (Custom Claim JWT -> Profiles Table fallback)
+CREATE OR REPLACE FUNCTION get_my_role()
+RETURNS TEXT 
+LANGUAGE sql 
+SECURITY DEFINER 
+SET search_path = public 
+STABLE AS $$
+  SELECT COALESCE(
+    auth.jwt() -> 'app_metadata' ->> 'role',
+    (SELECT role FROM profiles WHERE id = auth.uid()),
+    'user'
+  );
+$$;
+
+-- Trigger Function: Prevent Privilege Escalation on `profiles.role`
+CREATE OR REPLACE FUNCTION prevent_profile_role_escalation()
+RETURNS TRIGGER 
+LANGUAGE plpgsql 
+SECURITY DEFINER 
+SET search_path = public AS $$
+BEGIN
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+        IF get_my_role() != 'owner' THEN
+            NEW.role := OLD.role;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS protect_profile_role ON profiles;
+CREATE TRIGGER protect_profile_role
+BEFORE UPDATE ON profiles
+FOR EACH ROW
+EXECUTE FUNCTION prevent_profile_role_escalation();
+
+
+-- ENABLE RLS ON ALL TABLES
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_cars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE test_drives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE car_qa ENABLE ROW LEVEL SECURITY;
+ALTER TABLE viewed_cars ENABLE ROW LEVEL SECURITY;
+ALTER TABLE search_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
+
+
+-- 5.1 PROFILES POLICIES
+CREATE POLICY "Profiles read access" ON profiles 
+  FOR SELECT USING (id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Profiles self insert" ON profiles 
+  FOR INSERT WITH CHECK (id = auth.uid());
+
+CREATE POLICY "Profiles update access" ON profiles 
+  FOR UPDATE USING (id = auth.uid() OR get_my_role() = 'owner');
+
+
+-- 5.2 CARS POLICIES
+CREATE POLICY "Cars public read" ON cars 
+  FOR SELECT USING (is_active = TRUE OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Cars admin write" ON cars 
+  FOR ALL USING (get_my_role() IN ('manager', 'owner'));
+
+
+-- 5.3 ORDERS POLICIES
+-- NOTE: Users CANNOT INSERT/UPDATE directly via REST API. Orders must be created via `checkout_cart()` (SECURITY DEFINER).
+CREATE POLICY "Orders select policy" ON orders 
+  FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Orders manager update policy" ON orders 
+  FOR UPDATE USING (get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Orders owner full access" ON orders 
+  FOR ALL USING (get_my_role() = 'owner');
+
+
+-- 5.4 ORDER_ITEMS POLICIES
+-- NOTE: Users read items belonging to their own orders via EXISTS subquery.
+CREATE POLICY "Order items select policy" ON order_items 
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM orders 
+      WHERE orders.id = order_items.order_id 
+      AND orders.user_id = auth.uid()
+    ) 
+    OR get_my_role() IN ('manager', 'owner')
+  );
+
+CREATE POLICY "Order items owner full access" ON order_items 
+  FOR ALL USING (get_my_role() = 'owner');
+
+
+-- 5.5 CART ITEMS POLICIES
+CREATE POLICY "Cart items user policy" ON cart_items 
+  FOR ALL USING (user_id = auth.uid());
+
+
+-- 5.6 TEST DRIVES POLICIES
+CREATE POLICY "Test drives select policy" ON test_drives 
+  FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Test drives insert policy" ON test_drives 
+  FOR INSERT WITH CHECK (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Test drives update policy" ON test_drives 
+  FOR UPDATE USING (
+    (user_id = auth.uid() AND status = 'pending') 
+    OR get_my_role() IN ('manager', 'owner')
+  );
+
+CREATE POLICY "Test drives delete policy" ON test_drives 
+  FOR DELETE USING (get_my_role() IN ('manager', 'owner'));
+
+
+-- 5.7 REVIEWS POLICIES
+CREATE POLICY "Reviews public read" ON reviews 
+  FOR SELECT USING (TRUE);
+
+CREATE POLICY "Reviews user insert" ON reviews 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Reviews user update" ON reviews 
+  FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Reviews delete policy" ON reviews 
+  FOR DELETE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+
+-- 5.8 CAR QA POLICIES
+CREATE POLICY "Car QA public read" ON car_qa 
+  FOR SELECT USING (TRUE);
+
+CREATE POLICY "Car QA user insert" ON car_qa 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Car QA update policy" ON car_qa 
+  FOR UPDATE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Car QA delete policy" ON car_qa 
+  FOR DELETE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+
+-- 5.9 SAVED CARS POLICIES
+CREATE POLICY "Saved cars user policy" ON saved_cars 
+  FOR ALL USING (user_id = auth.uid());
+
+
+-- 5.10 VIEWED CARS POLICIES
+CREATE POLICY "Viewed cars user policy" ON viewed_cars 
+  FOR ALL USING (user_id = auth.uid());
+
+
+-- 5.11 SEARCH HISTORY POLICIES
+CREATE POLICY "Search history user policy" ON search_history 
+  FOR ALL USING (user_id = auth.uid());
+
+
+-- 5.12 NOTIFICATIONS POLICIES
+CREATE POLICY "Notifications select policy" ON notifications 
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Notifications update policy" ON notifications 
+  FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Notifications insert policy" ON notifications 
+  FOR INSERT WITH CHECK (get_my_role() IN ('manager', 'owner'));
+
