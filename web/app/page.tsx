@@ -1,11 +1,59 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Sparkles } from 'lucide-react';
-import { MOCK_CARS, formatCurrency } from '@/lib/mockData';
+import { createClient } from '@/lib/supabase/server';
+import { DatabaseCar, getCarImage } from '@/lib/types';
+
+async function FeaturedCars() {
+  const supabase = await createClient();
+  
+  const { data } = await supabase
+    .from('cars')
+    .select('*')
+    .eq('is_active', true)
+    .limit(3);
+    
+  const featuredCars = (data as DatabaseCar[]) || [];
+
+  const formatPrice = (price: number | null) => {
+    if (!price) return 'Liên hệ';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+    }).format(price);
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {featuredCars.map(car => (
+        <Link href={`/car/${car.id}`} key={car.id} className="group flex flex-col bg-card rounded-2xl overflow-hidden border shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
+          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+            <img 
+              src={getCarImage(car.id)} 
+              alt={car.model} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          </div>
+          <div className="p-6 flex flex-col flex-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{car.make}</p>
+            <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{car.model}</h3>
+            <div className="flex items-center justify-between mt-auto pt-4 border-t">
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Giá từ</span>
+                <span className="text-lg font-bold text-primary">{formatPrice(car.price)}</span>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function Home() {
-  const featuredCars = MOCK_CARS.filter(car => car.isFeatured).slice(0, 3);
-
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -58,37 +106,9 @@ export default function Home() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredCars.map(car => (
-              <Link href={`/car/${car.id}`} key={car.id} className="group flex flex-col bg-card rounded-2xl overflow-hidden border shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
-                <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-                  <img 
-                    src={car.imageUrl} 
-                    alt={car.name} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  {car.isNew && (
-                    <div className="absolute top-4 left-4 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      Mới
-                    </div>
-                  )}
-                </div>
-                <div className="p-6 flex flex-col flex-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{car.brand}</p>
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{car.name}</h3>
-                  <div className="flex items-center justify-between mt-auto pt-4 border-t">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-muted-foreground">Giá từ</span>
-                      <span className="text-lg font-bold text-primary">{formatCurrency(car.price)}</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      <ArrowRight className="w-5 h-5" />
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <Suspense fallback={<div className="h-64 flex items-center justify-center">Đang tải...</div>}>
+            <FeaturedCars />
+          </Suspense>
         </div>
       </section>
     </div>

@@ -17,13 +17,7 @@ export interface SearchResponse {
   ai_message: string;
 }
 
-const MOCK_CAR_IMAGES = [
-  "https://images.unsplash.com/photo-1617531653332-bd46c24f2068?q=80&w=2115&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1603584173870-7f23fdae1b7a?q=80&w=2069&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1583121274602-3e2820c69888?q=80&w=2070&auto=format&fit=crop"
-];
+
 
 export async function searchCars(query: string): Promise<SearchResponse> {
   try {
@@ -41,11 +35,7 @@ export async function searchCars(query: string): Promise<SearchResponse> {
 
     const data: SearchResponse = await res.json();
     
-    // Add mock images if missing
-    data.results = data.results.map((car, index) => ({
-      ...car,
-      image_url: car.image_url || MOCK_CAR_IMAGES[index % MOCK_CAR_IMAGES.length]
-    }));
+
 
     return data;
   } catch (error) {
