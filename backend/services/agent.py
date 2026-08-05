@@ -59,6 +59,9 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
         response = client.models.generate_content(
             model='gemini-3.6-flash',
             contents=prompt,
+            config={
+                'thinking_config': {'thinking_budget': 128}
+            }
         )
         return response.text
 
@@ -118,6 +121,9 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
     response = client.models.generate_content(
         model='gemini-3.6-flash',
         contents=prompt,
+        config={
+            'thinking_config': {'thinking_budget': 256}
+        }
     )
     
     return response.text

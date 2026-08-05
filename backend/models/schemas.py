@@ -23,6 +23,7 @@ class CarResponse(BaseModel):
     metadata: Optional[dict] = None
     review: Optional[str] = None
     similarity: Optional[float] = None
+    rerank_score: Optional[float] = None
 
 class SearchResponse(BaseModel):
     original_query: str
