@@ -47,6 +47,7 @@ CREATE TABLE cars (
     engine_hp INT,
     price BIGINT,                  -- MSRP 
     metadata JSONB,             -- Chứa các thông số phụ (kiểu dáng, hộp số, nhiên liệu,...)
+    image_url TEXT,             -- Cache link ảnh xe
     stock_quantity INT DEFAULT 1,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -262,6 +263,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Function: Match Cars (Vector Search RAG) — Post-filter architecture
+DROP FUNCTION IF EXISTS match_cars;
+
 CREATE OR REPLACE FUNCTION match_cars(
   query_embedding VECTOR(768),
   match_threshold FLOAT DEFAULT 0.3,
@@ -281,7 +284,8 @@ RETURNS TABLE (
   price BIGINT,
   metadata JSONB,
   review TEXT,
-  similarity DOUBLE PRECISION
+  similarity DOUBLE PRECISION,
+  image_url TEXT
 )
 LANGUAGE plpgsql
 AS $$
@@ -313,7 +317,8 @@ BEGIN
       c.year AS car_year,
       c.engine_hp AS car_engine_hp,
       c.price AS car_price,
-      c.metadata AS car_metadata
+      c.metadata AS car_metadata,
+      c.image_url AS car_image_url
     FROM vector_matches vm
     JOIN cars c ON vm.car_id = c.id
     WHERE
@@ -343,7 +348,8 @@ BEGIN
     d.car_price AS price,
     d.car_metadata AS metadata,
     d.comment AS review,
-    d.sim AS similarity
+    d.sim AS similarity,
+    d.car_image_url AS image_url
   FROM deduplicated d
   WHERE d.rn = 1
   ORDER BY d.sim DESC

@@ -4,8 +4,21 @@ import os
 import logging
 from typing import List, Dict, Optional
 import xml.etree.ElementTree as ET
+from services.retrieval import supabase
 
 logger = logging.getLogger(__name__)
+
+def update_image_in_db(car_id: str, image_url: str):
+    """
+    Background Task: Lưu ảnh vào Supabase.
+    """
+    if not car_id or not image_url:
+        return
+    try:
+        supabase.table("cars").update({"image_url": image_url}).eq("id", car_id).execute()
+        logger.info(f"Cached image for car {car_id} into DB.")
+    except Exception as e:
+        logger.warning(f"Failed to cache image for car {car_id}: {e}")
 
 async def fetch_from_car_api(client: httpx.AsyncClient, make: str, model: str, year: str) -> Optional[str]:
     """
@@ -62,9 +75,14 @@ async def fetch_single_car_image(car: dict) -> Optional[str]:
     """
     Điều phối luồng lấy ảnh theo thứ tự ưu tiên và tuân thủ SoC.
     """
+    # 0. Ưu tiên đọc từ DB
+    if car.get("image_url"):
+        return car["image_url"]
+        
     make = car.get("make", "")
     model = car.get("model", "")
-    year = car.get("year", "")
+    year = str(car.get("year", ""))
+    car_id = car.get("id", "")
     
     query = f"{year} {make} {model}".strip()
     if not query:
@@ -74,11 +92,13 @@ async def fetch_single_car_image(car: dict) -> Optional[str]:
         # Bước 1: Gọi API chính (Không cần Key)
         image_url = await fetch_from_car_api(client, make, model, year)
         if image_url:
+            asyncio.create_task(asyncio.to_thread(update_image_in_db, car_id, image_url))
             return image_url
             
         # Bước 2: Gọi API dự phòng (Google Search)
         image_url = await fetch_from_google_search(client, query)
         if image_url:
+            asyncio.create_task(asyncio.to_thread(update_image_in_db, car_id, image_url))
             return image_url
 
     # Bước 3: Thay vì dựa dẫm vào placeholder ngoài không kiểm soát, 

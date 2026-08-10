@@ -12,7 +12,7 @@ SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise ValueError("Missing Supabase environment variables. Please check .env file.")
 
-CACHE_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "embeddings_cache.db")
+CACHE_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data_pipeline/embeddings_cache.db")
 
 def main():
     if not os.path.exists(CACHE_DB_PATH):
