@@ -24,6 +24,7 @@ class CarResponse(BaseModel):
     review: Optional[str] = None
     similarity: Optional[float] = None
     rerank_score: Optional[float] = None
+    image_url: Optional[str] = None
 
 class SearchResponse(BaseModel):
     original_query: str
