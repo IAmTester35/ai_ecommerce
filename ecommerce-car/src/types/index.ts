@@ -22,11 +22,19 @@ export interface CarResponse {
   image_url?: string;
 }
 
-export interface SearchResponse {
+export interface SearchDataEvent {
   original_query: string;
   constraints: ExtractedConstraints;
   results: CarResponse[];
   conflict_detected: boolean;
   relaxed_terms?: string[];
+}
+
+export interface SearchResponse extends SearchDataEvent {
   ai_message: string;
+}
+
+export interface QueryRequest {
+  query: string;
+  session_id: string;
 }

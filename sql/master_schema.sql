@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS search_history CASCADE;
 DROP TABLE IF EXISTS viewed_cars CASCADE;
 DROP TABLE IF EXISTS car_qa CASCADE;
+DROP TABLE IF EXISTS chat_sessions CASCADE;
 DROP TABLE IF EXISTS reviews CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
@@ -146,6 +147,16 @@ CREATE TABLE search_history (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Chat Sessions (AI Chatbot)
+CREATE TABLE chat_sessions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id UUID NOT NULL,
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE, -- NULL cho guest
+    role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Notifications
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -174,6 +185,7 @@ CREATE INDEX IF NOT EXISTS idx_test_drives_user_id ON test_drives(user_id);
 CREATE INDEX IF NOT EXISTS idx_test_drives_car_id ON test_drives(car_id);
 CREATE INDEX IF NOT EXISTS idx_viewed_cars_user_id_viewed_at ON viewed_cars(user_id, viewed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_history_user_id ON search_history(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_session_id ON chat_sessions(session_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_car_id ON order_items(car_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
@@ -413,6 +425,7 @@ ALTER TABLE viewed_cars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE search_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 
 
 -- 5.1 PROFILES POLICIES
@@ -536,4 +549,9 @@ CREATE POLICY "Notifications update policy" ON notifications
 
 CREATE POLICY "Notifications insert policy" ON notifications 
   FOR INSERT WITH CHECK (get_my_role() IN ('manager', 'owner'));
+
+
+-- 5.13 CHAT SESSIONS POLICIES
+CREATE POLICY "Chat sessions user policy" ON chat_sessions 
+  FOR ALL USING (user_id = auth.uid() OR user_id IS NULL);
 

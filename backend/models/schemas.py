@@ -3,6 +3,7 @@ from typing import Optional, List
 
 class QueryRequest(BaseModel):
     query: str = Field(..., description="Câu hỏi tự nhiên của khách hàng")
+    session_id: str = Field(..., description="ID của phiên chat để lưu lịch sử (UUID)")
 
 class ExtractedConstraints(BaseModel):
     max_price: Optional[int] = Field(None, description="Ngân sách tối đa của khách hàng")

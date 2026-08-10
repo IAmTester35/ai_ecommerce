@@ -42,28 +42,38 @@ def extract_constraints(query: str) -> ExtractedConstraints:
     
     return response.parsed
 
-def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: list, conflict_detected: bool, relaxed_terms: list = None) -> str:
+def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: list, conflict_detected: bool, chat_history: list, relaxed_terms: list = None):
     """
-    Sinh ra câu trả lời tư vấn cho khách hàng.
+    Sinh ra câu trả lời tư vấn cho khách hàng (Streaming).
     """
+    # Xây dựng lịch sử trò chuyện để đưa vào model
+    history_text = "Previous conversation:\n"
+    for msg in chat_history:
+        history_text += f"{msg['role'].capitalize()}: {msg['content']}\n"
+    
     if constraints.is_out_of_scope:
         prompt = f"""
         You are an AI assistant for an automotive e-commerce platform specializing in cars.
         The user submitted an out-of-scope query: "{query}"
+
+        {history_text}
 
         Instructions:
         1. Write a polite, concise response.
         2. Inform the user that your system specialized exclusively in searching and recommending cars/automobiles.
         3. Politely invite them to rephrase their query with car preferences (e.g., budget, body style, or car requirements).
         """
-        response = client.models.generate_content(
+        response_stream = client.models.generate_content_stream(
             model='gemini-3.6-flash',
             contents=prompt,
             config={
                 'thinking_config': {'thinking_budget': 128}
             }
         )
-        return response.text
+        for chunk in response_stream:
+            if chunk.text:
+                yield chunk.text
+        return
 
     cars_info = ""
     for idx, c in enumerate(cars):
@@ -92,6 +102,8 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
     You are an expert, objective, and premium automotive sales consultant. 
     The user submitted the query: "{query}"
     
+    {history_text}
+
     Database search results:
     {cars_info if cars_info else "NO MATCHING CARS FOUND IN DATABASE INVENTORY."}
     
@@ -118,7 +130,7 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
        - If budget/constraints were relaxed due to conflict (e.g. budget expanded, make dropped), transparently but politely explain to the user what exactly was compromised to find these alternative options.
     """
     
-    response = client.models.generate_content(
+    response_stream = client.models.generate_content_stream(
         model='gemini-3.6-flash',
         contents=prompt,
         config={
@@ -126,4 +138,6 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
         }
     )
     
-    return response.text
+    for chunk in response_stream:
+        if chunk.text:
+            yield chunk.text
