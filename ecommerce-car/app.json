@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.nammaireecotech.ecommercecar"
+      "bundleIdentifier": "com.chitam.ecommercecar"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.nammaireecotech.ecommercecar"
+      "package": "com.chitam.ecommercecar"
     },
     "web": {
       "output": "static",
