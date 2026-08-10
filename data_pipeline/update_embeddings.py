@@ -35,7 +35,7 @@ counters = {'processed': 0, 'failed': 0}
 counter_lock = threading.Lock()
 backup_lock = threading.Lock()
 db_lock = threading.Lock()
-CACHE_DB_PATH = "embeddings_cache.db"
+CACHE_DB_PATH = "data_pipeline/embeddings_cache.db"
 
 def init_cache_db():
     with db_lock:
@@ -157,9 +157,14 @@ def worker_thread(thread_id: int, api_key: str):
     
     while not stop_event.is_set():
         try:
-            # Lấy data từ queue, dùng timeout để luồng không bị kẹt khi cần dừng
+            # Lấy data từ queue, dùng timeout để luồng không bị kẹt
             review = data_queue.get(timeout=2)
         except queue.Empty:
+            # FIX DEADLOCK: Nếu queue rỗng (không có data mới) mà batch_upsert đang giữ data < 50
+            # thì phải flush luôn. Nếu không, Producer sẽ chờ vô tận vì DB vẫn còn NULL.
+            if batch_upsert:
+                upsert_batch(supabase_local, batch_upsert, thread_id)
+                batch_upsert = []
             continue
 
         # Tín hiệu kết thúc từ Producer
