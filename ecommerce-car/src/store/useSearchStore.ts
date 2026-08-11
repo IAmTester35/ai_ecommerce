@@ -14,13 +14,21 @@ interface SearchState {
   clearSearch: () => void;
 }
 
-const generateSessionId = () => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+const generateUUID = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback RFC4122 v4 UUID format string
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 };
 
 export const useSearchStore = create<SearchState>((set, get) => ({
   query: '',
-  sessionId: generateSessionId(),
+  sessionId: generateUUID(),
   results: null,
   aiMessage: '',
   isLoading: false,
@@ -32,10 +40,16 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     const { query, sessionId } = get();
     if (!query.trim()) return;
 
+    // Detach any previous listeners before attaching new ones to prevent leaks
+    aiSseService.off(SseEventTypes.SEARCH_DATA);
+    aiSseService.off(SseEventTypes.MESSAGE);
+    aiSseService.off(SseEventTypes.ERROR);
+    aiSseService.off(SseEventTypes.CLOSE);
+
     // Reset old states before new search
     set({ isLoading: true, error: null, results: null, aiMessage: '' });
 
-    // Lắng nghe dữ liệu
+    // Attach listeners
     aiSseService.on<SearchDataEvent>(SseEventTypes.SEARCH_DATA, (data) => {
       set({ results: data });
     });
@@ -50,19 +64,19 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
     aiSseService.on<any>(SseEventTypes.CLOSE, () => {
       set({ isLoading: false });
-      // Cleanup events sau khi xong
+      // Cleanup events upon close
       aiSseService.off(SseEventTypes.SEARCH_DATA);
       aiSseService.off(SseEventTypes.MESSAGE);
       aiSseService.off(SseEventTypes.ERROR);
       aiSseService.off(SseEventTypes.CLOSE);
     });
 
-    // Bắt đầu kết nối
+    // Start connection
     aiSseService.connect(query, sessionId);
   },
 
   clearSearch: () => {
     aiSseService.cleanup();
-    set({ query: '', results: null, error: null, aiMessage: '', sessionId: generateSessionId() });
+    set({ query: '', results: null, error: null, aiMessage: '', sessionId: generateUUID() });
   },
 }));
