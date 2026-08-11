@@ -1,0 +1,12 @@
+<type>(<scope>): <subject>
+
+# Scope examples: auth, car, cart, order, test-drive, review, search, backend, db
+
+# Types:
+# feat     : Tính năng mới
+# fix      : Sửa lỗi
+# refactor : Refactor code không làm thay đổi tính năng
+# docs     : Cập nhật tài liệu
+# style    : Format, thiếu dấu chấm phẩy, v.v.
+# test     : Thêm hoặc sửa test
+# chore    : Cập nhật build script, dependencies
