@@ -7,20 +7,20 @@ interface TestDriveState {
   isLoading: boolean;
   error: string | null;
 
-  fetchTestDrives: (userId: string) => Promise<void>;
-  bookTestDrive: (userId: string, carId: string, scheduledDate: string, notes?: string) => Promise<TestDrive>;
-  cancelTestDrive: (testDriveId: string, userId: string) => Promise<void>;
+  fetchTestDrives: (userId?: string) => Promise<void>;
+  bookTestDrive: (userId: string | undefined, carId: string, scheduledDate: string, notes?: string) => Promise<TestDrive>;
+  cancelTestDrive: (testDriveId: string) => Promise<void>;
 }
 
-export const useTestDriveStore = create<TestDriveState>((set, get) => ({
+export const useTestDriveStore = create<TestDriveState>((set) => ({
   testDrives: [],
   isLoading: false,
   error: null,
 
-  fetchTestDrives: async (userId: string) => {
+  fetchTestDrives: async () => {
     set({ isLoading: true, error: null });
     try {
-      const data = await testDriveService.getTestDrives(userId);
+      const data = await testDriveService.getTestDrives();
       set({ testDrives: data, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || 'Lỗi tải lịch đăng ký lái thử', isLoading: false });
@@ -42,10 +42,10 @@ export const useTestDriveStore = create<TestDriveState>((set, get) => ({
     }
   },
 
-  cancelTestDrive: async (testDriveId, userId) => {
+  cancelTestDrive: async (testDriveId) => {
     set({ isLoading: true, error: null });
     try {
-      const updated = await testDriveService.cancelTestDrive(testDriveId, userId);
+      const updated = await testDriveService.cancelTestDrive(testDriveId);
       set((state) => ({
         testDrives: state.testDrives.map((td) => (td.id === testDriveId ? updated : td)),
         isLoading: false,

@@ -9,11 +9,11 @@ interface CartState {
   error: string | null;
   lastCreatedOrderId: string | null;
 
-  fetchCart: (userId: string) => Promise<void>;
-  addToCart: (userId: string, carId: string, quantity?: number) => Promise<void>;
+  fetchCart: (userId?: string) => Promise<void>;
+  addToCart: (userId: string | undefined, carId: string, quantity?: number) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   removeFromCart: (cartItemId: string) => Promise<void>;
-  checkout: (userId: string, paymentMethod: string) => Promise<string>;
+  checkout: (userId: string | undefined, paymentMethod: string) => Promise<string>;
   clearCartState: () => void;
   getTotalPrice: () => number;
   getItemCount: () => number;
@@ -26,10 +26,10 @@ export const useCartStore = create<CartState>((set, get) => ({
   error: null,
   lastCreatedOrderId: null,
 
-  fetchCart: async (userId: string) => {
+  fetchCart: async () => {
     set({ isLoading: true, error: null });
     try {
-      const items = await cartService.getCartItems(userId);
+      const items = await cartService.getCartItems();
       set({ items, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || 'Lỗi tải giỏ hàng', isLoading: false });
@@ -84,10 +84,10 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  checkout: async (userId, paymentMethod) => {
+  checkout: async (_userId, paymentMethod) => {
     set({ isCheckingOut: true, error: null });
     try {
-      const orderId = await cartService.checkoutCart(userId, paymentMethod);
+      const orderId = await cartService.checkoutCart(paymentMethod);
       set({ items: [], lastCreatedOrderId: orderId, isCheckingOut: false });
       return orderId;
     } catch (err: any) {

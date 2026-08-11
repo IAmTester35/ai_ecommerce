@@ -61,7 +61,7 @@ CREATE INDEX ON cars USING GIN (metadata);
 -- Saved Cars (Wishlist)
 CREATE TABLE saved_cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id, car_id)
@@ -70,7 +70,7 @@ CREATE TABLE saved_cars (
 -- Test Drives
 CREATE TABLE test_drives (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
     scheduled_date TIMESTAMPTZ NOT NULL,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled')),
@@ -81,7 +81,7 @@ CREATE TABLE test_drives (
 -- Orders
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     total_amount BIGINT NOT NULL,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'cancelled')),
     payment_method TEXT,
@@ -104,7 +104,7 @@ CREATE TABLE order_items (
 -- Reviews
 CREATE TABLE reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE, -- Có thể NULL cho review từ external source
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE, -- Có thể NULL cho review từ external source
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
     rating FLOAT, -- Hỗ trợ rating float từ file CSV
     comment TEXT,
@@ -123,7 +123,7 @@ CREATE INDEX idx_reviews_car_id ON reviews (car_id);
 CREATE TABLE car_qa (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     question TEXT NOT NULL,
     answer TEXT,
     answered_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
@@ -134,7 +134,7 @@ CREATE TABLE car_qa (
 -- Viewed Cars
 CREATE TABLE viewed_cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
     viewed_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -142,7 +142,7 @@ CREATE TABLE viewed_cars (
 -- Search History
 CREATE TABLE search_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     query_text TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -151,7 +151,7 @@ CREATE TABLE search_history (
 CREATE TABLE chat_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id UUID NOT NULL,
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE, -- NULL cho guest
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE, -- NULL cho guest
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -160,7 +160,7 @@ CREATE TABLE chat_sessions (
 -- Notifications
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     content TEXT NOT NULL,
     type TEXT,
@@ -171,7 +171,7 @@ CREATE TABLE notifications (
 -- Cart Items
 CREATE TABLE cart_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
     quantity INT DEFAULT 1 CHECK (quantity > 0),
     created_at TIMESTAMPTZ DEFAULT NOW(),

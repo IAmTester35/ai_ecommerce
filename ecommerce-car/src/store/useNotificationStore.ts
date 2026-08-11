@@ -7,8 +7,8 @@ interface NotificationState {
   isLoading: boolean;
   error: string | null;
 
-  fetchNotifications: (userId: string) => Promise<void>;
-  markAsRead: (notificationId: string, userId: string) => Promise<void>;
+  fetchNotifications: () => Promise<void>;
+  markAsRead: (notificationId: string) => Promise<void>;
   getUnreadCount: () => number;
 }
 
@@ -17,19 +17,19 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  fetchNotifications: async (userId: string) => {
+  fetchNotifications: async () => {
     set({ isLoading: true, error: null });
     try {
-      const data = await notificationService.getNotifications(userId);
+      const data = await notificationService.getNotifications();
       set({ notifications: data, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || 'Lỗi tải thông báo', isLoading: false });
     }
   },
 
-  markAsRead: async (notificationId, userId) => {
+  markAsRead: async (notificationId) => {
     try {
-      const updated = await notificationService.markAsRead(notificationId, userId);
+      const updated = await notificationService.markAsRead(notificationId);
       set((state) => ({
         notifications: state.notifications.map((n) => (n.id === notificationId ? updated : n)),
       }));

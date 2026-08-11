@@ -13,16 +13,18 @@ export const qaService = {
     return data as CarQA[];
   },
 
-  askQuestion: async (carId: string, userId: string, question: string): Promise<CarQA> => {
+  askQuestion: async (carId: string, userId: string | undefined, question: string): Promise<CarQA> => {
+    const record: Record<string, any> = {
+      car_id: carId,
+      question,
+    };
+    if (userId) {
+      record['user_id'] = userId;
+    }
+
     const { data, error } = await supabase
       .from('car_qa')
-      .insert([
-        {
-          car_id: carId,
-          user_id: userId,
-          question,
-        },
-      ])
+      .insert([record])
       .select()
       .single();
 

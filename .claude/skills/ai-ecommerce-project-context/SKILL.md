@@ -62,7 +62,7 @@ pip install -r backend/requirements.txt
 **Chạy kiểm tra Type trong Mobile App:**
 ```bash
 cd ecommerce-car
-npx tsc --noEmit
+yarn tsc --noEmit && yarn lint
 ```
 
 Chi tiết các luồng làm việc: `references/workflows.md`.

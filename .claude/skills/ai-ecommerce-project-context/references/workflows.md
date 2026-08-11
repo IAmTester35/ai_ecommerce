@@ -55,11 +55,11 @@ npm run dev # Hoặc npx expo start
 ### Chạy TypeScript Compiler Check (bắt buộc trước khi commit)
 ```bash
 cd ecommerce-car
-npx tsc --noEmit
+yarn tsc --noEmit && yarn lint
 ```
 
 Checklist đảm bảo code đạt chuẩn:
-- [ ] Không có lỗi TypeScript (`npx tsc --noEmit` thành công 0 lỗi).
+- [ ] Không có lỗi TypeScript (`yarn tsc --noEmit && yarn lint` thành công 0 lỗi).
 - [ ] Mọi hàm mới trong `services/` không import từ React/Zustand.
 - [ ] Các store mới đều export qua `src/store/index.ts`.
 - [ ] Các service mới đều export qua `src/services/index.ts`.

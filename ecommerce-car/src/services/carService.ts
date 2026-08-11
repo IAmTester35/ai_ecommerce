@@ -53,21 +53,30 @@ export const carService = {
     return data as Car[];
   },
 
-  getSavedCars: async (userId: string): Promise<SavedCar[]> => {
-    const { data, error } = await supabase
+  getSavedCars: async (userId?: string): Promise<SavedCar[]> => {
+    let query = supabase
       .from('saved_cars')
       .select('*, car:cars(*)')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data as SavedCar[];
   },
 
-  saveCar: async (carId: string, userId: string): Promise<SavedCar> => {
+  saveCar: async (carId: string, userId?: string): Promise<SavedCar> => {
+    const record: Record<string, any> = { car_id: carId };
+    if (userId) {
+      record['user_id'] = userId;
+    }
+
     const { data, error } = await supabase
       .from('saved_cars')
-      .insert([{ user_id: userId, car_id: carId }])
+      .insert([record])
       .select('*, car:cars(*)')
       .single();
 
@@ -75,13 +84,13 @@ export const carService = {
     return data as SavedCar;
   },
 
-  unsaveCar: async (carId: string, userId: string): Promise<void> => {
-    const { error } = await supabase
-      .from('saved_cars')
-      .delete()
-      .eq('user_id', userId)
-      .eq('car_id', carId);
+  unsaveCar: async (carId: string, userId?: string): Promise<void> => {
+    let query = supabase.from('saved_cars').delete().eq('car_id', carId);
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
 
+    const { error } = await query;
     if (error) throw error;
   },
 

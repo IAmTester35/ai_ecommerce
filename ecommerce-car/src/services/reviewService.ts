@@ -15,21 +15,23 @@ export const reviewService = {
 
   addReview: async (
     carId: string,
-    userId: string,
+    userId: string | undefined,
     rating: number,
     comment: string
   ): Promise<Review> => {
+    const record: Record<string, any> = {
+      car_id: carId,
+      rating,
+      comment,
+      source: 'user',
+    };
+    if (userId) {
+      record['user_id'] = userId;
+    }
+
     const { data, error } = await supabase
       .from('reviews')
-      .insert([
-        {
-          car_id: carId,
-          user_id: userId,
-          rating,
-          comment,
-          source: 'user',
-        },
-      ])
+      .insert([record])
       .select('*, profiles:profiles(*)')
       .single();
 
