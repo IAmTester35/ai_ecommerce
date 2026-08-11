@@ -16,18 +16,24 @@
          ▼ (SSE Connection / POST /api/search)
 [FastAPI Backend - Microservice]
          │
-         ├─► Layer 2: Entity Extraction (Gemini 2.5 Flash)
-         │       └─► Sanity Check & Conflict Flag Detection
+         ├─► Layer 2: Intent & Constraint Extraction (Gemini 3.1 Flash Lite)
+         │       ├─► Out-of-scope Detection (is_out_of_scope)
+         │       └─► Semantic Expansion (soft_intent in English)
          │
-         ├─► Layer 3: Hybrid Retrieval & Constraint Relaxation
-         │       └─► RPC Supabase: match_cars(query_embedding, filters)
-         │               └─► PostgreSQL pgvector + HNSW Index
+         ├─► Layer 3: Hybrid Retrieval & Multi-level Conflict Resolution
+         │       ├─► RPC Supabase: match_cars(query_embedding, filters)
+         │       │       └─► PostgreSQL pgvector (gemini-embedding-2: 768d) + HNSW Index
+         │       └─► Fallback Levels: 
+         │               • L1: Nới lỏng budget (+50%) & min HP (-20%)
+         │               • L2: Bỏ lọc thương hiệu (make = None)
          │
-         ├─► Layer 4: Re-ranking (Cross-Encoder Model)
-         │       └─► Filter Top 3-5 Xe tối ưu nhất
+         ├─► Layer 4: Re-ranking (Jina Reranker API: jina-reranker-v3.5)
+         │       ├─► Tái xếp hạng candidates theo soft_intent
+         │       └─► Parallel Image Enrichment (CarImagery API -> Google Search -> DB Cache)
          │
-         └─► Layer 5: Response Generation (Gemini 1.5 Pro / Flash)
-                 └─► SSE Text Stream + SearchData Event Payload
+         └─► Layer 5: Advisory Generation (Gemini 3.6 Flash - Thinking Mode)
+                 ├─► SSE Stream: `search_data` payload + `message` text stream
+                 └─► Lưu lịch sử vào Supabase `chat_sessions` table
 ```
 
 ---
@@ -36,25 +42,34 @@
 
 ### Layer 1: Data Ingestion & Storage Layer
 - **Structured Data (Metadata)**: Lưu trong cột `metadata` (JSONB) với GIN Index (`price`, `year`, `engine_hp`, `fuel_type`).
-- **Unstructured Data & Vectors**: Đánh giá xe (`reviews.comment`) được tạo embedding 768 chiều bởi model Google `gemini-embedding-2` và lưu vào cột `reviews.embedding VECTOR(768)` với **HNSW Index (`vector_cosine_ops`)**.
+- **Unstructured Data & Vectors**: Đánh giá xe (`reviews.comment`) được tạo embedding 768 chiều bằng **`gemini-embedding-2`** và lưu vào cột `reviews.embedding VECTOR(768)` với **HNSW Index (`vector_cosine_ops`)**.
+- **Chat Persistence**: Lưu lịch sử hội thoại dạng phiên (`session_id`, `role`, `content`, `user_id`) trong bảng `chat_sessions`.
 
-### Layer 2: Query Parsing & Sanity Check
-- Trích xuất Hard Constraints (`max_price`, `target_year`, `min_hp`, `make`, `fuel_type`) và Soft Intent.
-- Thực hiện Count Query kiểm tra xem có tồn tại xe thỏa mãn 100% hard constraints không. Nếu không, bật cờ `conflict_detected = true`.
+### Layer 2: Query Parsing & Intent Extraction
+- Model AI: **`gemini-3.1-flash-lite`** (Structured JSON output qua Pydantic schema `ExtractedConstraints`).
+- **Hard Constraints**: Trích xuất `max_price`, `target_year`, `min_hp`, `make`, `fuel_type`.
+- **Soft Intent & Expansion**: Mở rộng ngữ cảnh bằng tiếng Anh, chuẩn hóa và tự động bóc tách các đặc tính ngầm định (ví dụ: "đi đường núi" -> "mountain driving, high ground clearance, 4WD/AWD"). Loại bỏ lời chào/tên riêng người dùng.
+- **Out-of-Scope Detection**: Đánh cờ `is_out_of_scope = true` nếu truy vấn không liên quan tới lĩnh vực ô tô.
 
-### Layer 3: Hybrid Retrieval & Conflict Resolution
-- Nếu có mâu thuẫn (`conflict_detected = true`), chuyển Hard Constraints quá mức thành yêu cầu mềm, nới lỏng ngân sách/thông số kỹ thuật.
-- Gọi RPC function `match_cars` trên Supabase với chiến lược Post-Filter:
-  1. Phase 1: Pure vector search dùng HNSW Index trên bảng `reviews`.
-  2. Phase 2: JOIN + filter mềm trên bảng `cars`.
-  3. Phase 3: Deduplicate (1 review / 1 xe có similarity cao nhất).
-  4. Phase 4: Trả về Top kết quả.
-- Áp dụng thuật toán phạt điểm (Soft Penalty Scoring) đối với các mẫu xe vượt giá ngân sách.
+### Layer 3: Hybrid Retrieval & Multi-level Conflict Resolution
+- Tạo query embedding 768 dimensions từ `soft_intent` bằng `gemini-embedding-2`.
+- Gọi RPC function `match_cars` trên Supabase:
+  1. **Strict Phase**: Lọc chính xác theo toàn bộ hard constraints + HNSW vector similarity.
+  2. **Conflict Resolution Level 1**: Nếu 0 kết quả & có bộ lọc giá/mã lực, nới lỏng `max_price` x 1.5 và `min_hp` x 0.8, ghi nhận `relaxed_terms = ['price_or_hp']`.
+  3. **Conflict Resolution Level 2**: Nếu vẫn 0 kết quả & có lọc hãng, hủy điều kiện `make`, ghi nhận `relaxed_terms = ['make']`.
 
-### Layer 4: Re-ranking Layer
-- Đưa danh sách xe từ Layer 3 qua mô hình Cross-Encoder chạy cục bộ trên Python Microservice để tái xếp hạng dựa trên toàn bộ ngữ cảnh phức tạp của yêu cầu người dùng.
+### Layer 4: Re-ranking & Media Enrichment
+- **Re-ranking**: Đưa Top candidates qua **Jina Reranker API (`jina-reranker-v3.5`)** để tái xếp hạng theo `soft_intent`. Fallback giữ nguyên thứ tự nếu thiếu `JINA_API_KEY` hoặc API lỗi.
+- **Image Enrichment**: Tải ảnh xe bất đồng bộ (`fetch_images_for_cars`):
+  1. Đọc cache `image_url` từ Supabase DB.
+  2. Fallback 1: CarImagery API (miễn phí, search term: `{year}+{make}+{model}`).
+  3. Fallback 2: Google Custom Search API.
+  4. Cache ảnh mới vào DB thông qua background task.
 
 ### Layer 5: Generation & Streaming (SSE & Generative UI)
-- LLM tổng hợp lời khuyên dựa trên kết quả đã giải quyết mâu thuẫn.
-- Phản hồi dạng Server-Sent Events (SSE) qua giao thức `text/event-stream`, gửi sự kiện `search_data` chứa JSON kết quả xe và stream nội dung text tư vấn.
-- Mobile App / Web App render Generative UI (Car Cards, bảng so sánh, nút đặt lái thử).
+- Model AI: **`gemini-3.6-flash`** với cấu hình `thinking_budget`.
+- **Streaming SSE (`text/event-stream`)**:
+  - Gửi event `search_data`: JSON payload chứa `constraints`, `results` (kèm `image_url`, `rerank_score`), `conflict_detected`, `relaxed_terms`.
+  - Gửi event `message`: Stream từng chunk văn bản tư vấn trực quan, minh bạch (tuân thủ nguyên tắc không tư vấn sai khi không có xe trong DB).
+- Tự động lưu tin nhắn `assistant` vào bảng `chat_sessions`.
+

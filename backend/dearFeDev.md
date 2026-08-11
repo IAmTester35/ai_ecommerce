@@ -259,3 +259,78 @@ sequenceDiagram
   }
   ```
 - **Ứng dụng:** Sử dụng trường `ai_message` để hiển thị phản hồi từ Chatbot hoặc giao diện AI tạo sinh. Sử dụng trường `results` để hiển thị danh sách các thẻ sản phẩm tương ứng.
+
+---
+
+### 3.3. Tích hợp Thanh toán ZaloPay
+
+Hỗ trợ khởi tạo thanh toán ZaloPay, kiểm tra trạng thái và tự động cập nhật trạng thái đơn hàng trong Supabase khi nhận callback.
+
+#### A. Tạo đơn hàng thanh toán
+- **Endpoint:** `POST /api/payment/create`
+- **Body Request:**
+  ```json
+  {
+    "order_id": "UUID_DON_HANG_SUPABASE_NEU_CO",
+    "amount": 50000000,
+    "items": [
+      { "id": "UUID_XE", "name": "Porsche 911", "price": 50000000, "itemCount": 1 }
+    ],
+    "email": "khachhang@example.com",
+    "address": "123 Nguyễn Huệ, Q1, TP.HCM",
+    "name": "Nguyễn Văn A",
+    "phone": "0901234567",
+    "note": "Thanh toán đặt cọc mua xe",
+    "userid": "UUID_CUA_USER"
+  }
+  ```
+- **Response Format:**
+  ```json
+  {
+    "return_code": 1,
+    "return_message": "Giao dịch thành công",
+    "order_url": "https://sb-openapi.zalopay.vn/v2/gateway/pay?order=...",
+    "zp_trans_token": "...",
+    "app_trans_id": "260811_123456"
+  }
+  ```
+
+#### B. Kiểm tra trạng thái đơn hàng
+- **Endpoint:** `POST /api/payment/status`
+- **Body Request:**
+  ```json
+  {
+    "app_trans_id": "260811_123456"
+  }
+  ```
+
+#### C. Callback tự động (ZaloPay Webhook)
+- **Endpoint:** `POST /api/payment/callback`
+- Tự động gọi từ hệ thống ZaloPay sau khi thanh toán thành công để cập nhật bảng `orders` (`payment_status = 'paid'`, `status = 'processing'`) và lưu thông báo mới vào bảng `notifications` của Supabase.
+
+---
+
+### 3.4. Tích hợp Gửi Thông báo (Notifications)
+
+#### A. Gửi thông báo toàn hệ thống (Broadcast)
+- **Endpoint:** `POST /api/notifications/send`
+- **Body Request:**
+  ```json
+  {
+    "title": "Chương trình ưu đãi mới",
+    "body": "Giảm giá 5% cho tất cả các xe điện trong tuần này"
+  }
+  ```
+
+#### B. Gửi thông báo cá nhân
+- **Endpoint:** `POST /api/notifications/send-user`
+- **Body Request:**
+  ```json
+  {
+    "user_id": "UUID_CUA_USER",
+    "token": "FCM_DEVICE_TOKEN_NEU_CO",
+    "title": "Xác nhận đơn hàng",
+    "body": "Đơn hàng #260811_123456 của bạn đã được cập nhật thành công"
+  }
+  ```
+

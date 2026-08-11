@@ -140,6 +140,11 @@ export default function ProfileScreen() {
       {/* Options & Settings */}
       <Text style={styles.sectionTitle}>⚙️ Cài Đặt & Hỗ Trợ</Text>
       <View style={styles.settingsList}>
+        <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/orders' as any)}>
+          <Ionicons name="receipt-outline" size={20} color={colors.primary} />
+          <Text style={styles.settingText}>Đơn hàng của tôi & Thanh toán ZaloPay</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </TouchableOpacity>
         <TouchableOpacity style={styles.settingItem}>
           <Ionicons name="sparkles-outline" size={20} color={colors.primary} />
           <Text style={styles.settingText}>Cấu hình Trợ lý AI AutoMatch</Text>

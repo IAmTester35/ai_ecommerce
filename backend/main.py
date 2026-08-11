@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Load biến môi trường trước khi import các module khác
 load_dotenv()
 
-from routers import ai_search
+from routers import ai_search, payment, notifications
 
 # Import routers
 
@@ -26,6 +26,8 @@ app.add_middleware(
 
 # Include Routers
 app.include_router(ai_search.router)
+app.include_router(payment.router)
+app.include_router(notifications.router)
 
 if __name__ == "__main__":
     import uvicorn

@@ -4,7 +4,7 @@ import { colors } from '../../theme/colors';
 
 interface BadgeProps {
   label: string;
-  variant?: 'primary' | 'secondary' | 'conflict' | 'success' | 'outline';
+  variant?: 'primary' | 'secondary' | 'conflict' | 'warning' | 'success' | 'outline';
   size?: 'sm' | 'md';
 }
 
@@ -16,6 +16,7 @@ export const Badge: React.FC<BadgeProps> = ({ label, variant = 'primary', size =
       case 'secondary':
         return { bg: 'rgba(124, 77, 255, 0.15)', text: colors.secondary, border: colors.secondary };
       case 'conflict':
+      case 'warning':
         return { bg: colors.conflictMuted, text: colors.conflict, border: colors.conflict };
       case 'success':
         return { bg: 'rgba(0, 230, 118, 0.15)', text: colors.success, border: colors.success };

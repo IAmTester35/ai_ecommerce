@@ -25,6 +25,18 @@ export default function RootLayout() {
           name="car/[id]"
           options={{ title: 'Chi Tiết Xe', headerBackTitle: 'Quay lại' }}
         />
+        <Stack.Screen
+          name="checkout"
+          options={{ title: 'Thanh Toán ZaloPay', headerBackTitle: 'Quay lại' }}
+        />
+        <Stack.Screen
+          name="orders"
+          options={{ title: 'Đơn Hàng Của Tôi', headerBackTitle: 'Quay lại' }}
+        />
+        <Stack.Screen
+          name="order/[id]"
+          options={{ title: 'Chi Tiết Đơn Hàng', headerBackTitle: 'Danh sách' }}
+        />
       </Stack>
     </>
   );

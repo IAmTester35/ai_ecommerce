@@ -55,6 +55,8 @@ export interface Order {
   payment_method?: string | null;
   payment_status: PaymentStatus;
   contract_url?: string | null;
+  app_trans_id?: string | null;
+  zp_trans_token?: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
@@ -68,6 +70,57 @@ export interface OrderItem {
   quantity: number;
   created_at: string;
   car?: Car;
+}
+
+export interface PaymentItem {
+  id: string;
+  name: string;
+  price: number;
+  itemCount: number;
+}
+
+export interface PaymentCreateRequest {
+  order_id?: string;
+  amount: number;
+  items: PaymentItem[];
+  email: string;
+  address: string;
+  name: string;
+  phone: string;
+  note?: string;
+  userid: string;
+}
+
+export interface PaymentCreateResponse {
+  return_code: number;
+  return_message: string;
+  order_url?: string;
+  zp_trans_token?: string;
+  app_trans_id?: string;
+}
+
+export interface PaymentStatusRequest {
+  app_trans_id: string;
+}
+
+export interface PaymentStatusResponse {
+  return_code: number;
+  return_message: string;
+  is_processing?: boolean;
+  amount?: number;
+  zp_trans_id?: string;
+}
+
+export interface BroadcastNotificationRequest {
+  title: string;
+  body: string;
+}
+
+export interface UserNotificationRequest {
+  user_id: string;
+  token?: string;
+  title: string;
+  body: string;
 }
 
 export interface Review {

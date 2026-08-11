@@ -8,3 +8,4 @@ export * from './reviewService';
 export * from './qaService';
 export * from './historyService';
 export * from './notificationService';
+export * from './paymentService';
