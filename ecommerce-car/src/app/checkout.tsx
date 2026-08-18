@@ -27,14 +27,14 @@ export default function CheckoutScreen() {
   const [nameInput, setName] = useState<string | null>(null);
   const [phoneInput, setPhone] = useState<string | null>(null);
   const [emailInput, setEmail] = useState<string | null>(null);
-  const [address, setAddress] = useState('68 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP.HCM');
-  const [note, setNote] = useState('Thanh toán tiền đặt cọc giữ xe chính hãng AutoMatch');
+  const [address, setAddress] = useState('');
+  const [note, setNote] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'zalopay' | 'cash'>('zalopay');
   const [agreedTerms, setAgreedTerms] = useState(true);
 
-  const name = nameInput ?? profile?.full_name ?? 'Khách Hàng VIP';
-  const phone = phoneInput ?? profile?.phone ?? '0908889999';
-  const email = emailInput ?? user?.email ?? 'khachhang.vip@automatch.ai';
+  const name = nameInput ?? profile?.full_name ?? '';
+  const phone = phoneInput ?? profile?.phone ?? '';
+  const email = emailInput ?? user?.email ?? '';
 
   const fallbackImage =
     'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';

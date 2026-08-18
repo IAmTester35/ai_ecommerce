@@ -52,8 +52,6 @@ export default function CompareScreen() {
         engine_hp: c!.engine_hp || undefined,
         price: c!.price || undefined,
         metadata: c!.metadata || undefined,
-        similarity: 0.94 - idx * 0.03,
-        rerank_score: 0.95 - idx * 0.03,
         image_url: c!.image_url || undefined,
       }));
   }, [activeComparedIds, topCars]);
@@ -114,22 +112,8 @@ export default function CompareScreen() {
         </Text>
       </View>
 
-      {/* AI Comparison Summary Card */}
-      <Card highlightBorder style={styles.aiSummaryCard}>
-        <View style={styles.aiSummaryHeader}>
-          <Ionicons name="sparkles" size={18} color={colors.primary} />
-          <Text style={styles.aiSummaryTitle}>Nhận Xét & Đánh Giá Từ AutoMatch AI</Text>
-        </View>
-        <Text style={styles.aiSummaryText}>
-          {comparedCars.length >= 2
-            ? `So sánh giữa ${comparedCars.map((c) => `${c.make} ${c.model}`).join(' và ')}: ${
-                comparedCars[0]?.engine_hp && comparedCars[1]?.engine_hp && comparedCars[0].engine_hp > comparedCars[1].engine_hp
-                  ? `${comparedCars[0].make} ${comparedCars[0].model} vượt trội về công suất động cơ (${comparedCars[0].engine_hp} HP so với ${comparedCars[1].engine_hp} HP), mang lại cảm giác lái thể thao hơn.`
-                  : 'Các mẫu xe này đều sở hữu trang bị cao cấp và khung gầm vững chắc, phù hợp với tiêu chuẩn sang trọng.'
-              }`
-            : 'Chọn ít nhất 2 xe để AI tổng hợp nhận xét so sánh.'}
-        </Text>
-
+      {/* Comparison Options Bar */}
+      <Card style={styles.aiSummaryCard}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setHighlightDifferences(!highlightDifferences)}
@@ -140,7 +124,7 @@ export default function CompareScreen() {
             size={18}
             color={colors.primary}
           />
-          <Text style={styles.toggleDiffText}>Làm nổi bật các thông số khác biệt</Text>
+          <Text style={styles.toggleDiffText}>Làm nổi bật các thông số khác biệt giữa các dòng xe</Text>
         </TouchableOpacity>
       </Card>
 
@@ -177,12 +161,7 @@ export default function CompareScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                  <Badge
-                    label={`${Math.round((car.rerank_score || 0.92) * 100)}% Match`}
-                    variant="primary"
-                    size="xs"
-                    style={{ marginTop: 4, marginBottom: 8 }}
-                  />
+                    <Text style={styles.metricValueSmall}>Năm {car.year}</Text>
 
                   <Button
                     title="Đặt cọc"

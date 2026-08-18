@@ -5,7 +5,7 @@ export const qaService = {
   getCarQA: async (carId: string): Promise<CarQA[]> => {
     const { data, error } = await supabase
       .from('car_qa')
-      .select('*, profiles(full_name, avatar_url)')
+      .select('*, responder:profiles!answered_by(full_name, avatar_url), asker:profiles!user_id(full_name, avatar_url)')
       .eq('car_id', carId)
       .order('created_at', { ascending: false });
 
@@ -32,7 +32,7 @@ export const qaService = {
     const { data, error } = await supabase
       .from('car_qa')
       .insert([record])
-      .select('*, profiles(full_name, avatar_url)')
+      .select('*, responder:profiles!answered_by(full_name, avatar_url), asker:profiles!user_id(full_name, avatar_url)')
       .single();
 
     if (error) {

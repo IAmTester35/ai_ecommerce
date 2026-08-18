@@ -216,17 +216,15 @@ export default function CarDetailScreen() {
                 {selectedCar.make} {selectedCar.model}
               </Text>
               <Text style={styles.yearSubtitle}>
-                Phiên bản {selectedCar.year} • {selectedCar.metadata?.body_type || 'SUV/Coupe'}
+                Phiên bản {selectedCar.year} • {selectedCar.metadata?.body_type || selectedCar.metadata?.engine_fuel_type || 'Showroom'}
               </Text>
             </View>
-            <Badge label="AI Score: 96%" variant="primary" size="md" />
           </View>
 
           {/* Pricing & Stock Status */}
           <View style={styles.priceCardRow}>
             <PriceTag
               price={selectedCar.price}
-              originalPrice={selectedCar.original_price}
               size="xl"
               showInstallment
             />
@@ -242,17 +240,6 @@ export default function CarDetailScreen() {
             />
           </View>
 
-          {/* AI Advisor Assessment */}
-          <Card highlightBorder style={styles.aiCard}>
-            <View style={styles.aiCardHeader}>
-              <Ionicons name="sparkles" size={18} color={colors.primary} />
-              <Text style={styles.aiCardTitle}>Đánh Giá Chuyên Gia (AutoMatch AI Analysis)</Text>
-            </View>
-            <Text style={styles.aiCardText}>
-              {selectedCar.metadata?.review ||
-                'Mẫu xe này sở hữu hiệu năng vận hành mạnh mẽ, khung gầm vững chãi và chỉ số an toàn hàng đầu theo cơ sở dữ liệu Showroom.'}
-            </Text>
-          </Card>
 
           {/* Navigation Tabs (Specs / Loan / Reviews / Q&A) */}
           <View style={styles.tabContainer}>
@@ -317,7 +304,18 @@ export default function CarDetailScreen() {
               <View style={styles.reviewHeaderRow}>
                 <View>
                   <Text style={styles.reviewSectionTitle}>Đánh Giá Của Khách Hàng</Text>
-                  <RatingStars rating={5.0} size={16} showScore scoreText="5.0 / 5 (Rất Tốt)" />
+                  {reviews.length > 0 ? (
+                    <RatingStars
+                      rating={reviews.reduce((acc, curr) => acc + (curr.rating || 0), 0) / reviews.length}
+                      size={16}
+                      showScore
+                      scoreText={`${(reviews.reduce((acc, curr) => acc + (curr.rating || 0), 0) / reviews.length).toFixed(1)} / 5 (${reviews.length} đánh giá)`}
+                    />
+                  ) : (
+                    <Text style={{ color: colors.textMuted, fontSize: typography.sizes.xs }}>
+                      Chưa có đánh giá nào
+                    </Text>
+                  )}
                 </View>
                 <Button
                   title="Viết Đánh Giá"
@@ -375,7 +373,7 @@ export default function CarDetailScreen() {
 
                   {qa.answer && (
                     <View style={styles.qaAnswerBox}>
-                      <Text style={styles.qaAnswerBadge}>Trả lời từ {qa.answered_by || 'AutoMatch'}:</Text>
+                      <Text style={styles.qaAnswerBadge}>Trả lời từ {qa.responder?.full_name || 'Chuyên gia AutoMatch'}:</Text>
                       <Text style={styles.qaAnswerText}>{qa.answer}</Text>
                     </View>
                   )}
@@ -394,15 +392,7 @@ export default function CarDetailScreen() {
             contentContainerStyle={{ paddingBottom: spacing.md }}
             renderItem={({ item: c }) => (
               <CarCard
-                car={{
-                  ...c,
-                  engine_hp: c.engine_hp || undefined,
-                  price: c.price || undefined,
-                  image_url: c.image_url || undefined,
-                  metadata: c.metadata || undefined,
-                  similarity: 0.9,
-                  rerank_score: 0.92,
-                }}
+                car={c}
                 layout="compact"
                 onPressDetails={(carId) => router.push(`/car/${carId}` as any)}
                 onPressCompare={() => router.push('/(tabs)/compare' as any)}

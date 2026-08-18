@@ -43,7 +43,7 @@ export default function ProfileScreen() {
         .join('')
         .slice(0, 2)
         .toUpperCase()
-    : 'VIP';
+    : 'U';
 
   const handleCancelTestDrive = async (tdId: string) => {
     Alert.alert(
@@ -77,12 +77,18 @@ export default function ProfileScreen() {
         <View style={styles.profileInfo}>
           <View style={styles.nameRow}>
             <Text style={styles.userName}>
-              {profile?.full_name || 'Khách Hàng AutoMatch VIP'}
+              {profile?.full_name || 'Khách Hàng AutoMatch'}
             </Text>
-            <Badge label="VIP Black" variant="gold" size="xs" />
+            <Badge
+              label={profile?.role === 'owner' ? 'Chủ Showroom' : profile?.role === 'manager' ? 'Quản Lý' : 'Thành Viên'}
+              variant={profile?.role === 'owner' ? 'gold' : profile?.role === 'manager' ? 'primary' : 'secondary'}
+              size="xs"
+            />
           </View>
-          <Text style={styles.userEmail}>{user?.email || 'khachhang.vip@automatch.ai'}</Text>
-          <Text style={styles.membershipTier}>Hội viên Kim Cương • Ưu đãi 5% dịch vụ</Text>
+          <Text style={styles.userEmail}>{user?.email || 'khachhang@automatch.ai'}</Text>
+          {profile?.phone ? (
+            <Text style={styles.membershipTier}>📞 {profile.phone}</Text>
+          ) : null}
         </View>
       </View>
 

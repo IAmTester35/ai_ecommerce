@@ -33,18 +33,4 @@ export const orderService = {
     }
     return data as Order;
   },
-
-  createOrder: async (orderData: Partial<Order>): Promise<Order> => {
-    const { data, error } = await supabase
-      .from('orders')
-      .insert([orderData])
-      .select('*, order_items(*, car:cars(*))')
-      .single();
-
-    if (error) {
-      console.error('[orderService] Error creating order:', error.message);
-      throw error;
-    }
-    return data as Order;
-  },
 };

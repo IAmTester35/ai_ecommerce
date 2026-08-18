@@ -267,15 +267,7 @@ export default function HomeScreen() {
               const isSaved = savedCars.some((sc) => sc.car_id === car.id);
               return (
                 <CarCard
-                  car={{
-                    ...car,
-                    engine_hp: car.engine_hp || undefined,
-                    price: car.price || undefined,
-                    image_url: car.image_url || undefined,
-                    metadata: car.metadata || undefined,
-                    similarity: 0.94,
-                    rerank_score: 0.95,
-                  }}
+                  car={car}
                   layout="compact"
                   isSaved={isSaved}
                   onPressDetails={handleCarDetails}
@@ -321,15 +313,7 @@ export default function HomeScreen() {
             return (
               <CarCard
                 key={car.id}
-                car={{
-                  ...car,
-                  engine_hp: car.engine_hp || undefined,
-                  price: car.price || undefined,
-                  image_url: car.image_url || undefined,
-                  metadata: car.metadata || undefined,
-                  similarity: 0.92,
-                  rerank_score: 0.94,
-                }}
+                car={car}
                 isSaved={isSaved}
                 onPressDetails={handleCarDetails}
                 onPressCompare={handleCarCompare}
@@ -354,15 +338,7 @@ export default function HomeScreen() {
             return (
               <CarCard
                 key={car.id}
-                car={{
-                  ...car,
-                  engine_hp: car.engine_hp || undefined,
-                  price: car.price || undefined,
-                  image_url: car.image_url || undefined,
-                  metadata: car.metadata || undefined,
-                  similarity: 0.91,
-                  rerank_score: 0.93,
-                }}
+                car={car}
                 isSaved={isSaved}
                 onPressDetails={handleCarDetails}
                 onPressCompare={handleCarCompare}

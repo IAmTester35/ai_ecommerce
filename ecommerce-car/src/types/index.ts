@@ -16,7 +16,6 @@ export interface Car {
   year: number;
   engine_hp?: number | null;
   price?: number | null;
-  original_price?: number | null;
   metadata?: {
     transmission?: string;
     fuel_type?: string;
@@ -66,15 +65,6 @@ export interface TestDrive {
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
 export type PaymentStatus = 'unpaid' | 'paid' | 'refunded';
 
-export interface OrderTimelineStep {
-  id: string;
-  title: string;
-  description: string;
-  date?: string;
-  isCompleted: boolean;
-  isCurrent: boolean;
-}
-
 export interface Order {
   id: string;
   user_id: string;
@@ -83,13 +73,6 @@ export interface Order {
   payment_method?: string | null;
   payment_status: PaymentStatus;
   contract_url?: string | null;
-  app_trans_id?: string | null;
-  zp_trans_token?: string | null;
-  showroom_address?: string | null;
-  customer_name?: string | null;
-  customer_phone?: string | null;
-  customer_email?: string | null;
-  notes?: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
@@ -177,6 +160,14 @@ export interface CarQA {
   answered_by?: string | null;
   created_at: string;
   updated_at: string;
+  responder?: {
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
+  asker?: {
+    full_name?: string | null;
+    avatar_url?: string | null;
+  } | null;
 }
 
 export interface ViewedCar {
@@ -211,7 +202,6 @@ export interface NotificationItem {
   type?: 'order' | 'promo' | 'system' | 'test_drive' | null;
   is_read: boolean;
   created_at: string;
-  action_url?: string;
 }
 
 export interface CartItem {
@@ -255,13 +245,15 @@ export interface CarResponse {
   make?: string;
   model?: string;
   year?: number;
-  engine_hp?: number;
-  price?: number;
-  metadata?: Record<string, any>;
-  review?: string;
-  similarity?: number;
-  rerank_score?: number;
-  image_url?: string;
+  engine_hp?: number | null;
+  price?: number | null;
+  metadata?: Record<string, any> | null;
+  review?: string | null;
+  similarity?: number | null;
+  rerank_score?: number | null;
+  image_url?: string | null;
+  stock_quantity?: number;
+  is_active?: boolean;
 }
 
 export interface SearchDataEvent {

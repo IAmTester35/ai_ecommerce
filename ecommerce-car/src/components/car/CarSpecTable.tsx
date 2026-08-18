@@ -15,14 +15,14 @@ export const CarSpecTable: React.FC<CarSpecTableProps> = ({ car }) => {
     { label: 'Mô-men xoắn cực đại', value: car.metadata?.torque || 'Đang cập nhật' },
     { label: 'Tăng tốc 0-100 km/h', value: car.metadata?.acceleration_0_100 || 'N/A' },
     { label: 'Tốc độ tối đa', value: car.metadata?.top_speed || 'N/A' },
-    { label: 'Loại Động Cơ / Pin', value: car.metadata?.engine_fuel_type || car.metadata?.fuel_type || 'Xăng' },
-    { label: 'Hộp Số', value: car.metadata?.transmission || 'Tự động' },
-    { label: 'Kiểu Dáng Thân Xe', value: car.metadata?.body_type || 'SUV / Sedan' },
-    { label: 'Số Chỗ Ngồi', value: car.metadata?.seating_capacity ? `${car.metadata.seating_capacity} chỗ` : '5 chỗ' },
+    { label: 'Loại Động Cơ / Pin', value: car.metadata?.engine_fuel_type || car.metadata?.fuel_type || 'Đang cập nhật' },
+    { label: 'Hộp Số', value: car.metadata?.transmission || 'Đang cập nhật' },
+    { label: 'Kiểu Dáng Thân Xe', value: car.metadata?.body_type || 'Đang cập nhật' },
+    { label: 'Số Chỗ Ngồi', value: car.metadata?.seating_capacity ? `${car.metadata.seating_capacity} chỗ` : 'Đang cập nhật' },
     { label: 'Mức Tiêu Thụ Nhiên Liệu', value: car.metadata?.fuel_economy || 'Đang cập nhật' },
     { label: 'Kích Thước (DxRxC)', value: car.metadata?.dimensions || 'Đang cập nhật' },
-    { label: 'Số Túi Khí An Toàn', value: car.metadata?.airbags ? `${car.metadata.airbags} túi khí` : '8 túi khí' },
-    { label: 'Chính Sách Bảo Hành', value: car.metadata?.warranty || '3 năm chính hãng' },
+    { label: 'Số Túi Khí An Toàn', value: car.metadata?.airbags ? `${car.metadata.airbags} túi khí` : 'Đang cập nhật' },
+    { label: 'Chính Sách Bảo Hành', value: car.metadata?.warranty || 'Đang cập nhật' },
   ];
 
   return (

@@ -237,15 +237,7 @@ export default function CatalogScreen() {
             const isSaved = savedCars.some((sc) => sc.car_id === car.id);
             return (
               <CarCard
-                car={{
-                  ...car,
-                  engine_hp: car.engine_hp || undefined,
-                  price: car.price || undefined,
-                  image_url: car.image_url || undefined,
-                  metadata: car.metadata || undefined,
-                  similarity: 0.93,
-                  rerank_score: 0.94,
-                }}
+                car={car}
                 layout={layoutMode}
                 isSaved={isSaved}
                 onPressDetails={handleCarDetails}

@@ -9,7 +9,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography, shadows } from '../../theme';
-import { CarResponse } from '../../types';
+import { Car, CarResponse } from '../../types';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { formatVndPrice } from '../ui/PriceTag';
@@ -17,9 +17,9 @@ import { formatVndPrice } from '../ui/PriceTag';
 export type CarCardLayout = 'grid' | 'list' | 'compact';
 
 interface CarCardProps {
-  car: CarResponse;
+  car: Car | CarResponse;
   onPressDetails?: (carId: string) => void;
-  onPressCompare?: (car: CarResponse) => void;
+  onPressCompare?: (car: any) => void;
   onPressAddToCart?: (carId: string) => void;
   onPressToggleSave?: (carId: string) => void;
   isSaved?: boolean;
@@ -37,9 +37,11 @@ export const CarCard: React.FC<CarCardProps> = ({
   layout = 'grid',
   style,
 }) => {
-  const matchScore = Math.round(
-    (car.rerank_score || car.similarity || 0.88) * 100
-  );
+  const carSearch = car as CarResponse;
+  const hasMatchScore = typeof carSearch.rerank_score === 'number' || typeof carSearch.similarity === 'number';
+  const matchScore = hasMatchScore
+    ? Math.round((carSearch.rerank_score || carSearch.similarity || 0) * 100)
+    : null;
 
   const fallbackImage =
     'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
@@ -63,13 +65,15 @@ export const CarCard: React.FC<CarCardProps> = ({
             contentFit="cover"
             transition={200}
           />
-          <View style={styles.badgeTopLeft}>
-            <Badge
-              label={`${matchScore}% Match`}
-              variant={matchScore >= 90 ? 'primary' : 'secondary'}
-              size="xs"
-            />
-          </View>
+          {hasMatchScore && matchScore !== null && (
+            <View style={styles.badgeTopLeft}>
+              <Badge
+                label={`${matchScore}% Match`}
+                variant={matchScore >= 90 ? 'primary' : 'secondary'}
+                size="xs"
+              />
+            </View>
+          )}
         </View>
 
         <View style={styles.listContent}>
@@ -154,13 +158,15 @@ export const CarCard: React.FC<CarCardProps> = ({
           transition={250}
         />
 
-        <View style={styles.badgeTopLeft}>
-          <Badge
-            label={`${matchScore}% Match`}
-            variant={matchScore >= 90 ? 'primary' : 'secondary'}
-            size="sm"
-          />
-        </View>
+        {hasMatchScore && matchScore !== null && (
+          <View style={styles.badgeTopLeft}>
+            <Badge
+              label={`${matchScore}% Match`}
+              variant={matchScore >= 90 ? 'primary' : 'secondary'}
+              size="sm"
+            />
+          </View>
+        )}
 
         {onPressToggleSave && (
           <TouchableOpacity
@@ -214,9 +220,9 @@ export const CarCard: React.FC<CarCardProps> = ({
           )}
         </View>
 
-        {car.review && !isCompact && (
+        {carSearch.review && !isCompact && (
           <Text style={styles.reviewSnippet} numberOfLines={2}>
-            &quot;{car.review}&quot;
+            &quot;{carSearch.review}&quot;
           </Text>
         )}
 
