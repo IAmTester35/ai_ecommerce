@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
 import { Car } from '../../types';
 import { ModalSheet } from '../ui/ModalSheet';
@@ -57,7 +58,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
       const notesParts: string[] = [`Khung giờ: ${selectedTimeSlot}`];
       if (locationNote.trim()) {
-        notesParts.push(`Địa điểm/Khu vực: ${locationNote.trim()}`);
+        notesParts.push(`Địa điểm: ${locationNote.trim()}`);
       }
       if (notes.trim()) {
         notesParts.push(`Ghi chú: ${notes.trim()}`);
@@ -68,8 +69,8 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         notesParts.join(' | ')
       );
       Alert.alert(
-        'Đặt Lịch Thành Công! 🚗',
-        `Lịch trải nghiệm xe ${car.make} ${car.model} vào ${getTargetDateStr(selectedDayOffset)} (${selectedTimeSlot}) đã được gửi thành công.`
+        'Đặt Lịch Thành Công',
+        `Lịch trải nghiệm xe ${car.make} ${car.model} vào ${getTargetDateStr(selectedDayOffset)} (${selectedTimeSlot}) đã được ghi nhận.`
       );
       onClose();
     } catch (err: any) {
@@ -83,12 +84,15 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
     <ModalSheet
       visible={visible}
       onClose={onClose}
-      title="Đăng Ký Lái Thử Miễn Phí"
-      subtitle={car ? `Trải nghiệm thực tế xe ${car.make} ${car.model}` : 'Chọn lịch lái thử'}
+      title="Đăng Ký Lái Thử"
+      subtitle={car ? `Trải nghiệm xe ${car.make} ${car.model}` : 'Chọn lịch lái thử'}
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         {/* Date Selector */}
-        <Text style={styles.sectionTitle}>1. Chọn Ngày Trải Nghiệm</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons name="calendar-outline" size={14} color={colors.primaryHover} />
+          <Text style={styles.sectionTitle}>1. Chọn ngày trải nghiệm</Text>
+        </View>
         <View style={styles.dateRow}>
           {[1, 2, 3, 4].map((offset) => (
             <TouchableOpacity
@@ -113,7 +117,10 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         </View>
 
         {/* Time Slot */}
-        <Text style={styles.sectionTitle}>2. Khung Giờ Thuận Tiện</Text>
+        <View style={[styles.sectionHeaderRow, { marginTop: spacing.md }]}>
+          <Ionicons name="time-outline" size={14} color={colors.primaryHover} />
+          <Text style={styles.sectionTitle}>2. Khung giờ thuận tiện</Text>
+        </View>
         <View style={styles.timeGrid}>
           {TIME_SLOTS.map((slot) => (
             <TouchableOpacity
@@ -139,8 +146,8 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
         {/* Location & Preferred Address */}
         <Input
-          label="Địa điểm mong muốn lái thử (Tùy chọn)"
-          placeholder="Ví dụ: Quận 1, TP.HCM hoặc lái thử tận nơi..."
+          label="Địa điểm mong muốn (Tùy chọn)"
+          placeholder="Ví dụ: Showroom Quận 1 hoặc tận nơi..."
           value={locationNote}
           onChangeText={setLocationNote}
           containerStyle={{ marginTop: spacing.md }}
@@ -148,17 +155,17 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
         {/* Special Notes */}
         <Input
-          label="Ghi chú yêu cầu thêm (Tùy chọn)"
-          placeholder="Ví dụ: Chuẩn bị màu xe đỏ, tư vấn gói bảo hiểm..."
+          label="Ghi chú thêm (Tùy chọn)"
+          placeholder="Ví dụ: Tư vấn màu xe, bảo hiểm..."
           value={notes}
           onChangeText={setNotes}
-          containerStyle={{ marginTop: spacing.sm }}
+          containerStyle={{ marginTop: spacing.xs }}
         />
       </ScrollView>
 
       <View style={styles.footer}>
         <Button
-          title="Xác Nhận Đặt Lịch Lái Thử"
+          title="Xác Nhận Đăng Ký"
           variant="primary"
           loading={isSubmitting}
           disabled={isSubmitting}
@@ -172,29 +179,33 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 460,
+    maxHeight: 440,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.xs,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs + 2,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   dateRow: {
     flexDirection: 'row',
-    gap: spacing.xs + 2,
+    gap: spacing.xs,
   },
   dateBox: {
     flex: 1,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.sm,
+    paddingVertical: 7,
+    borderRadius: radii.xs,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dateBoxInactive: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
   },
   dateBoxActive: {
@@ -202,28 +213,28 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   dateText: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'] + 1,
     fontWeight: typography.weights.semibold,
   },
   dateTextInactive: {
     color: colors.textSecondary,
   },
   dateTextActive: {
-    color: colors.primary,
+    color: colors.primaryHover,
   },
   timeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.xs + 2,
+    gap: spacing.xs,
   },
   timeSlot: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.xs,
     borderWidth: 1,
   },
   timeSlotInactive: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
   },
   timeSlotActive: {
@@ -231,19 +242,20 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   timeSlotText: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'] + 1,
     fontWeight: typography.weights.semibold,
   },
   timeSlotTextInactive: {
     color: colors.textSecondary,
   },
   timeSlotTextActive: {
-    color: colors.primary,
+    color: colors.primaryHover,
   },
   footer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
+    marginTop: spacing.sm,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
 });
+

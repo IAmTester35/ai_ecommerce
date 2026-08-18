@@ -19,6 +19,8 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { formatVndPrice } from '../components/ui/PriceTag';
+import { FALLBACK_CAR_URL } from '../constants/images';
+
 export default function CheckoutScreen() {
   const { user, profile } = useAuthStore();
   const { items, getTotalPrice, checkout, isCheckingOut } = useCartStore();
@@ -36,8 +38,7 @@ export default function CheckoutScreen() {
   const phone = phoneInput ?? profile?.phone ?? '';
   const email = emailInput ?? user?.email ?? '';
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
+  const fallbackImage = FALLBACK_CAR_URL;
 
   const rawTotal = getTotalPrice();
   // 10% standard deposit
@@ -96,7 +97,7 @@ export default function CheckoutScreen() {
           await openZaloPayUrl(response.order_url);
         } else {
           Alert.alert(
-            'Thông Báo ZaloPay',
+            'Thông báo ZaloPay',
             response.return_message || 'Đã khởi tạo giao dịch ZaloPay Sandbox.'
           );
         }
@@ -108,7 +109,7 @@ export default function CheckoutScreen() {
       } else {
         // Direct / Transfer deposit
         Alert.alert(
-          'Đã Tiếp Nhận Đơn Hàng! 🚗',
+          'Đã tiếp nhận đơn hàng',
           `Đơn hàng #${orderId} đã được ghi nhận. Đội ngũ AutoMatch sẽ liên hệ theo số ${phone} để hoàn tất thủ tục bàn giao.`
         );
         router.replace(`/order/${orderId}` as any);
@@ -121,354 +122,410 @@ export default function CheckoutScreen() {
   const isLoading = isCheckingOut || isProcessing;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Items Summary Header */}
-      <Text style={styles.sectionTitle}>🚗 Sản Phẩm Đặt Cọc ({items.length})</Text>
-      {items.map((item) => (
-        <Card key={item.id} style={styles.itemCard}>
-          <Image
-            source={{ uri: item.car?.image_url || fallbackImage }}
-            style={styles.itemImage}
-            contentFit="cover"
-          />
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemTitle} numberOfLines={1}>
-              {item.car ? `${item.car.make} ${item.car.model}` : 'Mẫu xe AutoMatch'}
-            </Text>
-            <Text style={styles.itemYear}>Phiên bản {item.car?.year || 2024} • x{item.quantity} xe</Text>
-            <Text style={styles.itemPrice}>
-              Giá niêm yết: {formatVndPrice(item.car?.price)}
-            </Text>
-          </View>
-        </Card>
-      ))}
-
-      {/* Deposit Summary Box */}
-      <View style={styles.totalBox}>
-        <View>
-          <Text style={styles.totalLabel}>Tiền đặt cọc giữ xe (10%):</Text>
-          <Text style={styles.totalSub}>Bao gồm hợp đồng điện tử & bảo lưu giá</Text>
-        </View>
-        <Text style={styles.totalAmount}>{formatVndPrice(depositAmount)}</Text>
+    <View style={styles.screen}>
+      {/* Top Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={18} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Xác Nhận Đặt Cọc</Text>
       </View>
 
-      {/* Delivery / Pickup Address */}
-      <Text style={styles.sectionTitle}>📍 Địa Chỉ Nhận Xe & Bàn Giao Hợp Đồng</Text>
-      <View style={styles.formCard}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Địa chỉ giao xe / nhận hợp đồng *</Text>
-          <TextInput
-            style={styles.input}
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Số nhà, Tên đường, Phường/Xã, Quận/Huyện, Tỉnh/TP"
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
-      </View>
-
-      {/* Customer Information Form */}
-      <Text style={styles.sectionTitle}>👤 Thông Tin Người Đặt Xe</Text>
-      <View style={styles.formCard}>
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Họ và Tên chủ xe *</Text>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Nguyễn Văn A"
-            placeholderTextColor={colors.textMuted}
-          />
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Items Summary Header */}
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons name="car-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>Sản phẩm đặt cọc ({items.length})</Text>
         </View>
 
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Số điện thoại liên hệ *</Text>
-          <TextInput
-            style={styles.input}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            placeholder="0901234567"
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email nhận hợp đồng điện tử *</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            placeholder="khachhang@example.com"
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Ghi chú đơn hàng</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={note}
-            onChangeText={setNote}
-            multiline
-            numberOfLines={3}
-            placeholder="Ghi chú yêu cầu thêm..."
-            placeholderTextColor={colors.textMuted}
-          />
-        </View>
-      </View>
-
-      {/* Payment Method Options */}
-      <Text style={styles.sectionTitle}>💳 Phương Thức Thanh Toán Đặt Cọc</Text>
-
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={[
-          styles.paymentOptionCard,
-          selectedPaymentMethod === 'zalopay' && styles.paymentOptionSelected,
-        ]}
-        onPress={() => setSelectedPaymentMethod('zalopay')}
-      >
-        <View style={styles.paymentOptionHeader}>
-          <View style={styles.paymentIconCircle}>
-            <Ionicons name="qr-code-outline" size={22} color="#0088FF" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Text style={styles.paymentOptionTitle}>ZaloPay Gateway (Trực tuyến)</Text>
-              <Badge label="Khuyên Dùng" variant="primary" size="xs" />
+        {items.map((item) => (
+          <Card key={item.id} style={styles.itemCard} padding={spacing.sm}>
+            <Image
+              source={{ uri: item.car?.image_url || fallbackImage }}
+              style={styles.itemImage}
+              contentFit="cover"
+            />
+            <View style={styles.itemDetails}>
+              <Text style={styles.itemTitle} numberOfLines={1}>
+                {item.car ? `${item.car.make} ${item.car.model}` : 'Mẫu xe AutoMatch'}
+              </Text>
+              <Text style={styles.itemYear}>Năm {item.car?.year || 2024} • x{item.quantity} xe</Text>
+              <Text style={styles.itemPrice}>
+                Niêm yết: {formatVndPrice(item.car?.price)}
+              </Text>
             </View>
-            <Text style={styles.paymentOptionSub}>
-              Quét mã QR ZaloPay / Thẻ ATM Nội địa / Thẻ Quốc tế VISA, Mastercard
-            </Text>
+          </Card>
+        ))}
+
+        {/* Deposit Summary Box */}
+        <View style={styles.totalBox}>
+          <View>
+            <Text style={styles.totalLabel}>Tiền đặt cọc giữ xe (10%):</Text>
+            <Text style={styles.totalSub}>Bao gồm hợp đồng điện tử & bảo lưu giá</Text>
+          </View>
+          <Text style={styles.totalAmount}>{formatVndPrice(depositAmount)}</Text>
+        </View>
+
+        {/* Delivery / Pickup Address */}
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons name="location-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>Địa chỉ giao nhận xe</Text>
+        </View>
+        <View style={styles.formCard}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Địa chỉ giao xe / nhận hợp đồng *</Text>
+            <TextInput
+              style={styles.input}
+              value={address}
+              onChangeText={setAddress}
+              placeholder="Số nhà, Tên đường, Quận/Huyện, Tỉnh/TP"
+              placeholderTextColor={colors.textMuted}
+            />
           </View>
         </View>
-        {selectedPaymentMethod === 'zalopay' && (
-          <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-        )}
-      </TouchableOpacity>
 
-      <TouchableOpacity
-        activeOpacity={0.85}
-        style={[
-          styles.paymentOptionCard,
-          selectedPaymentMethod === 'cash' && styles.paymentOptionSelected,
-        ]}
-        onPress={() => setSelectedPaymentMethod('cash')}
-      >
-        <View style={styles.paymentOptionHeader}>
-          <View style={styles.paymentIconCircle}>
-            <Ionicons name="business-outline" size={22} color={colors.textSecondary} />
+        {/* Customer Information Form */}
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons name="person-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>Thông tin người đặt</Text>
+        </View>
+        <View style={styles.formCard}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Họ và tên chủ xe *</Text>
+            <TextInput
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="Nguyễn Văn A"
+              placeholderTextColor={colors.textMuted}
+            />
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.paymentOptionTitle}>Thanh Toán Trực Tiếp Tại Showroom</Text>
-            <Text style={styles.paymentOptionSub}>
-              Tiền mặt / Chuyển khoản ngân hàng chính thức tại quầy giao dịch AutoMatch
-            </Text>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Số điện thoại liên hệ *</Text>
+            <TextInput
+              style={styles.input}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              placeholder="0901234567"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email nhận hợp đồng điện tử *</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              placeholder="khachhang@example.com"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Ghi chú đơn hàng</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={note}
+              onChangeText={setNote}
+              multiline
+              numberOfLines={3}
+              placeholder="Yêu cầu thêm về thời gian, bàn giao..."
+              placeholderTextColor={colors.textMuted}
+            />
           </View>
         </View>
-        {selectedPaymentMethod === 'cash' && (
-          <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-        )}
-      </TouchableOpacity>
 
-      {/* Terms Checkbox */}
-      <TouchableOpacity
-        activeOpacity={0.8}
-        style={styles.termsRow}
-        onPress={() => setAgreedTerms(!agreedTerms)}
-      >
-        <Ionicons
-          name={agreedTerms ? 'checkbox' : 'square-outline'}
-          size={20}
-          color={colors.primary}
-        />
-        <Text style={styles.termsText}>
-          Tôi đồng ý với Điều khoản đặt cọc và chính sách bảo mật hợp đồng mua bán xe điện tử của AutoMatch.
-        </Text>
-      </TouchableOpacity>
+        {/* Payment Method Options */}
+        <View style={styles.sectionHeaderRow}>
+          <Ionicons name="card-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Text style={styles.sectionTitle}>Phương thức thanh toán cọc</Text>
+        </View>
 
-      {/* Submit Payment Button */}
-      <View style={styles.actionSection}>
-        <Button
-          title={
-            selectedPaymentMethod === 'zalopay'
-              ? `Thanh Toán Cọc ${formatVndPrice(depositAmount)} qua ZaloPay`
-              : `Xác Nhận Đặt Cọc ${formatVndPrice(depositAmount)}`
-          }
-          onPress={handleProcessPayment}
-          loading={isLoading}
-          disabled={isLoading}
-          icon={<Ionicons name="shield-checkmark" size={18} color={colors.textDark} />}
-          style={styles.submitBtn}
-          size="lg"
-        />
-      </View>
-    </ScrollView>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={[
+            styles.paymentOptionCard,
+            selectedPaymentMethod === 'zalopay' && styles.paymentOptionSelected,
+          ]}
+          onPress={() => setSelectedPaymentMethod('zalopay')}
+        >
+          <View style={styles.paymentOptionHeader}>
+            <View style={styles.paymentIconCircle}>
+              <Ionicons name="qr-code-outline" size={18} color="#0088FF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.paymentOptionTitle}>ZaloPay Gateway (Trực tuyến)</Text>
+                <Badge label="Khuyên dùng" variant="primary" size="xs" />
+              </View>
+              <Text style={styles.paymentOptionSub}>
+                QR ZaloPay / Thẻ ATM Nội địa / VISA, Mastercard
+              </Text>
+            </View>
+          </View>
+          {selectedPaymentMethod === 'zalopay' && (
+            <Ionicons name="checkmark-circle" size={18} color={colors.primaryHover} />
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          style={[
+            styles.paymentOptionCard,
+            selectedPaymentMethod === 'cash' && styles.paymentOptionSelected,
+          ]}
+          onPress={() => setSelectedPaymentMethod('cash')}
+        >
+          <View style={styles.paymentOptionHeader}>
+            <View style={styles.paymentIconCircle}>
+              <Ionicons name="business-outline" size={18} color={colors.textSecondary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.paymentOptionTitle}>Thanh toán tại Showroom</Text>
+              <Text style={styles.paymentOptionSub}>
+                Chuyển khoản hoặc tiền mặt tại quầy giao dịch AutoMatch
+              </Text>
+            </View>
+          </View>
+          {selectedPaymentMethod === 'cash' && (
+            <Ionicons name="checkmark-circle" size={18} color={colors.primaryHover} />
+          )}
+        </TouchableOpacity>
+
+        {/* Terms Checkbox */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.termsRow}
+          onPress={() => setAgreedTerms(!agreedTerms)}
+        >
+          <Ionicons
+            name={agreedTerms ? 'checkbox' : 'square-outline'}
+            size={16}
+            color={colors.primaryHover}
+          />
+          <Text style={styles.termsText}>
+            Tôi đồng ý với Điều khoản đặt cọc và chính sách bảo mật hợp đồng mua bán xe điện tử của AutoMatch.
+          </Text>
+        </TouchableOpacity>
+
+        {/* Submit Payment Button */}
+        <View style={styles.actionSection}>
+          <Button
+            title={
+              selectedPaymentMethod === 'zalopay'
+                ? `Thanh toán cọc ${formatVndPrice(depositAmount)} qua ZaloPay`
+                : `Xác nhận đặt cọc ${formatVndPrice(depositAmount)}`
+            }
+            onPress={handleProcessPayment}
+            loading={isLoading}
+            disabled={isLoading}
+            icon={<Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" />}
+            style={styles.submitBtn}
+            size="md"
+          />
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 48,
     paddingHorizontal: spacing.lg,
-    paddingTop: 12,
+    paddingBottom: spacing.sm + 2,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.sm + 2,
+  },
+  backBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    color: colors.text,
+    fontSize: typography.sizes.base + 1,
+    fontWeight: typography.weights.semibold,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: 8,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.xs + 2,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    fontSize: typography.sizes.xs + 2,
+    fontWeight: typography.weights.semibold,
   },
   itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.xs + 2,
-    padding: spacing.sm + 2,
   },
   itemImage: {
-    width: 70,
-    height: 52,
-    borderRadius: radii.sm,
-    marginRight: spacing.md,
+    width: 60,
+    height: 44,
+    borderRadius: radii.xs,
+    marginRight: spacing.sm + 2,
   },
   itemDetails: {
     flex: 1,
   },
   itemTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   itemYear: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     marginTop: 1,
   },
   itemPrice: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs + 1,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    marginTop: 2,
+    marginTop: 1,
   },
   totalBox: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
+    borderRadius: radii.sm,
+    padding: spacing.sm + 2,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs + 2,
     ...shadows.sm,
   },
   totalLabel: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   totalSub: {
     color: colors.textMuted,
     fontSize: typography.sizes['2xs'],
-    marginTop: 2,
+    marginTop: 1,
   },
   totalAmount: {
-    color: colors.primary,
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
   formCard: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: spacing.md,
+    borderRadius: radii.sm,
+    padding: spacing.sm + 2,
+    gap: spacing.sm,
   },
   inputGroup: {
-    gap: 4,
+    gap: 3,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   input: {
     backgroundColor: colors.background,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 7,
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
   textArea: {
-    height: 70,
+    height: 60,
     textAlignVertical: 'top',
   },
   paymentOptionCard: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
+    borderRadius: radii.sm,
+    padding: spacing.sm + 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs + 2,
   },
   paymentOptionSelected: {
     borderColor: colors.primary,
-    backgroundColor: 'rgba(0, 229, 255, 0.04)',
+    backgroundColor: 'rgba(59, 130, 246, 0.05)',
   },
   paymentOptionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     flex: 1,
     marginRight: spacing.sm,
   },
   paymentIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   paymentOptionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   paymentOptionSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'] + 1,
-    marginTop: 2,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 1,
   },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginTop: spacing.md,
+    gap: spacing.xs + 2,
+    marginTop: spacing.sm + 2,
     marginBottom: spacing.xs,
   },
   termsText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: typography.sizes['2xs'] + 1,
+    lineHeight: 16,
     flex: 1,
   },
   actionSection: {
     marginTop: spacing.md,
-    marginBottom: 50,
+    marginBottom: 40,
   },
   submitBtn: {
-    height: 52,
+    height: 42,
   },
 });
+

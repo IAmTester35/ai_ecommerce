@@ -19,7 +19,7 @@ export const Card: React.FC<CardProps> = ({
   variant = 'default',
   highlightBorder = false,
   onPress,
-  padding = spacing.lg,
+  padding = spacing.md,
 }) => {
   const getVariantStyle = () => {
     switch (variant) {
@@ -32,16 +32,16 @@ export const Card: React.FC<CardProps> = ({
       case 'glass':
         return {
           backgroundColor: colors.surfaceGlass,
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderColor: colors.borderLight,
         };
       case 'conflict':
         return {
-          backgroundColor: 'rgba(255, 179, 0, 0.05)',
-          borderColor: 'rgba(255, 179, 0, 0.4)',
+          backgroundColor: colors.conflictMuted,
+          borderColor: 'rgba(245, 158, 11, 0.25)',
         };
       case 'highlight':
         return {
-          backgroundColor: 'rgba(0, 229, 255, 0.04)',
+          backgroundColor: colors.primaryMuted,
           borderColor: colors.primary,
         };
       case 'default':
@@ -49,6 +49,7 @@ export const Card: React.FC<CardProps> = ({
         return {
           backgroundColor: colors.cardBg,
           borderColor: colors.cardBorder,
+          ...shadows.sm,
         };
     }
   };
@@ -78,11 +79,11 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.35)',
   },
   highlight: {
     borderColor: colors.primary,
   },
 });
+

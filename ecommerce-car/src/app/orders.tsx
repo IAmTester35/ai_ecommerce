@@ -19,12 +19,13 @@ import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
 import { formatVndPrice } from '../components/ui/PriceTag';
 import { Order, OrderStatus } from '../types';
+import { FALLBACK_CAR_URL } from '../constants/images';
 
 const STATUS_TABS: { id: string; label: string }[] = [
-  { id: 'all', label: 'Tất Cả' },
-  { id: 'processing', label: 'Đang Xử Lý' },
-  { id: 'completed', label: 'Đã Giao Xe' },
-  { id: 'cancelled', label: 'Đã Hủy' },
+  { id: 'all', label: 'Tất cả' },
+  { id: 'processing', label: 'Đang xử lý' },
+  { id: 'completed', label: 'Đã giao xe' },
+  { id: 'cancelled', label: 'Đã hủy' },
 ];
 
 export default function OrdersScreen() {
@@ -51,19 +52,18 @@ export default function OrdersScreen() {
   const getOrderStatusBadge = (status: OrderStatus) => {
     switch (status) {
       case 'completed':
-        return <Badge label="Đã Giao Xe" variant="success" size="xs" dot />;
+        return <Badge label="Đã giao xe" variant="success" size="xs" dot />;
       case 'processing':
-        return <Badge label="Đang Xử Lý" variant="primary" size="xs" dot />;
+        return <Badge label="Đang xử lý" variant="primary" size="xs" dot />;
       case 'cancelled':
-        return <Badge label="Đã Hủy" variant="danger" size="xs" dot />;
+        return <Badge label="Đã hủy" variant="danger" size="xs" dot />;
       case 'pending':
       default:
-        return <Badge label="Chờ Xác Nhận" variant="warning" size="xs" dot />;
+        return <Badge label="Chờ xác nhận" variant="warning" size="xs" dot />;
     }
   };
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
+  const fallbackImage = FALLBACK_CAR_URL;
 
   const renderOrderItem = ({ item }: { item: Order }) => {
     const createdDate = new Date(item.created_at).toLocaleDateString('vi-VN', {
@@ -81,14 +81,17 @@ export default function OrdersScreen() {
         activeOpacity={0.88}
         onPress={() => router.push(`/order/${item.id}` as any)}
       >
-        <Card style={styles.orderCard}>
+        <Card style={styles.orderCard} padding={spacing.sm + 2}>
           {/* Header Row */}
           <View style={styles.cardHeader}>
             <View style={{ flex: 1 }}>
               <Text style={styles.orderIdText}>
-                Đơn #{item.id.slice(0, 10).toUpperCase()}
+                Đơn #{item.id.slice(0, 8).toUpperCase()}
               </Text>
-              <Text style={styles.dateText}>⏰ {createdDate}</Text>
+              <View style={styles.dateRow}>
+                <Ionicons name="time-outline" size={11} color={colors.textMuted} style={{ marginRight: 3 }} />
+                <Text style={styles.dateText}>{createdDate}</Text>
+              </View>
             </View>
             {getOrderStatusBadge(item.status)}
           </View>
@@ -110,7 +113,7 @@ export default function OrdersScreen() {
                 Số lượng: x{item.order_items?.reduce((s, i) => s + i.quantity, 0) || 1} xe
               </Text>
               <Badge
-                label={item.payment_status === 'paid' ? 'Đã Cọc ZaloPay' : 'Chưa Thanh Toán'}
+                label={item.payment_status === 'paid' ? 'Đã cọc ZaloPay' : 'Chưa thanh toán'}
                 variant={item.payment_status === 'paid' ? 'success' : 'warning'}
                 size="xs"
                 style={{ marginTop: 4 }}
@@ -125,8 +128,8 @@ export default function OrdersScreen() {
             </View>
 
             <View style={styles.trackingLink}>
-              <Text style={styles.trackingLinkText}>Xem Tiến Độ</Text>
-              <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+              <Text style={styles.trackingLinkText}>Xem tiến độ</Text>
+              <Ionicons name="chevron-forward" size={12} color={colors.primaryHover} />
             </View>
           </View>
         </Card>
@@ -139,7 +142,7 @@ export default function OrdersScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+          <Ionicons name="arrow-back" size={18} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Đơn Hàng & Hợp Đồng</Text>
       </View>
@@ -165,15 +168,15 @@ export default function OrdersScreen() {
 
       {isLoading && !refreshing ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="small" color={colors.primary} />
           <Text style={styles.loadingText}>Đang tải danh sách đơn hàng...</Text>
         </View>
       ) : filteredOrders.length === 0 ? (
         <EmptyState
           icon="receipt-outline"
-          title="Chưa Có Đơn Hàng Nào"
+          title="Chưa có đơn hàng"
           description="Bạn chưa thực hiện giao dịch hoặc đặt cọc giữ xe nào trong mục này."
-          actionTitle="Khám Phá Showroom"
+          actionTitle="Khám phá Showroom"
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
       ) : (
@@ -204,61 +207,62 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 52,
+    paddingTop: 48,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm + 2,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.base + 1,
+    fontWeight: typography.weights.semibold,
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.xs,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     gap: spacing.xs,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: 5,
     alignItems: 'center',
-    borderRadius: radii.sm,
+    borderRadius: radii.xs,
   },
   tabBtnActive: {
     backgroundColor: colors.primaryMuted,
   },
   tabText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   tabTextActive: {
-    color: colors.primary,
-    fontWeight: typography.weights.bold,
+    color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   listContent: {
     padding: spacing.lg,
-    paddingBottom: 40,
-    gap: spacing.md,
+    paddingBottom: 32,
+    gap: spacing.sm,
   },
   orderCard: {
-    padding: spacing.md,
     ...shadows.sm,
   },
   cardHeader: {
@@ -268,28 +272,32 @@ const styles = StyleSheet.create({
   },
   orderIdText: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 1,
   },
   dateText: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: typography.sizes['2xs'],
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.sm,
+    backgroundColor: colors.borderLight,
+    marginVertical: spacing.xs + 2,
   },
   carPreviewRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   carThumb: {
-    width: 75,
-    height: 55,
-    borderRadius: radii.sm,
+    width: 65,
+    height: 48,
+    borderRadius: radii.xs,
     backgroundColor: colors.surfaceElevated,
   },
   carInfo: {
@@ -297,54 +305,57 @@ const styles = StyleSheet.create({
   },
   carName: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   itemCountText: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 1,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.xs + 2,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: colors.borderLight,
   },
   depositLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
   },
   depositAmount: {
-    color: colors.primary,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.bold,
   },
   trackingLink: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 6,
+    borderColor: colors.border,
+    borderWidth: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
     borderRadius: radii.xs,
-    gap: 4,
+    gap: 3,
   },
   trackingLinkText: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.semibold,
   },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
 });
+

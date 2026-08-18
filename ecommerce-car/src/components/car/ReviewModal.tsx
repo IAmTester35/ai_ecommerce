@@ -33,7 +33,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     setIsSubmitting(true);
     try {
       await onSubmitReview(rating, comment.trim(), authorName.trim() || 'Khách Hàng AutoMatch');
-      Alert.alert('Thành Công! ⭐', 'Cảm ơn bạn đã gửi đánh giá quý báu cho cộng đồng AutoMatch.');
+      Alert.alert('Gửi Thành Công', 'Cảm ơn bạn đã gửi đánh giá quý báu cho cộng đồng AutoMatch.');
       setComment('');
       onClose();
     } catch (err: any) {
@@ -47,15 +47,15 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     <ModalSheet
       visible={visible}
       onClose={onClose}
-      title="Đánh Giá & Nhận Xét Xe"
-      subtitle={`Chia sẻ trải nghiệm của bạn về ${carName}`}
+      title="Đánh Giá & Nhận Xét"
+      subtitle={`Chia sẻ trải nghiệm về ${carName}`}
     >
       <View style={styles.content}>
-        <Text style={styles.label}>Mức độ hài lòng:</Text>
+        <Text style={styles.label}>Mức độ hài lòng</Text>
         <View style={styles.ratingRow}>
           <RatingStars
             rating={rating}
-            size={28}
+            size={22}
             interactive
             onRatingChange={setRating}
           />
@@ -63,7 +63,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         </View>
 
         <Input
-          label="Họ và Tên người đánh giá"
+          label="Họ và Tên"
           placeholder="Ví dụ: Nguyễn Văn A"
           value={authorName}
           onChangeText={setAuthorName}
@@ -71,7 +71,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
         <Input
           label="Nhận xét chi tiết *"
-          placeholder="Chia sẻ cảm giác lái, nội thất, mức tiêu hao nhiên liệu..."
+          placeholder="Cảm giác lái, nội thất, mức tiêu hao nhiên liệu..."
           value={comment}
           onChangeText={setComment}
           multiline
@@ -81,7 +81,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         />
 
         <Button
-          title="Gửi Đánh Giá Ngay"
+          title="Gửi Đánh Giá"
           variant="primary"
           loading={isSubmitting}
           disabled={isSubmitting}
@@ -96,29 +96,30 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   ratingScore: {
     color: colors.conflict,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.bold,
   },
   textArea: {
-    height: 80,
+    height: 70,
     textAlignVertical: 'top',
   },
   submitBtn: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
 });
+

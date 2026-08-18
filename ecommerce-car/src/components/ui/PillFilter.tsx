@@ -90,13 +90,13 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingVertical: spacing.xs,
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+    paddingVertical: 6,
     borderRadius: radii.full,
     borderWidth: 1,
   },
@@ -109,21 +109,21 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   iconBox: {
-    marginRight: 6,
+    marginRight: 5,
   },
   label: {
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
   labelDefault: {
     color: colors.textSecondary,
   },
   labelSelected: {
-    color: colors.primary,
+    color: colors.primaryHover,
   },
   countBadge: {
-    marginLeft: 6,
-    paddingHorizontal: 6,
+    marginLeft: 5,
+    paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: radii.full,
   },
@@ -141,6 +141,7 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   countTextSelected: {
-    color: colors.textDark,
+    color: '#FFFFFF',
   },
 });
+

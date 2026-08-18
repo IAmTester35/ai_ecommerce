@@ -31,8 +31,8 @@ export const QAModal: React.FC<QAModalProps> = ({
     try {
       await onSubmitQuestion(question.trim());
       Alert.alert(
-        'Đã Tiếp Nhận Câu Hỏi! 💬',
-        'AutoMatch đã gửi câu hỏi tới các chuyên gia và tư vấn viên. Câu trả lời sẽ hiển thị trong ít phút.'
+        'Đã Tiếp Nhận',
+        'AutoMatch đã gửi câu hỏi tới đội ngũ chuyên gia. Phản hồi sẽ hiển thị trong mục Hỏi đáp.'
       );
       setQuestion('');
       onClose();
@@ -47,13 +47,13 @@ export const QAModal: React.FC<QAModalProps> = ({
     <ModalSheet
       visible={visible}
       onClose={onClose}
-      title="Đặt Câu Hỏi Về Xe"
-      subtitle={`Hỏi chuyên gia AutoMatch về mẫu xe ${carName}`}
+      title="Hỏi Đáp Về Xe"
+      subtitle={`Đặt câu hỏi về ${carName}`}
     >
       <View style={styles.content}>
         <Input
-          label="Nội dung câu hỏi của bạn *"
-          placeholder="Ví dụ: Xe có hỗ trợ giao tận nhà không? Mức tiêu thụ thực tế khi chạy phố là bao nhiêu?..."
+          label="Nội dung câu hỏi *"
+          placeholder="Ví dụ: Gói bảo hành, chi phí bảo dưỡng định kỳ..."
           value={question}
           onChangeText={setQuestion}
           multiline
@@ -63,7 +63,7 @@ export const QAModal: React.FC<QAModalProps> = ({
         />
 
         <Button
-          title="Gửi Câu Hỏi Cho Chuyên Gia"
+          title="Gửi Câu Hỏi"
           variant="primary"
           loading={isSubmitting}
           disabled={isSubmitting}
@@ -78,13 +78,14 @@ export const QAModal: React.FC<QAModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   textArea: {
-    height: 90,
+    height: 80,
     textAlignVertical: 'top',
   },
   submitBtn: {
     marginTop: spacing.xs,
   },
 });
+

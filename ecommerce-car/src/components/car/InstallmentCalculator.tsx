@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { formatVndPrice } from '../ui/PriceTag';
 import { Card } from '../ui/Card';
@@ -27,13 +28,16 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
 
   return (
     <Card style={styles.container}>
-      <Text style={styles.cardTitle}>📊 Dự Toán Vay Mua Xe Trả Góp</Text>
+      <View style={styles.headerRow}>
+        <Ionicons name="calculator-outline" size={18} color={colors.primaryHover} />
+        <Text style={styles.cardTitle}>Dự Toán Vay Trả Góp</Text>
+      </View>
       <Text style={styles.cardSubtitle}>
-        Lãi suất ưu đãi từ các ngân hàng đối tác VIP (khoảng 8.5%/năm)
+        Lãi suất tham khảo ~8.5%/năm từ các đối tác ngân hàng
       </Text>
 
       {/* Down Payment Selection */}
-      <Text style={styles.fieldLabel}>Tỷ Lệ Trả Trước ({downPercent}%)</Text>
+      <Text style={styles.fieldLabel}>Tỷ lệ trả trước ({downPercent}%)</Text>
       <View style={styles.pillRow}>
         {DOWN_PAYMENT_PERCENTAGES.map((pct) => (
           <TouchableOpacity
@@ -58,7 +62,7 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
       </View>
 
       {/* Loan Term Selection */}
-      <Text style={styles.fieldLabel}>Thời Hạn Vay ({termYears} năm / {totalMonths} tháng)</Text>
+      <Text style={styles.fieldLabel}>Thời hạn vay ({termYears} năm / {totalMonths} tháng)</Text>
       <View style={styles.pillRow}>
         {LOAN_TERMS_YEARS.map((yr) => (
           <TouchableOpacity
@@ -90,7 +94,7 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
         </View>
 
         <View style={styles.resultRow}>
-          <Text style={styles.resultLabel}>Số tiền cần vay:</Text>
+          <Text style={styles.resultLabel}>Số tiền vay:</Text>
           <Text style={styles.resultValue}>{formatVndPrice(loanAmount)}</Text>
         </View>
 
@@ -98,7 +102,7 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
 
         <View style={styles.highlightRow}>
           <View>
-            <Text style={styles.highlightLabel}>Ước tính trả hàng tháng:</Text>
+            <Text style={styles.highlightLabel}>Ước tính hàng tháng:</Text>
             <Text style={styles.highlightSub}>Gốc + Lãi bình quân</Text>
           </View>
           <Text style={styles.highlightAmount}>
@@ -108,7 +112,7 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
       </View>
 
       <Text style={styles.disclaimer}>
-        * Số liệu mang tính chất tham khảo. Chuyên viên tài chính AutoMatch sẽ liên hệ hỗ trợ gói vay tối ưu nhất.
+        * Số liệu ước tính tham khảo. Tư vấn viên sẽ liên hệ để cung cấp lịch trả chi tiết.
       </Text>
     </Card>
   );
@@ -116,36 +120,41 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.lg,
-    marginVertical: spacing.md,
+    padding: spacing.md,
+    marginVertical: spacing.sm,
     ...shadows.sm,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   cardTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.sm + 1,
+    fontWeight: typography.weights.semibold,
   },
   cardSubtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
+    fontSize: typography.sizes['2xs'],
     marginTop: 2,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm + 2,
   },
   fieldLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    marginBottom: spacing.xs,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.medium,
+    marginBottom: 4,
   },
   pillRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   pill: {
     flex: 1,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.sm,
+    paddingVertical: 6,
+    borderRadius: radii.xs,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -159,42 +168,42 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   pillText: {
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.semibold,
   },
   pillTextInactive: {
     color: colors.textSecondary,
   },
   pillTextActive: {
-    color: colors.primary,
+    color: colors.primaryHover,
   },
   resultBox: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.md,
+    borderRadius: radii.sm,
+    padding: spacing.sm + 2,
     marginTop: spacing.xs,
   },
   resultRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   resultLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'] + 1,
   },
   resultValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: spacing.xs + 2,
+    marginVertical: spacing.xs,
   },
   highlightRow: {
     flexDirection: 'row',
@@ -203,8 +212,8 @@ const styles = StyleSheet.create({
   },
   highlightLabel: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   highlightSub: {
     color: colors.textMuted,
@@ -212,15 +221,16 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   highlightAmount: {
-    color: colors.primary,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
   disclaimer: {
     color: colors.textMuted,
     fontSize: typography.sizes['2xs'],
     fontStyle: 'italic',
-    marginTop: spacing.sm,
+    marginTop: spacing.xs + 2,
     lineHeight: 14,
   },
 });
+

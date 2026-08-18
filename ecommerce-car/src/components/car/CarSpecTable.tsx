@@ -9,20 +9,20 @@ interface CarSpecTableProps {
 
 export const CarSpecTable: React.FC<CarSpecTableProps> = ({ car }) => {
   const specs = [
-    { label: 'Hãng & Dòng Xe', value: `${car.make} ${car.model}` },
-    { label: 'Năm Sản Xuất', value: `${car.year}` },
-    { label: 'Công Suất Cực Đại', value: car.engine_hp ? `${car.engine_hp} Mã lực (HP)` : 'N/A' },
-    { label: 'Mô-men xoắn cực đại', value: car.metadata?.torque || 'Đang cập nhật' },
+    { label: 'Hãng & Dòng xe', value: `${car.make} ${car.model}` },
+    { label: 'Năm sản xuất', value: `${car.year}` },
+    { label: 'Công suất cực đại', value: car.engine_hp ? `${car.engine_hp} HP` : 'N/A' },
+    { label: 'Mô-men xoắn', value: car.metadata?.torque || 'Đang cập nhật' },
     { label: 'Tăng tốc 0-100 km/h', value: car.metadata?.acceleration_0_100 || 'N/A' },
     { label: 'Tốc độ tối đa', value: car.metadata?.top_speed || 'N/A' },
-    { label: 'Loại Động Cơ / Pin', value: car.metadata?.engine_fuel_type || car.metadata?.fuel_type || 'Đang cập nhật' },
-    { label: 'Hộp Số', value: car.metadata?.transmission || 'Đang cập nhật' },
-    { label: 'Kiểu Dáng Thân Xe', value: car.metadata?.body_type || 'Đang cập nhật' },
-    { label: 'Số Chỗ Ngồi', value: car.metadata?.seating_capacity ? `${car.metadata.seating_capacity} chỗ` : 'Đang cập nhật' },
-    { label: 'Mức Tiêu Thụ Nhiên Liệu', value: car.metadata?.fuel_economy || 'Đang cập nhật' },
-    { label: 'Kích Thước (DxRxC)', value: car.metadata?.dimensions || 'Đang cập nhật' },
-    { label: 'Số Túi Khí An Toàn', value: car.metadata?.airbags ? `${car.metadata.airbags} túi khí` : 'Đang cập nhật' },
-    { label: 'Chính Sách Bảo Hành', value: car.metadata?.warranty || 'Đang cập nhật' },
+    { label: 'Động cơ / Nhiên liệu', value: car.metadata?.engine_fuel_type || car.metadata?.fuel_type || 'Đang cập nhật' },
+    { label: 'Hộp số', value: car.metadata?.transmission || 'Đang cập nhật' },
+    { label: 'Kiểu dáng', value: car.metadata?.body_type || 'Đang cập nhật' },
+    { label: 'Số chỗ ngồi', value: car.metadata?.seating_capacity ? `${car.metadata.seating_capacity} chỗ` : 'Đang cập nhật' },
+    { label: 'Mức tiêu thụ', value: car.metadata?.fuel_economy || 'Đang cập nhật' },
+    { label: 'Kích thước', value: car.metadata?.dimensions || 'Đang cập nhật' },
+    { label: 'Túi khí an toàn', value: car.metadata?.airbags ? `${car.metadata.airbags} túi khí` : 'Đang cập nhật' },
+    { label: 'Bảo hành', value: car.metadata?.warranty || 'Đang cập nhật' },
   ];
 
   return (
@@ -48,18 +48,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     overflow: 'hidden',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.xs + 3,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
   },
   rowDefault: {
     backgroundColor: colors.surface,
@@ -69,15 +69,16 @@ const styles = StyleSheet.create({
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes['2xs'] + 1,
     fontWeight: typography.weights.medium,
     flex: 1,
   },
   value: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
     textAlign: 'right',
     flex: 1.2,
   },
 });
+

@@ -9,6 +9,7 @@ interface SectionHeaderProps {
   actionText?: string;
   onAction?: () => void;
   icon?: React.ReactNode;
+  iconName?: keyof typeof Ionicons.glyphMap;
   style?: ViewStyle;
 }
 
@@ -18,12 +19,21 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
   actionText = 'Xem tất cả',
   onAction,
   icon,
+  iconName,
   style,
 }) => {
   return (
     <View style={[styles.container, style]}>
       <View style={styles.titleGroup}>
         <View style={styles.titleRow}>
+          {iconName && (
+            <Ionicons
+              name={iconName}
+              size={16}
+              color={colors.primary}
+              style={styles.iconBox}
+            />
+          )}
           {icon && <View style={styles.iconBox}>{icon}</View>}
           <Text style={styles.title}>{title}</Text>
         </View>
@@ -37,7 +47,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           style={styles.actionBtn}
         >
           <Text style={styles.actionText}>{actionText}</Text>
-          <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          <Ionicons name="chevron-forward" size={13} color={colors.primary} />
         </TouchableOpacity>
       )}
     </View>
@@ -49,8 +59,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs + 2,
   },
   titleGroup: {
     flex: 1,
@@ -60,17 +70,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBox: {
-    marginRight: spacing.xs + 2,
+    marginRight: 6,
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.extrabold,
-    letterSpacing: -0.2,
+    fontSize: typography.sizes.base + 1,
+    fontWeight: typography.weights.semibold,
+    letterSpacing: -0.1,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'] + 1,
     marginTop: 2,
   },
   actionBtn: {
@@ -81,8 +91,9 @@ const styles = StyleSheet.create({
   },
   actionText: {
     color: colors.primary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
     marginRight: 2,
   },
 });
+

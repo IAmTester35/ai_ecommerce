@@ -1,63 +1,70 @@
 /**
- * AutoMatch AI - Automotive E-Commerce Design System Tokens
- * Unified standard for luxury cyber-automotive aesthetics
+ * AutoMatch AI - Automotive E-Commerce Minimalist Design Tokens
+ * Refined standard for minimalist luxury automotive aesthetics
  */
 
 export const colors = {
-  // Backgrounds & Base Surfaces
-  background: '#0B0E14',         // Deep Titanium Obsidian Core
-  surface: '#141A26',            // Base surface
-  surfaceElevated: '#1C2333',    // Elevated card & sheet surface
-  surfaceElevatedHover: '#232C40',// Interactive state
-  surfaceGlass: 'rgba(28, 35, 51, 0.85)', // Glassmorphism backdrop
+  // Backgrounds & Base Surfaces (Obsidian & Graphite)
+  background: '#090A0C',          // Deep Obsidian Black
+  surface: '#11141B',             // Refined Slate Surface
+  surfaceElevated: '#171B24',     // Elevated Card & Sheet Surface
+  surfaceElevatedHover: '#1F2430',// Interactive state
+  surfaceGlass: 'rgba(17, 20, 27, 0.90)', // Glass backdrop
+  surfaceSubtle: 'rgba(255, 255, 255, 0.03)',
 
-  // Borders & Outlines
-  border: '#253046',             // Subtle container border
-  borderLight: 'rgba(255, 255, 255, 0.08)',
-  borderHighlight: 'rgba(0, 229, 255, 0.35)',
+  // Borders & Outlines (Subtle & clean)
+  border: 'rgba(255, 255, 255, 0.08)',
+  borderLight: 'rgba(255, 255, 255, 0.04)',
+  borderHighlight: 'rgba(59, 130, 246, 0.35)',
 
-  // Primary Electric Accents
-  primary: '#00E5FF',            // Electric Cyan - primary actions & branding
-  primaryHover: '#33EBFF',
-  primaryMuted: 'rgba(0, 229, 255, 0.12)',
-  primaryGlow: 'rgba(0, 229, 255, 0.25)',
+  // Primary Electric Sapphire / Porsche Blue
+  primary: '#3B82F6',             // Clean Sapphire Blue
+  primaryHover: '#60A5FA',
+  primaryMuted: 'rgba(59, 130, 246, 0.12)',
+  primaryGlow: 'rgba(59, 130, 246, 0.20)',
 
-  // Secondary Accents
-  secondary: '#7C4DFF',          // Vivid Electric Purple - AI reasoning & compare
-  secondaryHover: '#9670FF',
-  secondaryMuted: 'rgba(124, 77, 255, 0.15)',
+  // Secondary Accents (Soft Indigo)
+  secondary: '#6366F1',           // Soft Indigo
+  secondaryHover: '#818CF8',
+  secondaryMuted: 'rgba(99, 102, 241, 0.12)',
 
   // Semantic & Feedback Colors
-  conflict: '#FFB300',           // Amber Gold - AI Conflict Warning & Rating stars
-  conflictMuted: 'rgba(255, 179, 0, 0.15)',
+  conflict: '#F59E0B',            // Warm Amber (Ratings & Notices)
+  conflictMuted: 'rgba(245, 158, 11, 0.12)',
   
-  success: '#00E676',            // Mint Emerald - Paid, In Stock, Confirmed
-  successMuted: 'rgba(0, 230, 118, 0.15)',
+  success: '#10B981',             // Emerald
+  successMuted: 'rgba(16, 185, 129, 0.12)',
   
-  danger: '#FF5252',             // Coral Red - Discount badge, Cancel, Delete
-  dangerMuted: 'rgba(255, 82, 82, 0.15)',
+  danger: '#EF4444',              // Rose Red
+  dangerMuted: 'rgba(239, 68, 68, 0.12)',
   
-  warning: '#FF9100',            // Orange Alert
-  warningMuted: 'rgba(255, 145, 0, 0.15)',
+  warning: '#F97316',             // Soft Orange
+  warningMuted: 'rgba(249, 115, 22, 0.12)',
 
-  info: '#29B6F6',               // Sky Blue - Info notices
-  infoMuted: 'rgba(41, 182, 246, 0.15)',
+  info: '#0EA5E9',                // Sky Blue
+  infoMuted: 'rgba(14, 165, 233, 0.12)',
 
   // Typography Palette
-  text: '#F2F5F8',               // High contrast ice-white for headings & primary
-  textSecondary: '#94A3B8',      // Soft slate for subtitles & secondary info
-  textMuted: '#64748B',          // Low contrast for captions & placeholder
-  textDark: '#0B0E14',           // Dark text on bright accent buttons
+  text: '#F8FAFC',                // Crisp Ice White
+  textSecondary: '#94A3B8',       // Slate Grey
+  textMuted: '#64748B',           // Dark Slate for microcopy
+  textDark: '#090A0C',            // Dark text for bright badges
 
   // Card specific tokens
-  cardBg: '#131822',
-  cardBorder: '#1E2638',
+  cardBg: '#12151C',
+  cardBorder: 'rgba(255, 255, 255, 0.07)',
+
+  // TabBar tokens
+  tabBarBg: '#11141B',
+  tabBarBorder: 'rgba(255, 255, 255, 0.08)',
+  tabBarActive: '#3B82F6',
+  tabBarInactive: '#64748B',
 
   // Gradients
-  gradientStart: '#00E5FF',
-  gradientEnd: '#7C4DFF',
-  gradientGoldStart: '#FFD700',
-  gradientGoldEnd: '#FF8C00',
+  gradientStart: '#3B82F6',
+  gradientEnd: '#6366F1',
+  gradientGoldStart: '#F59E0B',
+  gradientGoldEnd: '#D97706',
 } as const;
 
 export const spacing = {
@@ -74,12 +81,12 @@ export const spacing = {
 
 export const radii = {
   xs: 4,
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
-  '2xl': 24,
-  '3xl': 32,
+  sm: 6,
+  md: 10,
+  lg: 14,
+  xl: 18,
+  '2xl': 22,
+  '3xl': 28,
   full: 9999,
 } as const;
 
@@ -88,21 +95,21 @@ export const typography = {
     '2xs': 10,
     xs: 11,
     sm: 12,
-    base: 14,
-    md: 15,
-    lg: 16,
-    xl: 18,
-    '2xl': 20,
-    '3xl': 24,
-    '4xl': 28,
+    base: 13,
+    md: 14,
+    lg: 15,
+    xl: 16,
+    '2xl': 18,
+    '3xl': 20,
+    '4xl': 24,
   },
   weights: {
     regular: '400' as const,
     medium: '500' as const,
     semibold: '600' as const,
     bold: '700' as const,
-    extrabold: '800' as const,
-    black: '900' as const,
+    extrabold: '700' as const,
+    black: '800' as const,
   },
   lineHeights: {
     tight: 1.2,
@@ -114,44 +121,45 @@ export const typography = {
 export const shadows = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.20,
+    shadowRadius: 3,
     elevation: 2,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.30,
     shadowRadius: 6,
     elevation: 4,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.40,
+    shadowRadius: 10,
+    elevation: 6,
   },
   glowCyan: {
-    shadowColor: '#00E5FF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.20,
+    shadowRadius: 6,
+    elevation: 3,
   },
   glowPurple: {
-    shadowColor: '#7C4DFF',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.20,
+    shadowRadius: 6,
+    elevation: 3,
   },
 } as const;
 
 export const layout = {
   screenPadding: spacing.lg,
-  cardPadding: spacing.lg,
-  bottomBarHeight: 64,
-  headerHeight: 56,
+  cardPadding: spacing.md,
+  bottomBarHeight: 60,
+  headerHeight: 52,
 } as const;
+

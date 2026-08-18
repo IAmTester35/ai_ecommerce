@@ -57,7 +57,7 @@ export const ModalSheet: React.FC<ModalSheetProps> = ({
                   onPress={onClose}
                   style={styles.closeBtn}
                 >
-                  <Ionicons name="close" size={20} color={colors.textSecondary} />
+                  <Ionicons name="close" size={18} color={colors.textSecondary} />
                 </TouchableOpacity>
               </View>
 
@@ -73,35 +73,35 @@ export const ModalSheet: React.FC<ModalSheetProps> = ({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
     backgroundColor: colors.surfaceElevated,
-    borderTopLeftRadius: radii['2xl'],
-    borderTopRightRadius: radii['2xl'],
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: colors.border,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.xs + 2,
     paddingBottom: Platform.OS === 'ios' ? 36 : spacing.xl,
     maxHeight: '90%',
   },
   handleBar: {
-    width: 36,
-    height: 4,
+    width: 32,
+    height: 3,
     borderRadius: radii.full,
     backgroundColor: colors.border,
     alignSelf: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs + 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
@@ -110,8 +110,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.base + 1,
+    fontWeight: typography.weights.semibold,
   },
   subtitle: {
     color: colors.textSecondary,
@@ -119,8 +119,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
+    width: 28,
+    height: 28,
     borderRadius: radii.full,
     backgroundColor: colors.surface,
     alignItems: 'center',
@@ -128,6 +128,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm + 2,
   },
 });
+

@@ -24,7 +24,7 @@ interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
-  placeholder = 'Tìm hãng, dòng xe, khoảng giá...',
+  placeholder = 'Tìm hãng, mẫu xe, dòng xe...',
   onClear,
   onSubmit,
   onFilterPress,
@@ -37,8 +37,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <View style={styles.searchBox}>
         <Ionicons
           name="search-outline"
-          size={18}
-          color={colors.primary}
+          size={16}
+          color={colors.textSecondary}
           style={styles.searchIcon}
         />
 
@@ -61,7 +61,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             }}
             style={styles.clearBtn}
           >
-            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+            <Ionicons name="close-circle" size={15} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -77,12 +77,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         >
           <Ionicons
             name="options-outline"
-            size={18}
-            color={activeFilterCount > 0 ? colors.textDark : colors.text}
+            size={16}
+            color={activeFilterCount > 0 ? '#FFFFFF' : colors.textSecondary}
           />
           {activeFilterCount > 0 && (
             <View style={styles.badgeCount}>
-              <Ionicons name="checkmark" size={10} color={colors.textDark} />
+              <Ionicons name="checkmark" size={8} color="#FFFFFF" />
             </View>
           )}
         </TouchableOpacity>
@@ -94,7 +94,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onPress={onAiPress}
           style={styles.aiBtn}
         >
-          <Ionicons name="sparkles" size={16} color={colors.textDark} />
+          <Ionicons name="sparkles" size={15} color="#FFFFFF" />
         </TouchableOpacity>
       )}
     </View>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   searchBox: {
     flex: 1,
@@ -114,26 +114,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    height: 46,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm + 2,
+    height: 40,
   },
   searchIcon: {
-    marginRight: spacing.sm,
+    marginRight: 6,
   },
   input: {
     flex: 1,
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.sm,
     height: '100%',
+    padding: 0,
   },
   clearBtn: {
-    padding: spacing.xs,
+    padding: 2,
   },
   filterBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: radii.md,
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
@@ -149,19 +150,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.primaryHover,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   aiBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: radii.md,
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
 });
+

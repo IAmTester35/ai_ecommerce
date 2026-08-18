@@ -16,6 +16,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
 import { formatVndPrice } from '../components/ui/PriceTag';
+import { FALLBACK_CAR_URL } from '../constants/images';
 
 export default function CartScreen() {
   const { items, fetchCart, updateQuantity, removeFromCart, getTotalPrice } = useCartStore();
@@ -30,24 +31,23 @@ export default function CartScreen() {
   const depositRate = 0.10;
   const depositAmount = Math.round(rawTotal * depositRate);
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
+  const fallbackImage = FALLBACK_CAR_URL;
 
   if (items.length === 0) {
     return (
       <View style={styles.screen}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
+            <Ionicons name="arrow-back" size={18} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Giỏ Hàng Đặt Cọc</Text>
         </View>
 
         <EmptyState
-          icon="cart-outline"
-          title="Giỏ Hàng Của Bạn Đang Trống"
-          description="Bạn chưa chọn mẫu xe nào để đặt cọc. Hãy khám phá kho xe mới nhất tại AutoMatch!"
-          actionTitle="Khám Phá Danh Mục Ngay"
+          icon="bag-handle-outline"
+          title="Giỏ hàng trống"
+          description="Bạn chưa chọn mẫu xe nào để đặt cọc. Hãy khám phá kho xe tại Showroom!"
+          actionTitle="Khám phá kho xe"
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
       </View>
@@ -59,17 +59,17 @@ export default function CartScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+          <Ionicons name="arrow-back" size={18} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Giỏ Hàng Đặt Cọc ({items.length})</Text>
       </View>
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Cart Items List */}
-        <Text style={styles.sectionHeader}>Danh Sách Xe Đặt Giữ Chỗ</Text>
+        <Text style={styles.sectionHeader}>Danh sách xe giữ chỗ</Text>
 
         {items.map((item) => (
-          <Card key={item.id} style={styles.itemCard}>
+          <Card key={item.id} style={styles.itemCard} padding={spacing.sm + 2}>
             <Image
               source={{ uri: item.car?.image_url || fallbackImage }}
               style={styles.itemThumb}
@@ -85,29 +85,29 @@ export default function CartScreen() {
                   onPress={() => removeFromCart(item.id)}
                   style={styles.deleteBtn}
                 >
-                  <Ionicons name="trash-outline" size={18} color={colors.danger} />
+                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.itemYear}>Năm sản xuất: {item.car?.year || 2024}</Text>
+              <Text style={styles.itemYear}>Năm {item.car?.year || 2024}</Text>
               <Text style={styles.itemPrice}>{formatVndPrice(item.car?.price)}</Text>
 
               {/* Quantity Stepper */}
               <View style={styles.stepperRow}>
-                <Text style={styles.qtyLabel}>Số lượng xe:</Text>
+                <Text style={styles.qtyLabel}>Số lượng:</Text>
                 <View style={styles.stepper}>
                   <TouchableOpacity
                     onPress={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
                     style={styles.stepBtn}
                   >
-                    <Ionicons name="remove" size={14} color={colors.text} />
+                    <Ionicons name="remove" size={13} color={colors.text} />
                   </TouchableOpacity>
                   <Text style={styles.stepValue}>{item.quantity}</Text>
                   <TouchableOpacity
                     onPress={() => updateQuantity(item.id, item.quantity + 1)}
                     style={styles.stepBtn}
                   >
-                    <Ionicons name="add" size={14} color={colors.text} />
+                    <Ionicons name="add" size={13} color={colors.text} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -116,8 +116,8 @@ export default function CartScreen() {
         ))}
 
         {/* Price Breakdown Summary */}
-        <Card style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Tóm Tắt Đặt Cọc & Thanh Toán</Text>
+        <Card style={styles.summaryCard} padding={spacing.md}>
+          <Text style={styles.summaryTitle}>Tóm tắt đặt cọc</Text>
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tổng giá trị niêm yết:</Text>
@@ -125,7 +125,7 @@ export default function CartScreen() {
           </View>
 
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Mức đặt cọc giữ xe (10%):</Text>
+            <Text style={styles.summaryLabel}>Tiền cọc giữ xe (10%):</Text>
             <Text style={styles.summaryValue}>{formatVndPrice(depositAmount)}</Text>
           </View>
 
@@ -133,8 +133,8 @@ export default function CartScreen() {
 
           <View style={styles.totalRow}>
             <View>
-              <Text style={styles.totalLabel}>Tổng Cọc Cần Thanh Toán:</Text>
-              <Text style={styles.totalSub}>Hoàn cọc 100% nếu đổi ý trong 7 ngày</Text>
+              <Text style={styles.totalLabel}>Tổng cọc cần thanh toán:</Text>
+              <Text style={styles.totalSub}>Cam kết hoàn cọc 100% trong 7 ngày</Text>
             </View>
             <Text style={styles.totalAmount}>{formatVndPrice(depositAmount)}</Text>
           </View>
@@ -142,29 +142,29 @@ export default function CartScreen() {
 
         {/* Security & Warranty Notice */}
         <View style={styles.noticeBox}>
-          <Ionicons name="shield-checkmark" size={18} color={colors.primary} />
+          <Ionicons name="shield-checkmark-outline" size={16} color={colors.primaryHover} />
           <Text style={styles.noticeText}>
-            Giao dịch được bảo mật và thực hiện trực tiếp qua cổng thanh toán số ZaloPay hoặc chuyển khoản ngân hàng chính thức của AutoMatch.
+            Giao dịch cọc được bảo mật và thực hiện qua cổng thanh toán ZaloPay hoặc chuyển khoản ngân hàng chính thức của AutoMatch.
           </Text>
         </View>
 
-        <View style={{ height: 100 }} />
+        <View style={{ height: 90 }} />
       </ScrollView>
 
       {/* Bottom Sticky Checkout Action */}
       <View style={styles.bottomCheckoutBar}>
         <View style={styles.bottomTotalGroup}>
-          <Text style={styles.bottomDepositLabel}>Tiền cọc giữ xe:</Text>
+          <Text style={styles.bottomDepositLabel}>Tiền cọc:</Text>
           <Text style={styles.bottomDepositAmount}>{formatVndPrice(depositAmount)}</Text>
         </View>
 
         <Button
           title="Tiến Hành Đặt Cọc"
           variant="primary"
-          size="lg"
+          size="md"
           onPress={() => router.push('/checkout' as any)}
           style={styles.checkoutBtn}
-          icon={<Ionicons name="arrow-forward" size={18} color={colors.textDark} />}
+          icon={<Ionicons name="arrow-forward" size={15} color="#FFFFFF" />}
         />
       </View>
     </View>
@@ -179,26 +179,28 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 52,
+    paddingTop: 48,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm + 2,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.base + 1,
+    fontWeight: typography.weights.semibold,
   },
   container: {
     flex: 1,
@@ -206,25 +208,24 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs + 2,
   },
   itemCard: {
     flexDirection: 'row',
-    marginBottom: spacing.md,
-    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   itemThumb: {
-    width: 90,
-    height: 75,
-    borderRadius: radii.sm,
+    width: 80,
+    height: 68,
+    borderRadius: radii.xs,
     backgroundColor: colors.surfaceElevated,
   },
   itemInfo: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm + 2,
     justifyContent: 'space-between',
   },
   itemTitleRow: {
@@ -234,8 +235,8 @@ const styles = StyleSheet.create({
   },
   itemCarName: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
     flex: 1,
   },
   deleteBtn: {
@@ -243,23 +244,23 @@ const styles = StyleSheet.create({
   },
   itemYear: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
   },
   itemPrice: {
-    color: colors.primary,
-    fontSize: typography.sizes.sm + 1,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.bold,
-    marginVertical: 2,
+    marginVertical: 1,
   },
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 2,
   },
   qtyLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
   },
   stepper: {
     flexDirection: 'row',
@@ -270,27 +271,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   stepBtn: {
-    width: 26,
-    height: 24,
+    width: 24,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     fontWeight: typography.weights.bold,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   summaryCard: {
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-    gap: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.xs + 2,
   },
   summaryTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.xs,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    marginBottom: 2,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -299,17 +299,17 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes['2xs'] + 1,
   },
   summaryValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: spacing.xs,
+    marginVertical: 4,
   },
   totalRow: {
     flexDirection: 'row',
@@ -318,34 +318,34 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   totalSub: {
     color: colors.textMuted,
     fontSize: typography.sizes['2xs'],
-    marginTop: 2,
+    marginTop: 1,
   },
   totalAmount: {
-    color: colors.primary,
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.base + 1,
+    fontWeight: typography.weights.bold,
   },
   noticeBox: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.md,
-    padding: spacing.md,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
     marginTop: spacing.md,
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
     alignItems: 'flex-start',
   },
   noticeText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: typography.sizes['2xs'] + 1,
+    lineHeight: 16,
     flex: 1,
   },
   bottomCheckoutBar: {
@@ -357,27 +357,28 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: 28,
+    paddingTop: spacing.xs + 3,
+    paddingBottom: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    ...shadows.lg,
+    ...shadows.md,
   },
   bottomTotalGroup: {
     flex: 1,
   },
   bottomDepositLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
   },
   bottomDepositAmount: {
-    color: colors.primary,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
   checkoutBtn: {
     flex: 1.2,
-    height: 48,
+    height: 40,
   },
 });
+

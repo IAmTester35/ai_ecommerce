@@ -1,28 +1,28 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../../theme/colors';
-import { Badge } from '../ui/Badge';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, radii, spacing, typography } from '../../theme';
 
 interface ConflictBannerProps {
   relaxedTerms?: string[];
-  message?: string;
 }
 
-export const ConflictBanner: React.FC<ConflictBannerProps> = ({ relaxedTerms = [], message }) => {
+export const ConflictBanner: React.FC<ConflictBannerProps> = ({ relaxedTerms }) => {
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Badge label="AI Constraint Relaxation" variant="conflict" size="sm" />
-        <Text style={styles.title}>Cảnh báo mâu thuẫn yêu cầu</Text>
+      <View style={styles.header}>
+        <Ionicons name="alert-circle-outline" size={15} color={colors.conflict} />
+        <Text style={styles.title}>Cảnh báo xung đột tiêu chí</Text>
       </View>
-      <Text style={styles.body}>
-        {message || 'Ràng buộc ban đầu chứa mâu thuẫn logic. AutoMatch AI đã tự động nới lỏng các tiêu chí bên dưới để tìm kiếm các lựa chọn tối ưu nhất cho bạn:'}
+      <Text style={styles.description}>
+        Yêu cầu có tiêu chí chưa đồng nhất, AI đã tự động điều chỉnh bộ lọc để tìm mẫu xe tối ưu nhất:
       </Text>
-      {relaxedTerms.length > 0 && (
-        <View style={styles.termsRow}>
-          {relaxedTerms.map((term) => (
-            <View key={term} style={styles.termChip}>
-              <Text style={styles.termText}>• {term}</Text>
+
+      {relaxedTerms && relaxedTerms.length > 0 && (
+        <View style={styles.termsContainer}>
+          {relaxedTerms.map((term, index) => (
+            <View key={index} style={styles.termBadge}>
+              <Text style={styles.termText}>{term}</Text>
             </View>
           ))}
         </View>
@@ -34,41 +34,45 @@ export const ConflictBanner: React.FC<ConflictBannerProps> = ({ relaxedTerms = [
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.conflictMuted,
-    borderRadius: 14,
+    borderColor: 'rgba(245, 158, 11, 0.25)',
     borderWidth: 1,
-    borderColor: colors.conflict,
-    padding: 14,
-    marginVertical: 10,
+    borderRadius: radii.sm,
+    padding: spacing.sm + 2,
+    marginBottom: spacing.xs + 2,
   },
-  headerRow: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
-    gap: 8,
+    gap: 5,
+    marginBottom: 3,
   },
   title: {
     color: colors.conflict,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
   },
-  body: {
-    color: colors.text,
-    fontSize: 12,
-    lineHeight: 18,
+  description: {
+    color: colors.textSecondary,
+    fontSize: typography.sizes['2xs'] + 1,
+    lineHeight: 16,
   },
-  termsRow: {
-    marginTop: 8,
-    gap: 4,
+  termsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: 6,
   },
-  termChip: {
-    backgroundColor: 'rgba(255, 171, 0, 0.1)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+  termBadge: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderWidth: 1,
+    borderRadius: radii.xs,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   termText: {
     color: colors.conflict,
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.semibold,
   },
 });

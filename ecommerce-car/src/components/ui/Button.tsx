@@ -45,20 +45,20 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return {
           bg: colors.primary,
-          text: colors.textDark,
+          text: '#FFFFFF',
           border: 'transparent',
         };
       case 'secondary':
         return {
-          bg: colors.secondary,
-          text: '#FFFFFF',
-          border: 'transparent',
+          bg: colors.surfaceElevated,
+          text: colors.text,
+          border: colors.border,
         };
       case 'outline':
         return {
           bg: 'transparent',
-          text: colors.primary,
-          border: colors.primary,
+          text: colors.primaryHover,
+          border: 'rgba(59, 130, 246, 0.45)',
         };
       case 'ghost':
         return {
@@ -68,15 +68,15 @@ export const Button: React.FC<ButtonProps> = ({
         };
       case 'danger':
         return {
-          bg: colors.danger,
-          text: '#FFFFFF',
-          border: 'transparent',
+          bg: colors.dangerMuted,
+          text: colors.danger,
+          border: 'rgba(239, 68, 68, 0.3)',
         };
       case 'conflict':
         return {
-          bg: colors.conflict,
-          text: colors.textDark,
-          border: 'transparent',
+          bg: colors.conflictMuted,
+          text: colors.conflict,
+          border: 'rgba(245, 158, 11, 0.3)',
         };
       default:
         return {
@@ -91,25 +91,25 @@ export const Button: React.FC<ButtonProps> = ({
     switch (size) {
       case 'sm':
         return {
-          height: 36,
-          paddingHorizontal: spacing.md,
-          fontSize: typography.sizes.sm,
+          height: 32,
+          paddingHorizontal: spacing.sm + 2,
+          fontSize: typography.sizes.xs,
           borderRadius: radii.sm,
         };
       case 'lg':
         return {
-          height: 52,
-          paddingHorizontal: spacing['2xl'],
-          fontSize: typography.sizes.lg,
-          borderRadius: radii.lg,
+          height: 46,
+          paddingHorizontal: spacing.xl,
+          fontSize: typography.sizes.base,
+          borderRadius: radii.md,
         };
       case 'md':
       default:
         return {
-          height: 44,
-          paddingHorizontal: spacing.lg,
-          fontSize: typography.sizes.base,
-          borderRadius: radii.md,
+          height: 38,
+          paddingHorizontal: spacing.md,
+          fontSize: typography.sizes.sm,
+          borderRadius: radii.sm + 2,
         };
     }
   };
@@ -176,17 +176,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   text: {
-    fontWeight: typography.weights.bold,
+    fontWeight: typography.weights.semibold,
     textAlign: 'center',
-    letterSpacing: 0.2,
+    letterSpacing: 0.1,
   },
   iconLeft: {
-    marginRight: spacing.sm,
+    marginRight: 6,
   },
   iconRight: {
-    marginLeft: spacing.sm,
+    marginLeft: 6,
   },
   disabled: {
     opacity: 0.45,
   },
 });
+

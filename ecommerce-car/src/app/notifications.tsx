@@ -32,7 +32,7 @@ export default function NotificationsScreen() {
   const getNotifIcon = (type?: string | null) => {
     switch (type) {
       case 'order':
-        return { icon: 'receipt-outline' as const, color: colors.primary, bg: colors.primaryMuted };
+        return { icon: 'receipt-outline' as const, color: colors.primaryHover, bg: colors.primaryMuted };
       case 'promo':
         return { icon: 'flash-outline' as const, color: colors.conflict, bg: colors.conflictMuted };
       case 'test_drive':
@@ -75,9 +75,10 @@ export default function NotificationsScreen() {
             styles.notifCard,
             !item.is_read ? styles.notifCardUnread : null,
           ]}
+          padding={spacing.sm + 2}
         >
           <View style={[styles.iconCircle, { backgroundColor: iconConfig.bg }]}>
-            <Ionicons name={iconConfig.icon} size={20} color={iconConfig.color} />
+            <Ionicons name={iconConfig.icon} size={18} color={iconConfig.color} />
           </View>
 
           <View style={styles.notifContent}>
@@ -85,7 +86,7 @@ export default function NotificationsScreen() {
               <Text
                 style={[
                   styles.notifTitle,
-                  !item.is_read && { fontWeight: typography.weights.extrabold },
+                  !item.is_read && { fontWeight: typography.weights.bold },
                 ]}
                 numberOfLines={1}
               >
@@ -94,11 +95,14 @@ export default function NotificationsScreen() {
               {!item.is_read && <View style={styles.unreadPill} />}
             </View>
 
-            <Text style={styles.notifDesc} numberOfLines={3}>
+            <Text style={styles.notifDesc} numberOfLines={2}>
               {item.content}
             </Text>
 
-            <Text style={styles.notifTime}>⏰ {dateStr}</Text>
+            <View style={styles.timeRow}>
+              <Ionicons name="time-outline" size={10} color={colors.textMuted} style={{ marginRight: 3 }} />
+              <Text style={styles.notifTime}>{dateStr}</Text>
+            </View>
           </View>
         </Card>
       </TouchableOpacity>
@@ -110,7 +114,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+          <Ionicons name="arrow-back" size={18} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Thông Báo & Tin Nhắn</Text>
@@ -165,13 +169,13 @@ export default function NotificationsScreen() {
 
       {isLoading ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Đang tải thông báo từ Supabase...</Text>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={styles.loadingText}>Đang tải thông báo...</Text>
         </View>
       ) : displayedNotifications.length === 0 ? (
         <EmptyState
           icon="notifications-off-outline"
-          title="Không Có Thông Báo Nào"
+          title="Không có thông báo"
           description="Bạn đã đọc hết tất cả thông báo khuyến mãi và cập nhật đơn hàng."
         />
       ) : (
@@ -195,48 +199,50 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 52,
+    paddingTop: 48,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm + 2,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
   },
   markAllBtn: {
     paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs + 2,
   },
   markAllText: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   filterStrip: {
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   filterPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 4,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
@@ -248,34 +254,33 @@ const styles = StyleSheet.create({
   },
   filterPillText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   filterPillTextActive: {
-    color: colors.primary,
-    fontWeight: typography.weights.bold,
+    color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   listContent: {
     padding: spacing.lg,
-    gap: spacing.sm,
-    paddingBottom: 40,
+    gap: spacing.xs + 2,
+    paddingBottom: 32,
   },
   notifCard: {
     flexDirection: 'row',
-    padding: spacing.md,
     ...shadows.sm,
   },
   notifCardUnread: {
     borderColor: colors.primary,
-    backgroundColor: 'rgba(0, 229, 255, 0.03)',
+    backgroundColor: 'rgba(59, 130, 246, 0.04)',
   },
   iconCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm + 2,
   },
   notifContent: {
     flex: 1,
@@ -284,39 +289,44 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   notifTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
     flex: 1,
   },
   unreadPill: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primaryHover,
     marginLeft: 6,
   },
   notifDesc: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 17,
+    fontSize: typography.sizes['2xs'] + 1,
+    lineHeight: 15,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
   notifTime: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'],
-    marginTop: 6,
+    fontSize: 10,
   },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
 });
+

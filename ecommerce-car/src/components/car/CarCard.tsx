@@ -13,6 +13,7 @@ import { Car, CarResponse } from '../../types';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { formatVndPrice } from '../ui/PriceTag';
+import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export type CarCardLayout = 'grid' | 'list' | 'compact';
 
@@ -43,8 +44,7 @@ export const CarCard: React.FC<CarCardProps> = ({
     ? Math.round((carSearch.rerank_score || carSearch.similarity || 0) * 100)
     : null;
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
+  const fallbackImage = FALLBACK_CAR_URL;
 
   const monthlyEst =
     car.price && car.price > 0
@@ -89,43 +89,49 @@ export const CarCard: React.FC<CarCardProps> = ({
               >
                 <Ionicons
                   name={isSaved ? 'bookmark' : 'bookmark-outline'}
-                  size={18}
-                  color={isSaved ? colors.primary : colors.textMuted}
+                  size={16}
+                  color={isSaved ? colors.primaryHover : colors.textMuted}
                 />
               </TouchableOpacity>
             )}
           </View>
 
-          <Text style={styles.yearText}>Phiên bản {car.year || 2024}</Text>
+          <Text style={styles.yearText}>Năm {car.year || 2024}</Text>
 
           <Text style={styles.price}>{formatVndPrice(car.price)}</Text>
 
           <View style={styles.specChipsRow}>
             {car.engine_hp && (
-              <Text style={styles.specChip}>⚡ {car.engine_hp} HP</Text>
+              <View style={styles.specChipBox}>
+                <Ionicons name="speedometer-outline" size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
+                <Text style={styles.specChipText}>{car.engine_hp} HP</Text>
+              </View>
             )}
-            {car.metadata?.transmission && (
-              <Text style={styles.specChip} numberOfLines={1}>
-                ⚙️ {car.metadata.transmission.split(' ')[0]}
-              </Text>
+            {car.metadata?.fuel_type && (
+              <View style={styles.specChipBox}>
+                <Ionicons name="water-outline" size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
+                <Text style={styles.specChipText} numberOfLines={1}>
+                  {car.metadata.fuel_type.split(' ')[0]}
+                </Text>
+              </View>
             )}
           </View>
 
           <View style={styles.listActionRow}>
             {onPressAddToCart && (
               <Button
-                title="Thêm giỏ"
-                variant="outline"
+                title="Đặt cọc"
+                variant="primary"
                 size="sm"
                 onPress={() => onPressAddToCart(car.id)}
                 style={styles.actionBtnHalf}
-                icon={<Ionicons name="cart-outline" size={14} color={colors.primary} />}
+                icon={<Ionicons name="flash-outline" size={12} color="#FFFFFF" />}
               />
             )}
             {onPressCompare && (
               <Button
                 title="So sánh"
-                variant="secondary"
+                variant="outline"
                 size="sm"
                 onPress={() => onPressCompare(car)}
                 style={styles.actionBtnHalf}
@@ -163,7 +169,7 @@ export const CarCard: React.FC<CarCardProps> = ({
             <Badge
               label={`${matchScore}% Match`}
               variant={matchScore >= 90 ? 'primary' : 'secondary'}
-              size="sm"
+              size="xs"
             />
           </View>
         )}
@@ -176,8 +182,8 @@ export const CarCard: React.FC<CarCardProps> = ({
           >
             <Ionicons
               name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={18}
-              color={isSaved ? colors.primary : colors.text}
+              size={15}
+              color={isSaved ? colors.primaryHover : colors.text}
             />
           </TouchableOpacity>
         )}
@@ -188,33 +194,39 @@ export const CarCard: React.FC<CarCardProps> = ({
           {car.make} {car.model}
         </Text>
 
-        <Text style={styles.yearSub}>Năm SX: {car.year || 2024}</Text>
+        <Text style={styles.yearSub}>Năm {car.year || 2024}</Text>
 
         <Text style={styles.price}>{formatVndPrice(car.price)}</Text>
 
         {monthlyEst > 0 && (
-          <Text style={styles.installmentTeaser}>
-            ⚡ Trả góp từ ~{monthlyEst} tr/tháng
-          </Text>
+          <View style={styles.installmentRow}>
+            <Ionicons name="card-outline" size={11} color={colors.textMuted} style={{ marginRight: 4 }} />
+            <Text style={styles.installmentTeaser}>
+              Trả góp từ ~{monthlyEst} tr/tháng
+            </Text>
+          </View>
         )}
 
         <View style={styles.specRow}>
           {car.engine_hp && (
             <View style={styles.specPill}>
-              <Text style={styles.specText}>⚡ {car.engine_hp} HP</Text>
+              <Ionicons name="speedometer-outline" size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
+              <Text style={styles.specText}>{car.engine_hp} HP</Text>
             </View>
           )}
           {car.metadata?.fuel_type && (
             <View style={styles.specPill}>
+              <Ionicons name="water-outline" size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
               <Text style={styles.specText} numberOfLines={1}>
-                ⛽ {car.metadata.fuel_type.split(' ')[0]}
+                {car.metadata.fuel_type.split(' ')[0]}
               </Text>
             </View>
           )}
           {car.metadata?.body_type && (
             <View style={styles.specPill}>
+              <Ionicons name="car-outline" size={11} color={colors.textSecondary} style={{ marginRight: 3 }} />
               <Text style={styles.specText} numberOfLines={1}>
-                🚘 {car.metadata.body_type.split(' ')[0]}
+                {car.metadata.body_type.split(' ')[0]}
               </Text>
             </View>
           )}
@@ -234,7 +246,7 @@ export const CarCard: React.FC<CarCardProps> = ({
               size="sm"
               style={styles.btnFlex}
               onPress={() => onPressAddToCart(car.id)}
-              icon={<Ionicons name="flash-outline" size={14} color={colors.textDark} />}
+              icon={<Ionicons name="flash-outline" size={12} color="#FFFFFF" />}
             />
           )}
           {onPressCompare && (
@@ -255,27 +267,27 @@ export const CarCard: React.FC<CarCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.cardBg,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     overflow: 'hidden',
     marginBottom: spacing.md,
     width: '100%',
-    ...shadows.md,
+    ...shadows.sm,
   },
   cardCompact: {
-    width: 270,
+    width: 250,
     marginRight: spacing.md,
     marginBottom: 0,
   },
   imageContainer: {
-    height: 160,
+    height: 145,
     width: '100%',
     backgroundColor: colors.surfaceElevated,
     position: 'relative',
   },
   imageContainerCompact: {
-    height: 135,
+    height: 125,
   },
   image: {
     width: '100%',
@@ -283,48 +295,51 @@ const styles = StyleSheet.create({
   },
   badgeTopLeft: {
     position: 'absolute',
-    top: spacing.sm,
-    left: spacing.sm,
+    top: 6,
+    left: 6,
   },
   saveBadgeTopRight: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 34,
-    height: 34,
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
     borderRadius: radii.full,
-    backgroundColor: 'rgba(11, 14, 20, 0.75)',
+    backgroundColor: 'rgba(9, 10, 12, 0.75)',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   content: {
-    padding: spacing.md,
+    padding: spacing.sm + 2,
   },
   carName: {
     color: colors.text,
-    fontSize: typography.sizes.base + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.sm + 1,
+    fontWeight: typography.weights.semibold,
   },
   yearSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
-    marginBottom: 6,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 1,
+    marginBottom: 4,
   },
   price: {
-    color: colors.primary,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.extrabold,
-    letterSpacing: -0.3,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
+    letterSpacing: -0.2,
+  },
+  installmentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    marginBottom: spacing.xs + 2,
   },
   installmentTeaser: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
-    marginBottom: spacing.sm,
-    fontWeight: typography.weights.medium,
+    color: colors.textMuted,
+    fontSize: typography.sizes['2xs'],
   },
   specRow: {
     flexDirection: 'row',
@@ -333,28 +348,30 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   specPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    paddingHorizontal: spacing.sm - 2,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: radii.xs,
   },
   specText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes['2xs'] + 1,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.medium,
   },
   reviewSnippet: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     fontStyle: 'italic',
-    marginBottom: spacing.md,
-    lineHeight: 17,
+    marginBottom: spacing.sm,
+    lineHeight: 15,
   },
   actionRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
     marginTop: spacing.xs,
   },
   btnFlex: {
@@ -365,18 +382,18 @@ const styles = StyleSheet.create({
   listCard: {
     flexDirection: 'row',
     backgroundColor: colors.cardBg,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.cardBorder,
     overflow: 'hidden',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm + 2,
     padding: spacing.sm,
     ...shadows.sm,
   },
   listImageContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: radii.md,
+    width: 110,
+    height: 110,
+    borderRadius: radii.sm,
     overflow: 'hidden',
     position: 'relative',
     backgroundColor: colors.surfaceElevated,
@@ -387,7 +404,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm + 2,
     justifyContent: 'space-between',
   },
   listHeaderRow: {
@@ -400,20 +417,26 @@ const styles = StyleSheet.create({
   },
   yearText: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
   },
   specChipsRow: {
     flexDirection: 'row',
     gap: spacing.xs,
-    marginVertical: 4,
+    marginVertical: 2,
   },
-  specChip: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+  specChipBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
-    paddingHorizontal: 6,
+    borderColor: colors.border,
+    borderWidth: 1,
+    paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: radii.xs,
+  },
+  specChipText: {
+    color: colors.textSecondary,
+    fontSize: typography.sizes['2xs'],
   },
   listActionRow: {
     flexDirection: 'row',
@@ -424,3 +447,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+

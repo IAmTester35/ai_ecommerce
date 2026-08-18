@@ -56,9 +56,9 @@ export default function CatalogScreen() {
   const handleAddToCart = async (carId: string) => {
     try {
       await addToCart(user?.id, carId, 1);
-      Alert.alert('Thành Công! 🛒', 'Đã thêm xe vào giỏ hàng đặt cọc.', [
+      Alert.alert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
         { text: 'Tiếp tục xem', style: 'cancel' },
-        { text: 'Đến giỏ hàng', onPress: () => router.push('/cart' as any) },
+        { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
       ]);
     } catch {
       Alert.alert('Lỗi', 'Không thể thêm vào giỏ hàng.');
@@ -94,7 +94,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Hãng: {filters.make}</Text>
-            <Ionicons name="close" size={12} color={colors.primary} />
+            <Ionicons name="close" size={11} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         {filters.bodyType && filters.bodyType !== 'all' && (
@@ -106,7 +106,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Kiểu dáng: {filters.bodyType}</Text>
-            <Ionicons name="close" size={12} color={colors.primary} />
+            <Ionicons name="close" size={11} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         {filters.fuelType && filters.fuelType !== 'all' && (
@@ -118,7 +118,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Nhiên liệu: {filters.fuelType}</Text>
-            <Ionicons name="close" size={12} color={colors.primary} />
+            <Ionicons name="close" size={11} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         {(filters.minPrice || filters.maxPrice) && (
@@ -130,7 +130,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Khoảng giá</Text>
-            <Ionicons name="close" size={12} color={colors.primary} />
+            <Ionicons name="close" size={11} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -141,7 +141,7 @@ export default function CatalogScreen() {
             applyFilters();
           }}
         >
-          <Text style={styles.clearAllText}>Xóa tất cả lọc</Text>
+          <Text style={styles.clearAllText}>Xóa tất cả</Text>
         </TouchableOpacity>
       </View>
     );
@@ -151,20 +151,20 @@ export default function CatalogScreen() {
     <View style={styles.screen}>
       {/* Top Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Showroom AutoMatch</Text>
+        <Text style={styles.headerTitle}>Kho Xe Showroom</Text>
         <Text style={styles.headerSubtitle}>
-          Kho ô tô cao cấp chính hãng từ Supabase Database
+          Bộ sưu tập ô tô cao cấp chính hãng
         </Text>
 
         {/* Search Bar & Filter trigger */}
         <SearchBar
           value={searchQuery}
           onChangeText={handleSearchChange}
-          placeholder="Tìm kiếm dòng xe, hãng, công suất..."
+          placeholder="Tìm dòng xe, hãng, phân khúc..."
           onFilterPress={() => setIsFilterModalVisible(true)}
           activeFilterCount={activeFilterCount}
           onAiPress={() => router.push('/(tabs)/ai-chat' as any)}
-          style={{ marginTop: spacing.md }}
+          style={{ marginTop: spacing.sm + 2 }}
         />
 
         {/* Active Filter Tags */}
@@ -187,8 +187,8 @@ export default function CatalogScreen() {
             >
               <Ionicons
                 name="grid"
-                size={16}
-                color={layoutMode === 'grid' ? colors.textDark : colors.textSecondary}
+                size={14}
+                color={layoutMode === 'grid' ? '#FFFFFF' : colors.textMuted}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -201,8 +201,8 @@ export default function CatalogScreen() {
             >
               <Ionicons
                 name="list"
-                size={16}
-                color={layoutMode === 'list' ? colors.textDark : colors.textSecondary}
+                size={14}
+                color={layoutMode === 'list' ? '#FFFFFF' : colors.textMuted}
               />
             </TouchableOpacity>
           </View>
@@ -212,15 +212,15 @@ export default function CatalogScreen() {
       {/* Car List */}
       {isLoading ? (
         <View style={styles.centerBox}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Đang tải kho xe Showroom...</Text>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={styles.loadingText}>Đang tải danh sách xe...</Text>
         </View>
       ) : filteredCars.length === 0 ? (
         <EmptyState
           icon="search-outline"
-          title="Không Tìm Thấy Mẫu Xe Phù Hợp"
-          description="Hãy thử nới lỏng các tiêu chí lọc giá, hãng hoặc hỏi trợ lý AI để được gợi ý tốt nhất."
-          actionTitle="Xóa Tất Cả Bộ Lọc"
+          title="Không tìm thấy mẫu xe phù hợp"
+          description="Hãy thử nới lỏng các tiêu chí lọc hoặc trao đổi với trợ lý AI để nhận đề xuất."
+          actionTitle="Xóa bộ lọc"
           onAction={() => {
             resetFilters();
             setSearchQuery('');
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 52,
+    paddingTop: 48,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
@@ -277,73 +277,73 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes['2xl'],
-    fontWeight: typography.weights.extrabold,
-    letterSpacing: -0.3,
+    fontSize: typography.sizes.xl,
+    fontWeight: typography.weights.bold,
+    letterSpacing: -0.2,
   },
   headerSubtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: typography.sizes['2xs'] + 1,
+    marginTop: 1,
   },
   activeFiltersRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs + 2,
   },
   filterTag: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primaryMuted,
-    borderColor: 'rgba(0, 229, 255, 0.3)',
+    borderColor: 'rgba(59, 130, 246, 0.25)',
     borderWidth: 1,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: radii.xs,
-    gap: 4,
+    gap: 3,
   },
   filterTagText: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.medium,
   },
   clearAllTag: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     justifyContent: 'center',
   },
   clearAllText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.semibold,
   },
   toolBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.md,
+    marginTop: spacing.sm + 2,
   },
   resultCount: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes['2xs'] + 1,
   },
   countBold: {
-    color: colors.primary,
+    color: colors.primaryHover,
     fontWeight: typography.weights.bold,
   },
   viewToggleGroup: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.sm,
+    borderRadius: radii.xs,
     borderWidth: 1,
     borderColor: colors.border,
     padding: 2,
   },
   viewToggleBtn: {
-    width: 32,
-    height: 28,
-    borderRadius: radii.xs,
+    width: 28,
+    height: 24,
+    borderRadius: radii.xs - 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -352,16 +352,17 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 32,
   },
   centerBox: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
 });
+

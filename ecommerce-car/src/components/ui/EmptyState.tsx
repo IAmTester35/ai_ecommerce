@@ -24,7 +24,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.iconCircle}>
-        <Ionicons name={icon} size={44} color={colors.textMuted} />
+        <Ionicons name={icon} size={32} color={colors.textMuted} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {description && <Text style={styles.description}>{description}</Text>}
@@ -45,35 +45,37 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing['2xl'],
+    paddingHorizontal: spacing.xl,
   },
   iconCircle: {
-    width: 80,
-    height: 80,
+    width: 64,
+    height: 64,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
     textAlign: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   description: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: spacing.xl,
+    lineHeight: 18,
+    marginBottom: spacing.lg,
+    maxWidth: 280,
   },
   actionBtn: {
-    minWidth: 160,
+    minWidth: 140,
   },
 });
+

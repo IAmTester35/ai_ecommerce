@@ -20,23 +20,23 @@ interface CarFilterModalProps {
 }
 
 const BRANDS = ['all', 'Porsche', 'Mercedes-Benz', 'BMW', 'Lexus', 'Audi', 'VinFast', 'Toyota', 'Honda', 'Mazda'];
-const BODY_TYPES = ['all', 'Coupe / Thể Thao', 'SUV Đô Thị', 'Sedan Sang Trọng', 'Xe Điện EV', 'Xe Gia Đình 7 chỗ'];
+const BODY_TYPES = ['all', 'Coupe / Thể thao', 'SUV Đô thị', 'Sedan Sang trọng', 'Xe Điện EV', '7 chỗ'];
 const FUEL_TYPES = ['all', 'Xăng', 'Điện', 'Hybrid'];
 
 const PRICE_RANGES = [
   { label: 'Tất cả mức giá', min: undefined, max: undefined },
-  { label: 'Dưới 1 tỷ VNĐ', min: 0, max: 1000000000 },
-  { label: '1 - 2 tỷ VNĐ', min: 1000000000, max: 2000000000 },
-  { label: '2 - 5 tỷ VNĐ', min: 2000000000, max: 5000000000 },
-  { label: 'Trên 5 tỷ VNĐ', min: 5000000000, max: 20000000000 },
+  { label: 'Dưới 1 tỷ', min: 0, max: 1000000000 },
+  { label: '1 - 2 tỷ', min: 1000000000, max: 2000000000 },
+  { label: '2 - 5 tỷ', min: 2000000000, max: 5000000000 },
+  { label: 'Trên 5 tỷ', min: 5000000000, max: 20000000000 },
 ];
 
 const SORT_OPTIONS: { id: CarSortOption; label: string }[] = [
-  { id: 'recommended', label: 'Gợi ý từ AI (AutoMatch)' },
-  { id: 'price_asc', label: 'Giá thấp đến cao' },
-  { id: 'price_desc', label: 'Giá cao đến thấp' },
-  { id: 'hp_desc', label: 'Công suất mã lực (HP) cao nhất' },
-  { id: 'year_desc', label: 'Đời xe mới nhất' },
+  { id: 'recommended', label: 'Gợi ý từ AI' },
+  { id: 'price_asc', label: 'Giá tăng dần' },
+  { id: 'price_desc', label: 'Giá giảm dần' },
+  { id: 'hp_desc', label: 'Công suất (HP) cao' },
+  { id: 'year_desc', label: 'Đời xe mới' },
 ];
 
 export const CarFilterModal: React.FC<CarFilterModalProps> = ({
@@ -88,12 +88,12 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
     <ModalSheet
       visible={visible}
       onClose={onClose}
-      title="Bộ Lọc Tìm Kiếm Xe"
-      subtitle="Tùy chỉnh tiêu chí theo kho xe AutoMatch Showroom"
+      title="Bộ Lọc Tìm Kiếm"
+      subtitle="Tùy chỉnh tiêu chí Showroom"
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         {/* Sort Options */}
-        <Text style={styles.sectionHeader}>Sắp Xếp Kết Quả</Text>
+        <Text style={styles.sectionHeader}>Sắp xếp</Text>
         <View style={styles.chipsContainer}>
           {SORT_OPTIONS.map((opt) => (
             <TouchableOpacity
@@ -118,7 +118,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
         </View>
 
         {/* Brand/Make */}
-        <Text style={styles.sectionHeader}>Hãng Xe</Text>
+        <Text style={styles.sectionHeader}>Hãng xe</Text>
         <View style={styles.chipsContainer}>
           {BRANDS.map((b) => (
             <TouchableOpacity
@@ -143,7 +143,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
         </View>
 
         {/* Body Type */}
-        <Text style={styles.sectionHeader}>Kiểu Dáng Xe</Text>
+        <Text style={styles.sectionHeader}>Kiểu dáng</Text>
         <View style={styles.chipsContainer}>
           {BODY_TYPES.map((bt) => (
             <TouchableOpacity
@@ -161,14 +161,14 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
                   selectedBodyType === bt ? styles.chipTextActive : styles.chipTextInactive,
                 ]}
               >
-                {bt === 'all' ? 'Tất cả kiểu dáng' : bt}
+                {bt === 'all' ? 'Tất cả' : bt}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Price Range */}
-        <Text style={styles.sectionHeader}>Khoảng Giá</Text>
+        <Text style={styles.sectionHeader}>Khoảng giá</Text>
         <View style={styles.chipsContainer}>
           {PRICE_RANGES.map((pr, idx) => (
             <TouchableOpacity
@@ -193,7 +193,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
         </View>
 
         {/* Fuel Type */}
-        <Text style={styles.sectionHeader}>Loại Nhiên Liệu / Động Cơ</Text>
+        <Text style={styles.sectionHeader}>Nhiên liệu / Động cơ</Text>
         <View style={styles.chipsContainer}>
           {FUEL_TYPES.map((ft) => (
             <TouchableOpacity
@@ -226,7 +226,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
           style={styles.resetBtn}
         />
         <Button
-          title="Áp Dụng Bộ Lọc"
+          title="Áp Dụng"
           variant="primary"
           onPress={handleApply}
           style={styles.applyBtn}
@@ -238,29 +238,29 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 460,
+    maxHeight: 440,
   },
   sectionHeader: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs + 2,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
+    marginTop: spacing.sm + 2,
+    marginBottom: 6,
   },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.xs + 2,
-    marginBottom: spacing.xs,
+    gap: spacing.xs,
+    marginBottom: 4,
   },
   chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
-    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+    borderRadius: radii.xs,
     borderWidth: 1,
   },
   chipInactive: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
   },
   chipActive: {
@@ -268,20 +268,20 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
   },
   chipText: {
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   chipTextInactive: {
     color: colors.textSecondary,
   },
   chipTextActive: {
-    color: colors.primary,
+    color: colors.primaryHover,
   },
   footer: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
+    gap: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
@@ -292,3 +292,4 @@ const styles = StyleSheet.create({
     flex: 2,
   },
 });
+

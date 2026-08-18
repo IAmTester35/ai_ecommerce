@@ -15,12 +15,12 @@ import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { ModalSheet } from '../../components/ui/ModalSheet';
 import { formatVndPrice } from '../../components/ui/PriceTag';
 import { CarResponse } from '../../types';
+import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export default function CompareScreen() {
   const { topCars, fetchTopCars, isLoading } = useCarStore();
@@ -44,7 +44,7 @@ export default function CompareScreen() {
     return activeComparedIds
       .map((id) => topCars.find((c) => c.id === id))
       .filter(Boolean)
-      .map((c, idx) => ({
+      .map((c) => ({
         id: c!.id,
         make: c!.make,
         model: c!.model,
@@ -58,7 +58,7 @@ export default function CompareScreen() {
 
   const removeCar = (carId: string) => {
     if (comparedCars.length <= 2) {
-      Alert.alert('Thông báo', 'Cần ít nhất 2 xe để duy trì bảng so sánh đối chiếu.');
+      Alert.alert('Thông báo', 'Cần tối thiểu 2 xe để hiển thị bảng so sánh.');
       return;
     }
     setSelectedIds(activeComparedIds.filter((id) => id !== carId));
@@ -70,7 +70,7 @@ export default function CompareScreen() {
       return;
     }
     if (activeComparedIds.length >= 4) {
-      Alert.alert('Giới hạn', 'Bạn chỉ có thể so sánh tối đa 4 xe cùng lúc.');
+      Alert.alert('Giới hạn', 'Bạn có thể so sánh tối đa 4 xe cùng lúc.');
       return;
     }
     setSelectedIds([...activeComparedIds, carId]);
@@ -80,40 +80,42 @@ export default function CompareScreen() {
   const handleAddToCart = async (carId: string) => {
     try {
       await addToCart(user?.id, carId, 1);
-      Alert.alert('Thành Công! 🛒', 'Đã thêm xe vào giỏ hàng đặt cọc.', [
+      Alert.alert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
         { text: 'Xem tiếp', style: 'cancel' },
-        { text: 'Đến giỏ hàng', onPress: () => router.push('/cart' as any) },
+        { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
       ]);
     } catch {
       Alert.alert('Lỗi', 'Không thể thêm vào giỏ hàng.');
     }
   };
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
+  const fallbackImage = FALLBACK_CAR_URL;
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header Title */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>⚖️ So Sánh Thông Số Đối Chiếu</Text>
+          <View style={styles.titleLeft}>
+            <Ionicons name="git-compare-outline" size={18} color={colors.primaryHover} style={{ marginRight: 6 }} />
+            <Text style={styles.title}>So Sánh Thông Số Xe</Text>
+          </View>
           <TouchableOpacity
             activeOpacity={0.8}
             style={styles.addCarBtn}
             onPress={() => setIsAddModalVisible(true)}
           >
-            <Ionicons name="add" size={16} color={colors.textDark} />
+            <Ionicons name="add" size={15} color="#FFFFFF" />
             <Text style={styles.addCarBtnText}>Thêm xe</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.subtitle}>
-          Phân tích kỹ thuật chi tiết từ cơ sở dữ liệu showroom AutoMatch
+          Đối chiếu trực tiếp thông số kỹ thuật các dòng xe
         </Text>
       </View>
 
       {/* Comparison Options Bar */}
-      <Card style={styles.aiSummaryCard}>
+      <Card style={styles.aiSummaryCard} padding={spacing.sm}>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setHighlightDifferences(!highlightDifferences)}
@@ -121,15 +123,15 @@ export default function CompareScreen() {
         >
           <Ionicons
             name={highlightDifferences ? 'checkbox' : 'square-outline'}
-            size={18}
-            color={colors.primary}
+            size={16}
+            color={colors.primaryHover}
           />
-          <Text style={styles.toggleDiffText}>Làm nổi bật các thông số khác biệt giữa các dòng xe</Text>
+          <Text style={styles.toggleDiffText}>Làm nổi bật thông số khác biệt giữa các xe</Text>
         </TouchableOpacity>
       </Card>
 
       {isLoading ? (
-        <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 30 }} />
+        <ActivityIndicator color={colors.primary} size="small" style={{ marginVertical: 30 }} />
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableScroll}>
           <View style={styles.table}>
@@ -144,7 +146,7 @@ export default function CompareScreen() {
                     style={styles.closeBtn}
                     onPress={() => removeCar(car.id)}
                   >
-                    <Ionicons name="close-circle" size={20} color={colors.danger} />
+                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -161,7 +163,7 @@ export default function CompareScreen() {
                     </Text>
                   </TouchableOpacity>
 
-                    <Text style={styles.metricValueSmall}>Năm {car.year}</Text>
+                  <Text style={styles.metricValueSmall}>Năm {car.year}</Text>
 
                   <Button
                     title="Đặt cọc"
@@ -291,10 +293,10 @@ export default function CompareScreen() {
       <ModalSheet
         visible={isAddModalVisible}
         onClose={() => setIsAddModalVisible(false)}
-        title="Thêm Xe Vào Bảng So Sánh"
-        subtitle="Chọn mẫu xe từ cơ sở dữ liệu Supabase"
+        title="Thêm Xe So Sánh"
+        subtitle="Chọn mẫu xe từ kho showroom"
       >
-        <ScrollView style={{ maxHeight: 400 }}>
+        <ScrollView style={{ maxHeight: 380 }}>
           {topCars
             .filter((c) => !activeComparedIds.includes(c.id))
             .map((c) => (
@@ -309,13 +311,13 @@ export default function CompareScreen() {
                   <Text style={styles.addCarTitle}>{c.make} {c.model} ({c.year})</Text>
                   <Text style={styles.addCarPrice}>{formatVndPrice(c.price)}</Text>
                 </View>
-                <Ionicons name="add-circle" size={24} color={colors.primary} />
+                <Ionicons name="add-circle" size={20} color={colors.primaryHover} />
               </TouchableOpacity>
             ))}
         </ScrollView>
       </ModalSheet>
 
-      <View style={{ height: 40 }} />
+      <View style={{ height: 32 }} />
     </ScrollView>
   );
 }
@@ -327,79 +329,63 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   header: {
-    marginTop: 52,
-    marginBottom: spacing.md,
+    marginTop: 48,
+    marginBottom: spacing.sm + 2,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  titleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.extrabold,
-    letterSpacing: -0.3,
+    fontSize: typography.sizes.lg,
+    fontWeight: typography.weights.bold,
+    letterSpacing: -0.2,
   },
   addCarBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: radii.sm,
-    gap: 4,
+    gap: 3,
   },
   addCarBtnText: {
-    color: colors.textDark,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    color: '#FFFFFF',
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.semibold,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    marginTop: 4,
+    fontSize: typography.sizes['2xs'] + 1,
+    marginTop: 2,
   },
   aiSummaryCard: {
     marginBottom: spacing.md,
     ...shadows.sm,
   },
-  aiSummaryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs + 2,
-    marginBottom: spacing.xs,
-  },
-  aiSummaryTitle: {
-    color: colors.primary,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-  },
-  aiSummaryText: {
-    color: colors.text,
-    fontSize: typography.sizes.xs + 1,
-    lineHeight: 18,
-  },
   toggleDiffRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs + 2,
-    marginTop: spacing.sm,
-    paddingTop: spacing.xs + 2,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    gap: 6,
   },
   toggleDiffText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   tableScroll: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   table: {
     backgroundColor: colors.surface,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden',
@@ -407,107 +393,109 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
   },
   tableRowAlt: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm + 2,
     backgroundColor: colors.surfaceElevated,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: colors.borderLight,
   },
   diffRow: {
-    backgroundColor: 'rgba(0, 229, 255, 0.05)',
+    backgroundColor: 'rgba(59, 130, 246, 0.06)',
   },
   labelCol: {
-    width: 115,
-    paddingHorizontal: spacing.md,
+    width: 105,
+    paddingHorizontal: spacing.sm + 2,
   },
   tableHeaderLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.semibold,
   },
   carCol: {
-    width: 155,
+    width: 140,
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs + 2,
     position: 'relative',
   },
   closeBtn: {
     position: 'absolute',
-    top: -6,
-    right: 6,
+    top: -4,
+    right: 4,
     zIndex: 10,
   },
   thumbImage: {
-    width: 120,
-    height: 70,
-    borderRadius: radii.md,
-    marginBottom: 6,
+    width: 110,
+    height: 64,
+    borderRadius: radii.sm,
+    marginBottom: 4,
   },
   carName: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
     textAlign: 'center',
-    height: 34,
+    height: 30,
   },
   colActionBtn: {
     width: '100%',
-    height: 32,
+    height: 30,
+    marginTop: 4,
   },
   metricLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
   },
   metricValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
   },
   metricValueHighlight: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.bold,
   },
   metricValueSmall: {
     color: colors.text,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'] + 1,
     textAlign: 'center',
   },
   addCarItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.sm,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     marginBottom: spacing.xs + 2,
   },
   addCarThumb: {
-    width: 60,
-    height: 40,
+    width: 54,
+    height: 36,
     borderRadius: radii.xs,
-    marginRight: spacing.md,
+    marginRight: spacing.sm + 2,
   },
   addCarInfo: {
     flex: 1,
   },
   addCarTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   addCarPrice: {
-    color: colors.primary,
+    color: colors.primaryHover,
     fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    marginTop: 2,
+    fontWeight: typography.weights.bold,
+    marginTop: 1,
   },
 });
+

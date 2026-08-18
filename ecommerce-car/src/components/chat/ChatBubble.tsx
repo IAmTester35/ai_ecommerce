@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { UIChatMessage } from '../../types/ui';
 import { CarResponse } from '../../types';
@@ -25,7 +26,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperAssistant]}>
       {!isUser && (
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>AI</Text>
+          <Ionicons name="sparkles" size={14} color="#FFFFFF" />
         </View>
       )}
 
@@ -40,7 +41,10 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
         {message.suggestedCars && message.suggestedCars.length > 0 && (
           <View style={styles.generativeUiContainer}>
-            <Text style={styles.suggestedTitle}>🚘 Mẫu xe phù hợp nhất từ Showroom:</Text>
+            <View style={styles.suggestedHeaderRow}>
+              <Ionicons name="car-sport-outline" size={13} color={colors.primaryHover} />
+              <Text style={styles.suggestedTitle}>Mẫu xe đề xuất:</Text>
+            </View>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -67,7 +71,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 const styles = StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
-    marginVertical: 6,
+    marginVertical: 4,
     paddingHorizontal: spacing.md,
     alignItems: 'flex-start',
   },
@@ -78,25 +82,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   avatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: radii.full,
     backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 6,
     marginTop: 2,
-  },
-  avatarText: {
-    color: '#FFF',
-    fontSize: 11,
-    fontWeight: typography.weights.extrabold,
   },
   bubble: {
     maxWidth: '85%',
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md - 2,
+    paddingVertical: spacing.sm,
     ...shadows.sm,
   },
   bubbleUser: {
@@ -110,29 +109,35 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radii.xs,
   },
   text: {
-    fontSize: typography.sizes.base,
-    lineHeight: 20,
+    fontSize: typography.sizes.sm,
+    lineHeight: 18,
   },
   textUser: {
-    color: colors.textDark,
-    fontWeight: typography.weights.semibold,
+    color: '#FFFFFF',
+    fontWeight: typography.weights.medium,
   },
   textAssistant: {
     color: colors.text,
   },
   generativeUiContainer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.xs + 2,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
+  suggestedHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
   suggestedTitle: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.xs + 2,
+    color: colors.primaryHover,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.semibold,
   },
   carCarousel: {
     marginTop: 4,
   },
 });
+

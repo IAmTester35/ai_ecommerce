@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, typography } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { UIChatMessage } from '../../types/ui';
 import { historyService } from '../../services/historyService';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -42,7 +43,7 @@ export default function AIChatScreen() {
       id: 'welcome-msg',
       role: 'assistant',
       content:
-        'Xin chào! Tôi là AutoMatch AI — Trợ lý tư vấn ô tô thông minh kết nối hệ thống RAG & Supabase. Bạn có thể mô tả nhu cầu, ví dụ: "Xe SUV 7 chỗ cách âm tốt giá 1.5 tỷ", "Xe thể thao 2 cửa",...',
+        'Xin chào! Tôi là trợ lý AI AutoMatch. Bạn có thể nêu ngân sách, dòng xe hoặc thông số mong muốn để nhận tư vấn chính xác.',
       timestamp: '09:00',
     },
   ]);
@@ -120,7 +121,7 @@ export default function AIChatScreen() {
             content:
               assistantText.trim() ||
               searchData?.ai_message ||
-              `Dựa trên yêu cầu "${query}", AutoMatch AI đã tìm kiếm trong kho xe và gợi ý các lựa chọn phù hợp nhất:`,
+              `Dựa trên yêu cầu "${query}", AutoMatch đã đối chiếu cơ sở dữ liệu và đề xuất các mẫu xe phù hợp:`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             conflictDetected: searchData?.conflict_detected || false,
             relaxedTerms: searchData?.relaxed_terms || undefined,
@@ -137,7 +138,7 @@ export default function AIChatScreen() {
           {
             id: `err-${Math.random().toString(36).substring(2, 9)}`,
             role: 'assistant',
-            content: `Hệ thống AutoMatch AI đang kết nối. Bạn có thể xem toàn bộ kho xe tại mục Showroom.`,
+            content: `Hệ thống đang kết nối dữ liệu. Bạn có thể khám phá trực tiếp tại mục Kho xe.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);
@@ -173,8 +174,8 @@ export default function AIChatScreen() {
       keyboardVerticalOffset={90}
     >
       <View style={styles.headerInfo}>
-        <Ionicons name="sparkles" size={16} color={colors.primary} />
-        <Text style={styles.headerText}>AutoMatch RAG Engine: Online (Supabase & FastAPI)</Text>
+        <View style={styles.liveDot} />
+        <Text style={styles.headerText}>AutoMatch RAG Intelligence • Trực Tuyến</Text>
       </View>
 
       <FlatList
@@ -192,7 +193,8 @@ export default function AIChatScreen() {
         ListFooterComponent={
           isTyping ? (
             <View style={styles.typingIndicator}>
-              <Text style={styles.typingText}>🤖 AutoMatch AI đang truy xuất dữ liệu & suy luận...</Text>
+              <ActivityIndicator size="small" color={colors.primaryHover} style={{ marginRight: 6 }} />
+              <Text style={styles.typingText}>AI đang phân tích & đối chiếu thông số...</Text>
             </View>
           ) : null
         }
@@ -206,7 +208,7 @@ export default function AIChatScreen() {
       <View style={styles.inputBar}>
         <TextInput
           style={styles.textInput}
-          placeholder="Mô tả nhu cầu mua xe của bạn..."
+          placeholder="Nhập yêu cầu tìm xe của bạn..."
           placeholderTextColor={colors.textMuted}
           value={input}
           onChangeText={setInput}
@@ -219,7 +221,7 @@ export default function AIChatScreen() {
           disabled={!input.trim()}
           onPress={() => handleSendMessage()}
         >
-          <Ionicons name="send" size={18} color={input.trim() ? colors.textDark : colors.textMuted} />
+          <Ionicons name="arrow-up" size={18} color={input.trim() ? '#FFFFFF' : colors.textMuted} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -236,58 +238,71 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 6,
+    paddingVertical: 5,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.success,
+  },
   headerText: {
-    color: colors.primary,
-    fontSize: 11,
-    fontWeight: typography.weights.bold,
+    color: colors.textSecondary,
+    fontSize: 10,
+    fontWeight: typography.weights.medium,
+    letterSpacing: 0.2,
   },
   chatList: {
-    paddingVertical: 12,
+    paddingVertical: spacing.sm,
   },
   typingIndicator: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs + 2,
   },
   typingText: {
     color: colors.textSecondary,
-    fontSize: 12,
+    fontSize: typography.sizes['2xs'] + 1,
     fontStyle: 'italic',
   },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 3,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    gap: 8,
+    gap: spacing.xs + 2,
   },
   textInput: {
     flex: 1,
-    height: 42,
+    height: 38,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.full,
-    paddingHorizontal: 16,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
     color: colors.text,
-    fontSize: 14,
+    fontSize: typography.sizes.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    paddingVertical: 0,
   },
   sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.full,
+    width: 38,
+    height: 38,
+    borderRadius: radii.sm,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sendBtnDisabled: {
     backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });
+

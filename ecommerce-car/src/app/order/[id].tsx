@@ -20,6 +20,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { formatVndPrice } from '../../components/ui/PriceTag';
 import { OrderStatus, PaymentStatus } from '../../types';
+import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export default function OrderDetailScreen() {
   const { id, app_trans_id } = useLocalSearchParams<{ id: string; app_trans_id?: string }>();
@@ -48,7 +49,7 @@ export default function OrderDetailScreen() {
         await fetchOrderDetails(id);
       }
       Alert.alert(
-        res.return_code === 1 ? 'Thành Công' : 'Trạng Thái ZaloPay',
+        res.return_code === 1 ? 'Thành công' : 'Trạng thái ZaloPay',
         `Phản hồi: ${res.return_message}`
       );
     } catch (err: any) {
@@ -61,37 +62,36 @@ export default function OrderDetailScreen() {
   const getOrderStatusBadge = (status: OrderStatus) => {
     switch (status) {
       case 'completed':
-        return <Badge label="Đã hoàn tất" variant="success" size="sm" dot />;
+        return <Badge label="Đã hoàn tất" variant="success" size="xs" dot />;
       case 'processing':
-        return <Badge label="Đang xử lý" variant="primary" size="sm" dot />;
+        return <Badge label="Đang xử lý" variant="primary" size="xs" dot />;
       case 'cancelled':
-        return <Badge label="Đã hủy" variant="danger" size="sm" dot />;
+        return <Badge label="Đã hủy" variant="danger" size="xs" dot />;
       case 'pending':
       default:
-        return <Badge label="Chờ xác nhận" variant="warning" size="sm" dot />;
+        return <Badge label="Chờ xác nhận" variant="warning" size="xs" dot />;
     }
   };
 
   const getPaymentStatusBadge = (paymentStatus: PaymentStatus) => {
     switch (paymentStatus) {
       case 'paid':
-        return <Badge label="Đã thanh toán" variant="success" size="sm" dot />;
+        return <Badge label="Đã thanh toán" variant="success" size="xs" dot />;
       case 'refunded':
-        return <Badge label="Đã hoàn tiền" variant="danger" size="sm" dot />;
+        return <Badge label="Đã hoàn tiền" variant="danger" size="xs" dot />;
       case 'unpaid':
       default:
-        return <Badge label="Chưa thanh toán" variant="warning" size="sm" dot />;
+        return <Badge label="Chờ thanh toán" variant="warning" size="xs" dot />;
     }
   };
 
-  const fallbackImage =
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?q=80&w=800';
+  const fallbackImage = FALLBACK_CAR_URL;
 
   if (isLoading || !selectedOrder) {
     return (
       <View style={[styles.screen, styles.centerBox]}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Đang tải chi tiết đơn hàng từ Supabase...</Text>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={styles.loadingText}>Đang tải chi tiết đơn hàng...</Text>
       </View>
     );
   }
@@ -117,7 +117,7 @@ export default function OrderDetailScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={20} color={colors.text} />
+          <Ionicons name="arrow-back" size={18} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>
@@ -130,12 +130,12 @@ export default function OrderDetailScreen() {
 
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Order Overview Summary Card */}
-        <Card style={styles.overviewCard}>
-          <Text style={styles.cardHeaderTitle}>Thông Tin Đơn Hàng</Text>
+        <Card style={styles.overviewCard} padding={spacing.md}>
+          <Text style={styles.cardHeaderTitle}>Thông tin đơn hàng</Text>
 
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Mã đơn hàng:</Text>
-            <Text style={styles.infoValueCode}>{selectedOrder.id}</Text>
+            <Text style={styles.infoValueCode} numberOfLines={1}>{selectedOrder.id}</Text>
           </View>
 
           <View style={styles.infoRow}>
@@ -144,49 +144,49 @@ export default function OrderDetailScreen() {
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Trạng thái thanh toán:</Text>
+            <Text style={styles.infoLabel}>Thanh toán:</Text>
             {getPaymentStatusBadge(selectedOrder.payment_status)}
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Phương thức thanh toán:</Text>
+            <Text style={styles.infoLabel}>Hình thức:</Text>
             <Text style={styles.infoValue}>
               {selectedOrder.payment_method === 'zalopay'
-                ? 'Cổng thanh toán ZaloPay'
-                : selectedOrder.payment_method || 'Chưa xác định'}
+                ? 'ZaloPay Gateway'
+                : selectedOrder.payment_method || 'Trực tiếp tại showroom'}
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Thời gian cập nhật:</Text>
+            <Text style={styles.infoLabel}>Cập nhật lần cuối:</Text>
             <Text style={styles.infoValue}>{updatedDate}</Text>
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Tổng tiền đơn hàng:</Text>
+            <Text style={styles.totalLabel}>Tổng tiền cọc:</Text>
             <Text style={styles.totalAmount}>{formatVndPrice(selectedOrder.total_amount)}</Text>
           </View>
         </Card>
 
         {/* ZaloPay Payment Status Card (if trans id available) */}
         {app_trans_id && (
-          <Card style={styles.paymentCard}>
+          <Card style={styles.paymentCard} padding={spacing.md}>
             <View style={styles.paymentHeaderRow}>
               <View style={styles.paymentIconBox}>
-                <Ionicons name="wallet-outline" size={20} color="#0088FF" />
+                <Ionicons name="wallet-outline" size={18} color="#0088FF" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.paymentTitle}>Cổng Thanh Toán ZaloPay</Text>
-                <Text style={styles.paymentSubtitle}>Mã giao dịch: {app_trans_id}</Text>
+                <Text style={styles.paymentSubtitle}>Mã GD: {app_trans_id}</Text>
               </View>
               {getPaymentStatusBadge(selectedOrder.payment_status)}
             </View>
 
             {statusResult && (
               <View style={styles.statusResultBox}>
-                <Text style={styles.statusResultTitle}>Kết Quả Kiểm Tra:</Text>
+                <Text style={styles.statusResultTitle}>Kết quả giao dịch:</Text>
                 <Text style={styles.statusResultText}>• {statusResult.return_message}</Text>
                 {statusResult.zp_trans_id && (
                   <Text style={styles.statusResultText}>• Mã ZaloPay: {statusResult.zp_trans_id}</Text>
@@ -195,12 +195,12 @@ export default function OrderDetailScreen() {
             )}
 
             <Button
-              title={checkingPayment ? 'Đang Kiểm Tra...' : 'Cập Nhật Trạng Thái ZaloPay'}
+              title={checkingPayment ? 'Đang kiểm tra...' : 'Cập nhật trạng thái ZaloPay'}
               variant="outline"
               size="sm"
               onPress={handleCheckPaymentStatus}
               loading={checkingPayment || isProcessing}
-              icon={<Ionicons name="refresh" size={14} color={colors.primary} />}
+              icon={<Ionicons name="refresh" size={13} color={colors.primaryHover} />}
               style={{ marginTop: spacing.sm }}
             />
           </Card>
@@ -208,10 +208,10 @@ export default function OrderDetailScreen() {
 
         {/* Ordered Car Items */}
         <Text style={styles.sectionTitle}>
-          Danh Sách Xe ({selectedOrder.order_items?.length || 0})
+          Danh sách xe ({selectedOrder.order_items?.length || 0})
         </Text>
         {selectedOrder.order_items?.map((item) => (
-          <Card key={item.id} style={styles.itemCard}>
+          <Card key={item.id} style={styles.itemCard} padding={spacing.sm}>
             <Image
               source={{ uri: item.car?.image_url || fallbackImage }}
               style={styles.itemThumb}
@@ -237,35 +237,37 @@ export default function OrderDetailScreen() {
             onPress={() => Linking.openURL(selectedOrder.contract_url!)}
           >
             <View style={styles.contractIconCircle}>
-              <Ionicons name="document-text" size={22} color={colors.primary} />
+              <Ionicons name="document-text-outline" size={18} color={colors.primaryHover} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.contractTitle}>Hợp Đồng Điện Tử</Text>
               <Text style={styles.contractSub}>
-                Nhấp để tải file hợp đồng đính kèm đơn hàng
+                Tải file hợp đồng điện tử đính kèm
               </Text>
             </View>
-            <Ionicons name="download-outline" size={20} color={colors.primary} />
+            <Ionicons name="download-outline" size={18} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
 
         {/* Bottom Actions */}
         <View style={styles.bottomActions}>
           <Button
-            title="Về Danh Sách Đơn Hàng"
+            title="Danh sách đơn"
             variant="outline"
+            size="md"
             onPress={() => router.push('/orders' as any)}
             style={{ flex: 1 }}
           />
           <Button
-            title="Khám Phá Thêm Xe"
+            title="Khám phá xe"
             variant="primary"
+            size="md"
             onPress={() => router.push('/(tabs)/catalog' as any)}
             style={{ flex: 1 }}
           />
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: 32 }} />
       </ScrollView>
     </View>
   );
@@ -279,39 +281,41 @@ const styles = StyleSheet.create({
   centerBox: {
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 52,
+    paddingTop: 48,
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm + 2,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    gap: spacing.md,
+    gap: spacing.sm + 2,
   },
   backBtn: {
-    width: 36,
-    height: 36,
+    width: 34,
+    height: 34,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
+    borderColor: colors.border,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.base,
+    fontWeight: typography.weights.semibold,
   },
   headerSubtitle: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     marginTop: 1,
   },
   container: {
@@ -320,22 +324,21 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
-    fontWeight: typography.weights.bold,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    fontSize: typography.sizes.xs + 2,
+    fontWeight: typography.weights.semibold,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs + 2,
   },
   overviewCard: {
-    marginTop: spacing.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.xs + 2,
     ...shadows.sm,
   },
   cardHeaderTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
-    marginBottom: spacing.xs,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.semibold,
+    marginBottom: 2,
   },
   infoRow: {
     flexDirection: 'row',
@@ -344,23 +347,23 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes['2xs'] + 1,
   },
   infoValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
   },
   infoValueCode: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    maxWidth: 200,
+    color: colors.primaryHover,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.medium,
+    maxWidth: 180,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.xs,
+    backgroundColor: colors.borderLight,
+    marginVertical: 4,
   },
   totalRow: {
     flexDirection: 'row',
@@ -369,18 +372,17 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   totalAmount: {
-    color: colors.primary,
-    fontSize: typography.sizes.xl,
-    fontWeight: typography.weights.extrabold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.md,
+    fontWeight: typography.weights.bold,
   },
   paymentCard: {
-    marginTop: spacing.md,
-    padding: spacing.md,
-    borderColor: 'rgba(0, 136, 255, 0.25)',
+    marginTop: spacing.sm,
+    borderColor: 'rgba(0, 136, 255, 0.2)',
   },
   paymentHeaderRow: {
     flexDirection: 'row',
@@ -388,103 +390,102 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   paymentIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
+    width: 32,
+    height: 32,
+    borderRadius: radii.xs,
     backgroundColor: 'rgba(0, 136, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   paymentTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   paymentSubtitle: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
   },
   statusResultBox: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.sm,
-    padding: spacing.sm,
-    marginTop: spacing.sm,
+    borderRadius: radii.xs,
+    padding: spacing.xs + 2,
+    marginTop: spacing.xs + 2,
     gap: 2,
   },
   statusResultTitle: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'],
-    fontWeight: typography.weights.bold,
+    fontSize: 10,
+    fontWeight: typography.weights.semibold,
     textTransform: 'uppercase',
   },
   statusResultText: {
     color: colors.text,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'] + 1,
   },
   itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.sm + 2,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs + 2,
   },
   itemThumb: {
-    width: 75,
-    height: 55,
-    borderRadius: radii.sm,
-    marginRight: spacing.md,
+    width: 65,
+    height: 48,
+    borderRadius: radii.xs,
+    marginRight: spacing.sm + 2,
   },
   itemInfo: {
     flex: 1,
   },
   itemCarName: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   itemQuantity: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 1,
   },
   itemDepositPrice: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs + 1,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.bold,
-    marginTop: 2,
+    marginTop: 1,
   },
   contractBox: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.primary,
+    borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    marginTop: spacing.md,
-    gap: spacing.md,
-    ...shadows.glowCyan,
+    borderRadius: radii.sm,
+    padding: spacing.sm + 2,
+    marginTop: spacing.sm + 2,
+    gap: spacing.sm,
   },
   contractIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
   contractTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   contractSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 1,
   },
   bottomActions: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.lg,
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
 });
+

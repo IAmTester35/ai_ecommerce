@@ -1,44 +1,51 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { colors } from '../../theme/colors';
-import { QuickPrompt } from '../../types/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, radii, spacing, typography } from '../../theme';
 import { historyService } from '../../services/historyService';
 import { useAuthStore } from '../../store/useAuthStore';
+
+interface PromptItem {
+  id: string;
+  iconName: keyof typeof Ionicons.glyphMap;
+  title: string;
+  prompt: string;
+}
 
 interface QuickPromptsProps {
   onSelectPrompt: (promptText: string) => void;
 }
 
-const DEFAULT_SEARCH_PROMPTS: QuickPrompt[] = [
+const DEFAULT_SEARCH_PROMPTS: PromptItem[] = [
   {
     id: '1',
-    icon: '🏎️',
-    title: 'Mâu thuẫn V12 & Giá rẻ',
-    prompt: 'Tôi muốn tìm xe động cơ V12, phong cách thể thao đi dạo phố nhưng giá dưới 1 tỷ',
+    iconName: 'speedometer-outline',
+    title: 'Động cơ V12 & Thể thao',
+    prompt: 'Tìm xe thể thao động cơ mạnh mẽ, phong cách sang trọng dưới 3 tỷ',
   },
   {
     id: '2',
-    icon: '🚙',
-    title: 'SUV Gia đình',
-    prompt: 'Tìm xe SUV 7 chỗ gầm cao, an toàn tốt, tiết kiệm nhiên liệu trong tầm giá 1.2 tỷ',
+    iconName: 'car-sport-outline',
+    title: 'SUV Gia đình 7 chỗ',
+    prompt: 'Tìm xe SUV 7 chỗ gầm cao, an toàn tốt, cách âm êm trong tầm giá 2 tỷ',
   },
   {
     id: '3',
-    icon: '⚡',
-    title: 'Xe Điện Hiện Đại',
-    prompt: 'Đề xuất xe điện tự lái tốt, quãng đường chạy trên 450km/lần sạc',
+    iconName: 'flash-outline',
+    title: 'Xe Điện Thông Minh',
+    prompt: 'Đề xuất xe điện pin trên 450km/lần sạc, hỗ trợ lái tự động ADAS',
   },
   {
     id: '4',
-    icon: '💼',
+    iconName: 'briefcase-outline',
     title: 'Sedan Doanh Nhân',
-    prompt: 'Tư vấn xe Sedan sang trọng cách âm tốt cho doanh nhân giá khoảng 2 tỷ',
+    prompt: 'Tư vấn xe Sedan hạng sang êm ái cho doanh nhân tầm giá 2.5 tỷ',
   },
 ];
 
 export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) => {
   const { user } = useAuthStore();
-  const [prompts, setPrompts] = useState<QuickPrompt[]>(DEFAULT_SEARCH_PROMPTS);
+  const [prompts, setPrompts] = useState<PromptItem[]>(DEFAULT_SEARCH_PROMPTS);
 
   useEffect(() => {
     if (!user) return;
@@ -46,9 +53,9 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
       .getSearchHistory(user.id, 5)
       .then((history) => {
         if (history && history.length > 0) {
-          const userHistoryPrompts: QuickPrompt[] = history.map((item, index) => ({
+          const userHistoryPrompts: PromptItem[] = history.map((item, index) => ({
             id: item.id || `hist-${index}`,
-            icon: '🔍',
+            iconName: 'search-outline',
             title: 'Lịch sử tìm kiếm',
             prompt: item.query_text,
           }));
@@ -56,13 +63,13 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
         }
       })
       .catch(() => {
-        // Fallback to default search templates
+        // Fallback to default
       });
   }, [user]);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Gợi ý câu hỏi thông minh:</Text>
+      <Text style={styles.header}>Gợi ý câu hỏi:</Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -75,8 +82,10 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
             style={styles.chip}
             onPress={() => onSelectPrompt(item.prompt)}
           >
-            <Text style={styles.icon}>{item.icon}</Text>
-            <View>
+            <View style={styles.iconCircle}>
+              <Ionicons name={item.iconName} size={14} color={colors.primaryHover} />
+            </View>
+            <View style={styles.textContainer}>
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.subtitle} numberOfLines={1}>
                 {item.prompt}
@@ -91,42 +100,51 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
+    marginVertical: 6,
   },
   header: {
     color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 8,
-    paddingHorizontal: 14,
+    fontSize: typography.sizes['2xs'] + 1,
+    fontWeight: typography.weights.medium,
+    marginBottom: 6,
+    paddingHorizontal: spacing.md,
   },
   scroll: {
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingHorizontal: spacing.md,
+    gap: spacing.xs + 2,
   },
   chip: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: 240,
+    maxWidth: 220,
   },
-  icon: {
-    fontSize: 18,
+  iconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: radii.full,
+    backgroundColor: colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 8,
   },
+  textContainer: {
+    flex: 1,
+  },
   title: {
-    color: colors.primary,
-    fontSize: 12,
-    fontWeight: '700',
+    color: colors.primaryHover,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.semibold,
   },
   subtitle: {
     color: colors.textMuted,
-    fontSize: 11,
-    maxWidth: 170,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 1,
   },
 });
+

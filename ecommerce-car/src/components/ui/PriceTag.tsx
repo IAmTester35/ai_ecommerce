@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
 
 interface PriceTagProps {
@@ -30,14 +31,14 @@ export const PriceTag: React.FC<PriceTagProps> = ({
   const getPriceFontSize = () => {
     switch (size) {
       case 'sm':
-        return typography.sizes.sm + 1;
+        return typography.sizes.sm;
       case 'lg':
-        return typography.sizes['2xl'];
+        return typography.sizes.xl;
       case 'xl':
-        return typography.sizes['3xl'];
+        return typography.sizes['2xl'];
       case 'md':
       default:
-        return typography.sizes.lg;
+        return typography.sizes.md;
     }
   };
 
@@ -72,8 +73,9 @@ export const PriceTag: React.FC<PriceTagProps> = ({
 
       {showInstallment && monthlyEst > 0 && (
         <View style={styles.installmentPill}>
+          <Ionicons name="card-outline" size={11} color={colors.primaryHover} style={{ marginRight: 4 }} />
           <Text style={styles.installmentText}>
-            ⚡ Trả góp từ ~{monthlyEst} tr/tháng
+            Trả góp từ ~{monthlyEst} tr/tháng
           </Text>
         </View>
       )}
@@ -88,30 +90,33 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   price: {
-    color: colors.primary,
-    fontWeight: typography.weights.extrabold,
-    letterSpacing: -0.3,
+    color: colors.primaryHover,
+    fontWeight: typography.weights.bold,
+    letterSpacing: -0.2,
   },
   originalPrice: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     textDecorationLine: 'line-through',
   },
   installmentPill: {
-    marginTop: 4,
-    backgroundColor: 'rgba(0, 229, 255, 0.08)',
-    borderColor: 'rgba(0, 229, 255, 0.25)',
+    marginTop: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primaryMuted,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
     borderWidth: 1,
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: radii.xs + 2,
+    borderRadius: radii.xs,
   },
   installmentText: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    color: colors.primaryHover,
+    fontSize: typography.sizes['2xs'],
+    fontWeight: typography.weights.medium,
   },
 });
+

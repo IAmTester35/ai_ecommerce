@@ -9,76 +9,82 @@ export default function TabLayout() {
       screenOptions={{
         headerStyle: {
           backgroundColor: colors.background,
+          borderBottomColor: colors.border,
+          borderBottomWidth: 1,
         },
         headerTintColor: colors.text,
         headerTitleStyle: {
-          fontWeight: typography.weights.bold,
+          fontSize: typography.sizes.base + 1,
+          fontWeight: typography.weights.semibold,
+          letterSpacing: -0.2,
         },
         tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          height: 64,
-          paddingBottom: 8,
-          paddingTop: 6,
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
+          borderTopWidth: 1,
+          height: 54,
+          paddingBottom: 6,
+          paddingTop: 4,
         },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: colors.tabBarActive,
+        tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: typography.weights.semibold,
+          fontSize: 10,
+          fontWeight: typography.weights.medium,
         },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Khám Phá',
+          title: 'Khám phá',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass-outline" size={size} color={color} />
+            <Ionicons name="compass-outline" size={size - 2} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="catalog"
         options={{
-          title: 'Showroom',
+          title: 'Kho xe',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={size} color={color} />
+            <Ionicons name="grid-outline" size={size - 2} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="ai-chat"
         options={{
-          title: 'AutoMatch AI',
-          headerTitle: 'Trợ Lý AI AutoMatch',
+          title: 'AI Match',
+          headerTitle: 'Trợ Lý AI',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="sparkles" size={size} color={color} />
+            <Ionicons name="sparkles" size={size - 2} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="compare"
         options={{
-          title: 'So Sánh',
-          headerTitle: 'So Sánh Thông Số Xe',
+          title: 'So sánh',
+          headerTitle: 'So Sánh Xe',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="git-compare-outline" size={size} color={color} />
+            <Ionicons name="git-compare-outline" size={size - 2} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Cá Nhân',
-          headerTitle: 'Tài Khoản Khách Hàng',
+          title: 'Cá nhân',
+          headerTitle: 'Tài Khoản',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="person-outline" size={size - 2} color={color} />
           ),
         }}
       />
     </Tabs>
   );
 }
+
