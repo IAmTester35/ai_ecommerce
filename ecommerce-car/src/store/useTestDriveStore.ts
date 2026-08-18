@@ -8,7 +8,12 @@ interface TestDriveState {
   error: string | null;
 
   fetchTestDrives: (userId?: string) => Promise<void>;
-  bookTestDrive: (userId: string | undefined, carId: string, scheduledDate: string, notes?: string) => Promise<TestDrive>;
+  bookTestDrive: (
+    userId: string | undefined,
+    carId: string,
+    scheduledDate: string,
+    notes?: string
+  ) => Promise<TestDrive>;
   cancelTestDrive: (testDriveId: string) => Promise<void>;
 }
 
@@ -16,7 +21,7 @@ export const useTestDriveStore = create<TestDriveState>((set) => ({
   testDrives: [],
   isLoading: false,
   error: null,
-
+  
   fetchTestDrives: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -30,7 +35,12 @@ export const useTestDriveStore = create<TestDriveState>((set) => ({
   bookTestDrive: async (userId, carId, scheduledDate, notes) => {
     set({ isLoading: true, error: null });
     try {
-      const newBooking = await testDriveService.bookTestDrive(userId, carId, scheduledDate, notes);
+      const newBooking = await testDriveService.bookTestDrive(
+        userId,
+        carId,
+        scheduledDate,
+        notes
+      );
       set((state) => ({
         testDrives: [...state.testDrives, newBooking],
         isLoading: false,

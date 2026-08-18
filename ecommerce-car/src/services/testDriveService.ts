@@ -2,36 +2,50 @@ import { supabase } from '../api/supabaseClient';
 import { TestDrive } from '../types';
 
 export const testDriveService = {
+  getTestDrives: async (userId?: string): Promise<TestDrive[]> => {
+    let query = supabase
+      .from('test_drives')
+      .select('*, car:cars(*)')
+      .order('created_at', { ascending: false });
+
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('[testDriveService] Error fetching test drives:', error.message);
+      return [];
+    }
+    return (data || []) as TestDrive[];
+  },
+
   bookTestDrive: async (
-    _userId: string | undefined,
+    userId: string | undefined,
     carId: string,
     scheduledDate: string,
     notes?: string
   ): Promise<TestDrive> => {
+    const record: Record<string, any> = {
+      car_id: carId,
+      scheduled_date: scheduledDate,
+      notes: notes || undefined,
+    };
+    if (userId) {
+      record['user_id'] = userId;
+    }
+
     const { data, error } = await supabase
       .from('test_drives')
-      .insert([
-        {
-          car_id: carId,
-          scheduled_date: scheduledDate,
-          notes: notes || null,
-        },
-      ])
+      .insert([record])
       .select('*, car:cars(*)')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[testDriveService] Error booking test drive:', error.message);
+      throw error;
+    }
     return data as TestDrive;
-  },
-
-  getTestDrives: async (): Promise<TestDrive[]> => {
-    const { data, error } = await supabase
-      .from('test_drives')
-      .select('*, car:cars(*)')
-      .order('scheduled_date', { ascending: true });
-
-    if (error) throw error;
-    return data as TestDrive[];
   },
 
   cancelTestDrive: async (testDriveId: string): Promise<TestDrive> => {
@@ -42,7 +56,10 @@ export const testDriveService = {
       .select('*, car:cars(*)')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[testDriveService] Error cancelling test drive:', error.message);
+      throw error;
+    }
     return data as TestDrive;
   },
 };

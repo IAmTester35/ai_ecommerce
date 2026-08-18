@@ -2,15 +2,22 @@ import { supabase } from '../api/supabaseClient';
 import { Order } from '../types';
 
 export const orderService = {
-  getOrders: async (userId: string): Promise<Order[]> => {
-    const { data, error } = await supabase
+  getOrders: async (userId?: string): Promise<Order[]> => {
+    let query = supabase
       .from('orders')
       .select('*, order_items(*, car:cars(*))')
-      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data as Order[];
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('[orderService] Error fetching orders:', error.message);
+      return [];
+    }
+    return (data || []) as Order[];
   },
 
   getOrderById: async (orderId: string): Promise<Order | null> => {
@@ -20,7 +27,24 @@ export const orderService = {
       .eq('id', orderId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[orderService] Error fetching order detail:', error.message);
+      return null;
+    }
+    return data as Order;
+  },
+
+  createOrder: async (orderData: Partial<Order>): Promise<Order> => {
+    const { data, error } = await supabase
+      .from('orders')
+      .insert([orderData])
+      .select('*, order_items(*, car:cars(*))')
+      .single();
+
+    if (error) {
+      console.error('[orderService] Error creating order:', error.message);
+      throw error;
+    }
     return data as Order;
   },
 };

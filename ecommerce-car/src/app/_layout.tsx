@@ -1,6 +1,7 @@
+import React from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { colors } from '../src/theme/colors';
+import { colors, typography } from '../theme';
 
 export default function RootLayout() {
   return (
@@ -13,7 +14,7 @@ export default function RootLayout() {
           },
           headerTintColor: colors.text,
           headerTitleStyle: {
-            fontWeight: '700',
+            fontWeight: typography.weights.bold,
           },
           contentStyle: {
             backgroundColor: colors.background,
@@ -23,19 +24,27 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
           name="car/[id]"
-          options={{ title: 'Chi Tiết Xe', headerBackTitle: 'Quay lại' }}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="cart"
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="checkout"
-          options={{ title: 'Thanh Toán ZaloPay', headerBackTitle: 'Quay lại' }}
+          options={{ title: 'Thanh Toán Đặt Cọc', headerBackTitle: 'Quay lại' }}
         />
         <Stack.Screen
           name="orders"
-          options={{ title: 'Đơn Hàng Của Tôi', headerBackTitle: 'Quay lại' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="order/[id]"
-          options={{ title: 'Chi Tiết Đơn Hàng', headerBackTitle: 'Danh sách' }}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="notifications"
+          options={{ headerShown: false }}
         />
       </Stack>
     </>

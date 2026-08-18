@@ -13,8 +13,8 @@ interface CarState {
 
   fetchTopCars: () => Promise<void>;
   fetchCarDetails: (carId: string) => Promise<void>;
-  fetchSavedCars: (userId: string) => Promise<void>;
-  toggleSaveCar: (carId: string, userId: string) => Promise<void>;
+  fetchSavedCars: (userId?: string) => Promise<void>;
+  toggleSaveCar: (carId: string, userId?: string) => Promise<void>;
   setFilters: (filters: Partial<CarFilterParams>) => void;
   applyFilters: () => Promise<void>;
   resetFilters: () => void;
@@ -49,7 +49,7 @@ export const useCarStore = create<CarState>((set, get) => ({
     }
   },
 
-  fetchSavedCars: async (userId: string) => {
+  fetchSavedCars: async (userId?: string) => {
     set({ isLoading: true, error: null });
     try {
       const saved = await carService.getSavedCars(userId);
@@ -59,7 +59,7 @@ export const useCarStore = create<CarState>((set, get) => ({
     }
   },
 
-  toggleSaveCar: async (carId: string, userId: string) => {
+  toggleSaveCar: async (carId: string, userId?: string) => {
     const { savedCars } = get();
     const isSaved = savedCars.some((sc) => sc.car_id === carId);
 

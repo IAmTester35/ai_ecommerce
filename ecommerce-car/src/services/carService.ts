@@ -10,8 +10,11 @@ export const carService = {
       .order('created_at', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
-    return data as Car[];
+    if (error) {
+      console.error('[carService] Error fetching top cars:', error.message);
+      throw error;
+    }
+    return (data || []) as Car[];
   },
 
   getCarById: async (carId: string): Promise<Car | null> => {
@@ -21,15 +24,24 @@ export const carService = {
       .eq('id', carId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[carService] Error fetching car details:', error.message);
+      return null;
+    }
     return data as Car;
   },
 
   getCarsWithFilter: async (params: CarFilterParams): Promise<Car[]> => {
     let query = supabase.from('cars').select('*').eq('is_active', true);
 
-    if (params.make) {
+    if (params.query) {
+      query = query.or(`make.ilike.%${params.query}%,model.ilike.%${params.query}%`);
+    }
+    if (params.make && params.make !== 'all') {
       query = query.ilike('make', `%${params.make}%`);
+    }
+    if (params.minPrice) {
+      query = query.gte('price', params.minPrice);
     }
     if (params.maxPrice) {
       query = query.lte('price', params.maxPrice);
@@ -40,17 +52,35 @@ export const carService = {
     if (params.minHp) {
       query = query.gte('engine_hp', params.minHp);
     }
-    if (params.fuelType) {
-      query = query.ilike('metadata->>engine_fuel_type', `%${params.fuelType}%`);
+    if (params.fuelType && params.fuelType !== 'all') {
+      query = query.ilike('metadata->>fuel_type', `%${params.fuelType}%`);
+    }
+    if (params.bodyType && params.bodyType !== 'all') {
+      query = query.ilike('metadata->>body_type', `%${params.bodyType}%`);
     }
 
-    const limit = params.limit || 20;
+    if (params.sortBy === 'price_asc') {
+      query = query.order('price', { ascending: true });
+    } else if (params.sortBy === 'price_desc') {
+      query = query.order('price', { ascending: false });
+    } else if (params.sortBy === 'hp_desc') {
+      query = query.order('engine_hp', { ascending: false });
+    } else if (params.sortBy === 'year_desc') {
+      query = query.order('year', { ascending: false });
+    } else {
+      query = query.order('created_at', { ascending: false });
+    }
+
+    const limit = params.limit || 50;
     const offset = params.offset || 0;
     query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
-    if (error) throw error;
-    return data as Car[];
+    if (error) {
+      console.error('[carService] Error filtering cars:', error.message);
+      throw error;
+    }
+    return (data || []) as Car[];
   },
 
   getSavedCars: async (userId?: string): Promise<SavedCar[]> => {
@@ -64,8 +94,11 @@ export const carService = {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
-    return data as SavedCar[];
+    if (error) {
+      console.error('[carService] Error fetching saved cars:', error.message);
+      return [];
+    }
+    return (data || []) as SavedCar[];
   },
 
   saveCar: async (carId: string, userId?: string): Promise<SavedCar> => {
@@ -80,7 +113,10 @@ export const carService = {
       .select('*, car:cars(*)')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[carService] Error saving car:', error.message);
+      throw error;
+    }
     return data as SavedCar;
   },
 
@@ -89,29 +125,9 @@ export const carService = {
     if (userId) {
       query = query.eq('user_id', userId);
     }
-
     const { error } = await query;
-    if (error) throw error;
-  },
-
-  matchCars: async (
-    queryEmbedding: number[],
-    matchThreshold = 0.3,
-    matchCount = 5,
-    filters?: CarFilterParams
-  ) => {
-    const { data, error } = await supabase.rpc('match_cars', {
-      query_embedding: queryEmbedding,
-      match_threshold: matchThreshold,
-      match_count: matchCount,
-      filter_make: filters?.make || null,
-      filter_max_price: filters?.maxPrice || null,
-      filter_target_year: filters?.targetYear || null,
-      filter_min_hp: filters?.minHp || null,
-      filter_fuel_type: filters?.fuelType || null,
-    });
-
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('[carService] Error unsaving car:', error.message);
+    }
   },
 };

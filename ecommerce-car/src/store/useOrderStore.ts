@@ -8,7 +8,7 @@ interface OrderState {
   isLoading: boolean;
   error: string | null;
 
-  fetchOrders: (userId: string) => Promise<void>;
+  fetchOrders: (userId?: string) => Promise<void>;
   fetchOrderDetails: (orderId: string) => Promise<void>;
   clearSelectedOrder: () => void;
 }
@@ -19,7 +19,7 @@ export const useOrderStore = create<OrderState>((set) => ({
   isLoading: false,
   error: null,
 
-  fetchOrders: async (userId: string) => {
+  fetchOrders: async (userId?: string) => {
     set({ isLoading: true, error: null });
     try {
       const orders = await orderService.getOrders(userId);

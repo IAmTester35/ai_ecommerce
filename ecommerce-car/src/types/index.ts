@@ -16,7 +16,26 @@ export interface Car {
   year: number;
   engine_hp?: number | null;
   price?: number | null;
-  metadata?: Record<string, any> | null;
+  original_price?: number | null;
+  metadata?: {
+    transmission?: string;
+    fuel_type?: string;
+    engine_fuel_type?: string;
+    body_type?: string;
+    seating_capacity?: number;
+    acceleration_0_100?: string;
+    top_speed?: string;
+    torque?: string;
+    fuel_economy?: string;
+    color_options?: string[];
+    features?: string[];
+    gallery?: string[];
+    dimensions?: string;
+    airbags?: number;
+    warranty?: string;
+    review?: string;
+    [key: string]: any;
+  } | null;
   image_url?: string | null;
   stock_quantity: number;
   is_active: boolean;
@@ -47,6 +66,15 @@ export interface TestDrive {
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
 export type PaymentStatus = 'unpaid' | 'paid' | 'refunded';
 
+export interface OrderTimelineStep {
+  id: string;
+  title: string;
+  description: string;
+  date?: string;
+  isCompleted: boolean;
+  isCurrent: boolean;
+}
+
 export interface Order {
   id: string;
   user_id: string;
@@ -57,6 +85,11 @@ export interface Order {
   contract_url?: string | null;
   app_trans_id?: string | null;
   zp_trans_token?: string | null;
+  showroom_address?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_email?: string | null;
+  notes?: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
@@ -175,9 +208,10 @@ export interface NotificationItem {
   user_id: string;
   title: string;
   content: string;
-  type?: string | null;
+  type?: 'order' | 'promo' | 'system' | 'test_drive' | null;
   is_read: boolean;
   created_at: string;
+  action_url?: string;
 }
 
 export interface CartItem {
@@ -189,12 +223,19 @@ export interface CartItem {
   car?: Car;
 }
 
+export type CarSortOption = 'recommended' | 'price_asc' | 'price_desc' | 'hp_desc' | 'year_desc';
+
 export interface CarFilterParams {
+  query?: string;
   make?: string;
+  bodyType?: string;
+  minPrice?: number;
   maxPrice?: number;
   targetYear?: number;
   minHp?: number;
   fuelType?: string;
+  transmission?: string;
+  sortBy?: CarSortOption;
   limit?: number;
   offset?: number;
 }

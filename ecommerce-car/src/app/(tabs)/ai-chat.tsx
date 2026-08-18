@@ -10,30 +10,34 @@ import {
   Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { colors } from '../../src/theme/colors';
-import { UIChatMessage } from '../../src/types/ui';
-import { carService } from '../../src/services/carService';
-import { historyService } from '../../src/services/historyService';
-import { useAuthStore } from '../../src/store/useAuthStore';
-import { ChatBubble } from '../../src/components/chat/ChatBubble';
-import { QuickPrompts } from '../../src/components/chat/QuickPrompts';
 import { Ionicons } from '@expo/vector-icons';
+import { colors, radii, typography } from '../../theme';
+import { UIChatMessage } from '../../types/ui';
+import { historyService } from '../../services/historyService';
+import { useAuthStore } from '../../store/useAuthStore';
+import { ChatBubble } from '../../components/chat/ChatBubble';
+import { QuickPrompts } from '../../components/chat/QuickPrompts';
+import { CarResponse } from '../../types';
+
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function AIChatScreen() {
   const params = useLocalSearchParams<{ initialPrompt?: string }>();
   const { user } = useAuthStore();
   const [input, setInput] = useState('');
+  const [sessionId] = useState(() => `session-${Math.random().toString(36).substring(2, 9)}`);
   const [messages, setMessages] = useState<UIChatMessage[]>([
     {
       id: 'welcome-msg',
       role: 'assistant',
       content:
-        'Xin chào! Tôi là AutoMatch AI — Trợ lý tư vấn ô tô thông minh. Bạn có thể hỏi tôi bất kỳ điều gì, ví dụ: "Xe thể thao 5 chỗ dưới 1 tỷ", "Xe động cơ V12 giá rẻ",...',
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        'Xin chào! Tôi là AutoMatch AI — Trợ lý tư vấn ô tô thông minh kết nối hệ thống RAG & Supabase. Bạn có thể mô tả nhu cầu, ví dụ: "Xe SUV 7 chỗ cách âm tốt giá 1.5 tỷ", "Xe thể thao 2 cửa",...',
+      timestamp: '09:00',
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const initialPromptHandled = useRef(false);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -48,7 +52,7 @@ export default function AIChatScreen() {
       if (!query) return;
 
       const userMsg: UIChatMessage = {
-        id: `user-${Date.now()}`,
+        id: `user-${Math.random().toString(36).substring(2, 9)}`,
         role: 'user',
         content: query,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -59,49 +63,70 @@ export default function AIChatScreen() {
       setIsTyping(true);
 
       if (user?.id) {
-        historyService.saveSearchQuery(user.id, query).catch(() => { });
+        historyService.saveSearchQuery(user.id, query).catch(() => {});
       }
 
       try {
-        const isV12Conflict = query.toLowerCase().includes('v12');
-        const dbCars = await carService.getTopCars(4);
+        // Call FastAPI Backend RAG Search
+        const response = await fetch(`${BASE_URL}/api/search`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            query,
+            session_id: sessionId,
+          }),
+        });
 
-        const suggestedCars = dbCars.map((c, index) => ({
-          id: c.id,
-          make: c.make,
-          model: c.model,
-          year: c.year,
-          engine_hp: c.engine_hp || undefined,
-          price: c.price || undefined,
-          metadata: c.metadata || undefined,
-          review: c.metadata?.review || 'Xe ô tô nguyên bản chất lượng cao từ Supabase database.',
-          similarity: 0.95 - index * 0.03,
-          rerank_score: 0.96 - index * 0.03,
-          image_url: c.image_url || undefined,
-        }));
+        if (response.ok) {
+          const rawText = await response.text();
+          let searchData: any = null;
+          let assistantText = '';
 
-        const aiReply: UIChatMessage = {
-          id: `ai-${Date.now()}`,
-          role: 'assistant',
-          content: isV12Conflict
-            ? 'Hệ thống nhận thấy yêu cầu động cơ V12 với ngân sách giá rẻ có mâu thuẫn logic (xe động cơ V12 có mức giá rất cao). AutoMatch AI đã nới lỏng tiêu chí V12 và chọn lọc các dòng xe từ cơ sở dữ liệu Supabase có cảm giác lái thể thao, tăng tốc ấn tượng phù hợp với nhu cầu của bạn:'
-            : `Dựa trên truy vấn "${query}", AutoMatch AI đã tìm kiếm trong kho xe Supabase và chọn ra các mẫu xe phù hợp nhất:`,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          conflictDetected: isV12Conflict,
-          relaxedTerms: isV12Conflict
-            ? ['Bỏ ràng buộc cứng: Động cơ V12', 'Nới lỏng: Xe thể thao tăng tốc ấn tượng']
-            : undefined,
-          suggestedCars,
-        };
+          const lines = rawText.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                if (parsed.results) {
+                  searchData = parsed;
+                }
+                if (parsed.text) {
+                  assistantText += parsed.text;
+                }
+              } catch {
+                // Ignore non-json lines
+              }
+            }
+          }
 
-        setMessages((prev) => [...prev, aiReply]);
-      } catch (err: any) {
+          const suggestedCars: CarResponse[] = searchData?.results || [];
+
+          const aiReply: UIChatMessage = {
+            id: `ai-${Math.random().toString(36).substring(2, 9)}`,
+            role: 'assistant',
+            content:
+              assistantText.trim() ||
+              searchData?.ai_message ||
+              `Dựa trên yêu cầu "${query}", AutoMatch AI đã tìm kiếm trong kho xe và gợi ý các lựa chọn phù hợp nhất:`,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            conflictDetected: searchData?.conflict_detected || false,
+            relaxedTerms: searchData?.relaxed_terms || undefined,
+            suggestedCars,
+          };
+
+          setMessages((prev) => [...prev, aiReply]);
+        } else {
+          throw new Error('Backend AI response error');
+        }
+      } catch {
         setMessages((prev) => [
           ...prev,
           {
-            id: `err-${Date.now()}`,
+            id: `err-${Math.random().toString(36).substring(2, 9)}`,
             role: 'assistant',
-            content: `Không thể kết nối đến cơ sở dữ liệu: ${err?.message || 'Vui lòng thử lại sau.'}`,
+            content: `Hệ thống AutoMatch AI đang kết nối. Bạn có thể xem toàn bộ kho xe tại mục Showroom.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);
@@ -109,12 +134,16 @@ export default function AIChatScreen() {
         setIsTyping(false);
       }
     },
-    [input, user?.id]
+    [input, user, sessionId]
   );
 
   useEffect(() => {
-    if (params.initialPrompt) {
-      handleSendMessage(params.initialPrompt);
+    if (params.initialPrompt && !initialPromptHandled.current) {
+      initialPromptHandled.current = true;
+      const timer = setTimeout(() => {
+        handleSendMessage(params.initialPrompt);
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [params.initialPrompt, handleSendMessage]);
 
@@ -134,7 +163,7 @@ export default function AIChatScreen() {
     >
       <View style={styles.headerInfo}>
         <Ionicons name="sparkles" size={16} color={colors.primary} />
-        <Text style={styles.headerText}>AutoMatch RAG Engine: Online (Supabase DB Connected)</Text>
+        <Text style={styles.headerText}>AutoMatch RAG Engine: Online (Supabase & FastAPI)</Text>
       </View>
 
       <FlatList
@@ -152,7 +181,7 @@ export default function AIChatScreen() {
         ListFooterComponent={
           isTyping ? (
             <View style={styles.typingIndicator}>
-              <Text style={styles.typingText}>🤖 AutoMatch AI đang suy luận & tìm kiếm kho xe Supabase...</Text>
+              <Text style={styles.typingText}>🤖 AutoMatch AI đang truy xuất dữ liệu & suy luận...</Text>
             </View>
           ) : null
         }
@@ -179,7 +208,7 @@ export default function AIChatScreen() {
           disabled={!input.trim()}
           onPress={() => handleSendMessage()}
         >
-          <Ionicons name="send" size={18} color={input.trim() ? '#000' : colors.textMuted} />
+          <Ionicons name="send" size={18} color={input.trim() ? colors.textDark : colors.textMuted} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -204,7 +233,7 @@ const styles = StyleSheet.create({
   headerText: {
     color: colors.primary,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: typography.weights.bold,
   },
   chatList: {
     paddingVertical: 12,
@@ -232,7 +261,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 42,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: 21,
+    borderRadius: radii.full,
     paddingHorizontal: 16,
     color: colors.text,
     fontSize: 14,
@@ -242,7 +271,7 @@ const styles = StyleSheet.create({
   sendBtn: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: radii.full,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

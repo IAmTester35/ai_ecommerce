@@ -5,19 +5,23 @@ export const reviewService = {
   getCarReviews: async (carId: string): Promise<Review[]> => {
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, profiles:profiles(*)')
+      .select('*, profiles(full_name, avatar_url)')
       .eq('car_id', carId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data as Review[];
+    if (error) {
+      console.error('[reviewService] Error fetching car reviews:', error.message);
+      return [];
+    }
+    return (data || []) as Review[];
   },
 
   addReview: async (
     carId: string,
     userId: string | undefined,
     rating: number,
-    comment: string
+    comment: string,
+    authorName?: string
   ): Promise<Review> => {
     const record: Record<string, any> = {
       car_id: carId,
@@ -32,10 +36,13 @@ export const reviewService = {
     const { data, error } = await supabase
       .from('reviews')
       .insert([record])
-      .select('*, profiles:profiles(*)')
+      .select('*, profiles(full_name, avatar_url)')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[reviewService] Error adding review:', error.message);
+      throw error;
+    }
     return data as Review;
   },
 };

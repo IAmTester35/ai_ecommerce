@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { colors } from '../../theme/colors';
+import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { UIChatMessage } from '../../types/ui';
 import { CarResponse } from '../../types';
 import { ConflictBanner } from './ConflictBanner';
@@ -10,12 +10,14 @@ interface ChatBubbleProps {
   message: UIChatMessage;
   onPressCarDetails?: (carId: string) => void;
   onPressCarCompare?: (car: CarResponse) => void;
+  onPressAddToCart?: (carId: string) => void;
 }
 
 export const ChatBubble: React.FC<ChatBubbleProps> = ({
   message,
   onPressCarDetails,
   onPressCarCompare,
+  onPressAddToCart,
 }) => {
   const isUser = message.role === 'user';
 
@@ -38,7 +40,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 
         {message.suggestedCars && message.suggestedCars.length > 0 && (
           <View style={styles.generativeUiContainer}>
-            <Text style={styles.suggestedTitle}>🚘 Xe đề xuất cho bạn:</Text>
+            <Text style={styles.suggestedTitle}>🚘 Mẫu xe phù hợp nhất từ Showroom:</Text>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -48,9 +50,10 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
               renderItem={({ item }) => (
                 <CarCard
                   car={item}
-                  compact
+                  layout="compact"
                   onPressDetails={onPressCarDetails}
                   onPressCompare={onPressCarCompare}
+                  onPressAddToCart={onPressAddToCart}
                 />
               )}
             />
@@ -65,7 +68,7 @@ const styles = StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
     marginVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     alignItems: 'flex-start',
   },
   wrapperUser: {
@@ -87,46 +90,47 @@ const styles = StyleSheet.create({
   avatarText: {
     color: '#FFF',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: typography.weights.extrabold,
   },
   bubble: {
     maxWidth: '85%',
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md - 2,
+    ...shadows.sm,
   },
   bubbleUser: {
     backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: radii.xs,
   },
   bubbleAssistant: {
     backgroundColor: colors.surfaceElevated,
     borderColor: colors.border,
     borderWidth: 1,
-    borderBottomLeftRadius: 4,
+    borderBottomLeftRadius: radii.xs,
   },
   text: {
-    fontSize: 14,
+    fontSize: typography.sizes.base,
     lineHeight: 20,
   },
   textUser: {
-    color: '#000',
-    fontWeight: '600',
+    color: colors.textDark,
+    fontWeight: typography.weights.semibold,
   },
   textAssistant: {
     color: colors.text,
   },
   generativeUiContainer: {
-    marginTop: 12,
-    paddingTop: 8,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
   suggestedTitle: {
     color: colors.primary,
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.bold,
+    marginBottom: spacing.xs + 2,
   },
   carCarousel: {
     marginTop: 4,

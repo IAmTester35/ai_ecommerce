@@ -5,15 +5,22 @@ export const qaService = {
   getCarQA: async (carId: string): Promise<CarQA[]> => {
     const { data, error } = await supabase
       .from('car_qa')
-      .select('*')
+      .select('*, profiles(full_name, avatar_url)')
       .eq('car_id', carId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data as CarQA[];
+    if (error) {
+      console.error('[qaService] Error fetching car QA:', error.message);
+      return [];
+    }
+    return (data || []) as CarQA[];
   },
 
-  askQuestion: async (carId: string, userId: string | undefined, question: string): Promise<CarQA> => {
+  askQuestion: async (
+    carId: string,
+    userId: string | undefined,
+    question: string
+  ): Promise<CarQA> => {
     const record: Record<string, any> = {
       car_id: carId,
       question,
@@ -25,10 +32,13 @@ export const qaService = {
     const { data, error } = await supabase
       .from('car_qa')
       .insert([record])
-      .select()
+      .select('*, profiles(full_name, avatar_url)')
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[qaService] Error asking question:', error.message);
+      throw error;
+    }
     return data as CarQA;
   },
 };

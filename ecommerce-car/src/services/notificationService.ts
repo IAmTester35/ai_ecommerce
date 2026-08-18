@@ -1,54 +1,49 @@
 import { supabase } from '../api/supabaseClient';
-import { NotificationItem, BroadcastNotificationRequest, UserNotificationRequest } from '../types';
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+import { NotificationItem } from '../types';
 
 export const notificationService = {
-  getNotifications: async (): Promise<NotificationItem[]> => {
-    const { data, error } = await supabase
+  getNotifications: async (userId?: string): Promise<NotificationItem[]> => {
+    let query = supabase
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data as NotificationItem[];
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.error('[notificationService] Error fetching notifications:', error.message);
+      return [];
+    }
+    return (data || []) as NotificationItem[];
   },
 
-  markAsRead: async (notificationId: string): Promise<NotificationItem> => {
-    const { data, error } = await supabase
+  markAsRead: async (id: string): Promise<void> => {
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
-      .eq('id', notificationId)
-      .select()
-      .single();
+      .eq('id', id);
 
-    if (error) throw error;
-    return data as NotificationItem;
+    if (error) {
+      console.error('[notificationService] Error marking notification read:', error.message);
+    }
   },
 
-  sendBroadcastNotification: async (payload: BroadcastNotificationRequest): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/api/notifications/send`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.detail || errData.message || 'Gửi thông báo thất bại');
-    }
-    return await response.json();
-  },
+  markAllAsRead: async (userId?: string): Promise<void> => {
+    let query = supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('is_read', false);
 
-  sendUserNotification: async (payload: UserNotificationRequest): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/api/notifications/send-user`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData.detail || errData.message || 'Gửi thông báo cá nhân thất bại');
+    if (userId) {
+      query = query.eq('user_id', userId);
     }
-    return await response.json();
+
+    const { error } = await query;
+    if (error) {
+      console.error('[notificationService] Error marking all notifications read:', error.message);
+    }
   },
 };
