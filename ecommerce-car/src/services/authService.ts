@@ -1,3 +1,4 @@
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '../api/supabaseClient';
 import { Profile } from '../types';
 
@@ -18,16 +19,22 @@ export const authService = {
 
     if (data.user) {
       // Upsert profile record
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .upsert({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-          phone,
-        });
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            email,
+            full_name: fullName || null,
+            phone: phone || null,
+          });
 
-      if (profileError) console.warn('[AuthService] Profile upsert warning:', profileError);
+        if (profileError) {
+          console.warn('[AuthService] Profile upsert warning:', profileError);
+        }
+      } catch (upsertErr) {
+        console.warn('[AuthService] Profile upsert catch:', upsertErr);
+      }
     }
 
     return data;
@@ -49,9 +56,25 @@ export const authService = {
   },
 
   resetPassword: async (email: string) => {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'automatch://reset-password',
+    });
     if (error) throw error;
     return data;
+  },
+
+  updatePassword: async (newPassword: string) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  getSession: async (): Promise<Session | null> => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return data.session;
   },
 
   getProfile: async (userId: string): Promise<Profile | null> => {
@@ -59,10 +82,10 @@ export const authService = {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
-    return data as Profile;
+    return data as Profile | null;
   },
 
   updateProfile: async (userId: string, updates: Partial<Profile>): Promise<Profile> => {
@@ -77,3 +100,4 @@ export const authService = {
     return data as Profile;
   },
 };
+

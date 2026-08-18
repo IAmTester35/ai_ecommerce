@@ -1,9 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { colors, typography } from '../theme';
+import { useAuthStore } from '../store/useAuthStore';
 
 export default function RootLayout() {
+  const { initAuth } = useAuthStore();
+
+  useEffect(() => {
+    initAuth();
+  }, [initAuth]);
+
   return (
     <>
       <StatusBar style="light" />
@@ -22,6 +29,14 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(auth)"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
         <Stack.Screen
           name="car/[id]"
           options={{ headerShown: false }}
@@ -50,3 +65,4 @@ export default function RootLayout() {
     </>
   );
 }
+

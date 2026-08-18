@@ -184,6 +184,22 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
+        {/* Guest Banner */}
+        {!user && (
+          <View style={styles.guestBanner}>
+            <Ionicons name="information-circle-outline" size={16} color={colors.primaryHover} style={{ marginRight: 6 }} />
+            <Text style={styles.guestBannerText}>
+              Bạn đang đặt cọc với tư cách Khách.{' '}
+              <Text
+                style={styles.guestBannerLink}
+                onPress={() => router.push('/(auth)/login' as any)}
+              >
+                Đăng nhập ngay
+              </Text>
+            </Text>
+          </View>
+        )}
+
         {/* Customer Information Form */}
         <View style={styles.sectionHeaderRow}>
           <Ionicons name="person-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
@@ -527,5 +543,27 @@ const styles = StyleSheet.create({
   submitBtn: {
     height: 42,
   },
+  guestBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    borderWidth: 1,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  guestBannerText: {
+    color: colors.textSecondary,
+    fontSize: typography.sizes.xs,
+    flex: 1,
+    lineHeight: 16,
+  },
+  guestBannerLink: {
+    color: colors.primaryHover,
+    fontWeight: typography.weights.bold,
+  },
 });
+
 
