@@ -5,8 +5,8 @@ import queue
 import json
 import sqlite3
 import argparse
-import xml.etree.ElementTree as ET
 import urllib.parse
+from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional, List, Dict, Set
 
@@ -14,8 +14,12 @@ import httpx
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-# Load env variables from local .env or parent .env
-load_dotenv()
+# Load env variables from data_pipeline or root
+for p in [Path(__file__).parent, Path(__file__).parent.parent, Path(__file__).parent.parent.parent]:
+    env_file = p / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 GOOGLE_SEARCH_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY")
@@ -46,6 +50,10 @@ failed_record_ids: Set[str] = set()
 in_flight_ids: Set[str] = set()
 processed_results: List[Dict] = []
 
+HTTP_HEADERS = {
+    "User-Agent": "CarEcommerceDataPipeline/2.0 (contact@ecommerce-car.com)"
+}
+
 
 # ==========================================
 # 1. CACHE LAYER (SQLite)
@@ -73,25 +81,24 @@ def get_cached_image(car_id: str, make: str, model: str, year: int) -> Optional[
     """
     Tra cứu cache:
     1. Ưu tiên theo car_id
-    2. Nếu không có, tra cứu theo (make, model, year) để tái sử dụng ảnh xe cùng loại
+    2. Nếu không có, tra cứu theo (make, model, year)
+    Lọc bỏ các URL regcheck hoặc loading gif cũ.
     """
     with db_lock:
         try:
             with sqlite3.connect(CACHE_DB_PATH) as conn:
                 cursor = conn.cursor()
-                # 1. Check theo car_id
                 cursor.execute("SELECT image_url FROM car_images WHERE id = ? AND image_url IS NOT NULL", (car_id,))
                 row = cursor.fetchone()
-                if row and row[0]:
+                if row and row[0] and "regcheck" not in row[0] and "fancybox" not in row[0]:
                     return row[0]
                 
-                # 2. Check theo make, model, year
                 cursor.execute(
                     "SELECT image_url FROM car_images WHERE make = ? AND model = ? AND year = ? AND image_url IS NOT NULL LIMIT 1",
                     (make, model, year)
                 )
                 row = cursor.fetchone()
-                if row and row[0]:
+                if row and row[0] and "regcheck" not in row[0] and "fancybox" not in row[0]:
                     return row[0]
         except Exception as e:
             print(f"Lỗi khi đọc cache SQLite: {e}")
@@ -131,32 +138,72 @@ def save_failed_record(car: dict, reason: str):
 
 
 # ==========================================
-# 2. IMAGE FETCHING LAYER
+# 2. IMAGE FETCHING LAYER (Wikimedia / Wikipedia / Google)
 # ==========================================
 
-def fetch_from_car_api(client: httpx.Client, make: str, model: str, year: int, timeout: float = 5.0) -> Optional[str]:
+def fetch_from_wikimedia_commons(client: httpx.Client, query: str, timeout: float = 6.0) -> Optional[str]:
     """
-    Lấy ảnh từ CarImagery API (Miễn phí, không cần Key).
-    Tương thích logic từ backend/services/image.py.
+    Lấy ảnh thật độ phân giải cao từ Wikimedia Commons Search API (Direct CDN JPG/PNG).
     """
-    raw_term = f"{year} {make} {model}".strip()
-    term = urllib.parse.quote_plus(raw_term)
-    url = f"http://www.carimagery.com/api.asmx/GetImageUrl?searchTerm={term}"
-    
+    url = "https://commons.wikimedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "generator": "search",
+        "gsrsearch": f"{query} filetype:bitmap",
+        "gsrnamespace": 6,
+        "gsrlimit": 1,
+        "prop": "imageinfo",
+        "iiprop": "url",
+        "iiurlwidth": 960,
+        "format": "json"
+    }
     try:
-        response = client.get(url, timeout=timeout)
+        response = client.get(url, params=params, headers=HTTP_HEADERS, timeout=timeout)
         if response.status_code == 200:
-            root = ET.fromstring(response.text)
-            img_url = root.text
-            if img_url and img_url.strip().startswith("http"):
-                return img_url.strip()
-    except Exception as e:
-        # Ghi nhận log ngắn gọn
+            data = response.json()
+            pages = data.get("query", {}).get("pages", {})
+            for pid, pdata in pages.items():
+                imageinfo = pdata.get("imageinfo", [])
+                if imageinfo:
+                    img_url = imageinfo[0].get("thumburl") or imageinfo[0].get("url")
+                    if img_url and img_url.startswith("http") and not img_url.endswith(".svg"):
+                        return img_url
+    except Exception:
         pass
     return None
 
 
-def fetch_from_google_search(client: httpx.Client, query: str, timeout: float = 4.0) -> Optional[str]:
+def fetch_from_wikipedia_pageimages(client: httpx.Client, query: str, timeout: float = 6.0) -> Optional[str]:
+    """
+    Lấy ảnh từ Wikipedia PageImages API (Direct CDN JPG/PNG).
+    """
+    url = "https://en.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "generator": "search",
+        "gsrsearch": f"{query} car",
+        "gsrlimit": 1,
+        "prop": "pageimages",
+        "piprop": "thumbnail|original",
+        "pithumbsize": 960
+    }
+    try:
+        response = client.get(url, params=params, headers=HTTP_HEADERS, timeout=timeout)
+        if response.status_code == 200:
+            data = response.json()
+            pages = data.get("query", {}).get("pages", {})
+            for pid, pdata in pages.items():
+                if "thumbnail" in pdata and pdata["thumbnail"].get("source"):
+                    return pdata["thumbnail"]["source"]
+                if "original" in pdata and pdata["original"].get("source"):
+                    return pdata["original"]["source"]
+    except Exception:
+        pass
+    return None
+
+
+def fetch_from_google_search(client: httpx.Client, query: str, timeout: float = 5.0) -> Optional[str]:
     """
     Dự phòng: Tìm ảnh bằng Google Custom Search API nếu có cấu hình API Key và CX.
     """
@@ -182,54 +229,68 @@ def fetch_from_google_search(client: httpx.Client, query: str, timeout: float = 
                 img_url = items[0].get("link")
                 if img_url and img_url.startswith("http"):
                     return img_url
-    except Exception as e:
+    except Exception:
         pass
     return None
 
 
-def get_car_image(client: httpx.Client, car: dict, thread_id: int, request_delay: float = 0.3) -> Optional[str]:
+def get_car_image(client: httpx.Client, car: dict, thread_id: int, request_delay: float = 0.2) -> Optional[str]:
     """
-    Lấy ảnh cho xe qua các provider với cơ chế retry và delay chống ratelimit.
+    Lấy ảnh xe theo thứ tự ưu tiên:
+    1. Wikimedia Commons theo '{year} {make} {model}'
+    2. Wikimedia Commons theo '{make} {model}'
+    3. Wikipedia Pageimages theo '{make} {model}'
+    4. Google Custom Search (nếu có key)
     """
-    make = car.get("make", "")
-    model = car.get("model", "")
+    make = car.get("make", "").strip()
+    model = car.get("model", "").strip()
     year = int(car.get("year", 0))
-    query = f"{year} {make} {model}".strip()
     
-    if not query:
-        return None
-
+    search_candidates = []
+    if year > 0 and make and model:
+        search_candidates.append(f"{year} {make} {model}")
+    if make and model:
+        search_candidates.append(f"{make} {model}")
+    
     max_retries = 3
     for attempt in range(max_retries):
         if stop_event.is_set():
             raise Exception("STOP_EVENT_SET")
             
         try:
-            # 1. CarImagery API (Ưu tiên số 1)
-            img_url = fetch_from_car_api(client, make, model, year)
-            if img_url:
-                time.sleep(request_delay)
-                return img_url
+            # 1. Thử Wikimedia Commons
+            for term in search_candidates:
+                img_url = fetch_from_wikimedia_commons(client, term)
+                if img_url:
+                    time.sleep(request_delay)
+                    return img_url
 
-            # 2. Google Custom Search (Dự phòng)
-            img_url = fetch_from_google_search(client, query)
-            if img_url:
-                time.sleep(request_delay)
-                return img_url
+            # 2. Thử Wikipedia Pageimages
+            for term in search_candidates:
+                img_url = fetch_from_wikipedia_pageimages(client, term)
+                if img_url:
+                    time.sleep(request_delay)
+                    return img_url
 
-            # Nếu không tìm thấy qua cả 2 nguồn, coi như không có ảnh
+            # 3. Thử Google Search (nếu có key)
+            if search_candidates:
+                img_url = fetch_from_google_search(client, search_candidates[0])
+                if img_url:
+                    time.sleep(request_delay)
+                    return img_url
+
             return None
 
         except Exception as e:
             if "429" in str(e) or "Too Many Requests" in str(e):
-                backoff_time = (attempt + 1) * 10
-                print(f"\n[Luồng {thread_id}] Rate limit (429). Tạm dừng {backoff_time}s (Lần thử {attempt+1}/{max_retries})...")
+                backoff_time = (attempt + 1) * 5
+                print(f"\n[Luồng {thread_id}] Rate limit (429). Tạm dừng {backoff_time}s...")
                 for _ in range(backoff_time):
                     if stop_event.is_set():
                         raise Exception("STOP_EVENT_SET")
                     time.sleep(1)
             else:
-                time.sleep(2)
+                time.sleep(1)
 
     return None
 
@@ -245,7 +306,6 @@ def upsert_batch_cars(supabase_client: Client, batch: List[Dict], thread_id: int
     if not batch:
         return
 
-    # Deduplicate theo car id
     dedup_dict = {item['id']: item for item in batch}
     unique_batch = list(dedup_dict.values())
 
@@ -286,12 +346,9 @@ def upsert_batch_cars(supabase_client: Client, batch: List[Dict], thread_id: int
 # 4. WORKER THREAD (Producer-Consumer)
 # ==========================================
 
-def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
+def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool, force: bool):
     """
-    Worker xử lý từng item từ queue:
-    1. Kiểm tra cache SQLite
-    2. Nếu chưa có -> gọi API lấy ảnh và lưu cache
-    3. Gom batch và upsert lên Supabase
+    Worker xử lý từng item từ queue.
     """
     supabase_worker: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
     http_client = httpx.Client(timeout=10.0)
@@ -307,7 +364,6 @@ def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
                     batch_upsert = []
                 continue
 
-            # Poison pill kết thúc luồng
             if car is None:
                 data_queue.task_done()
                 break
@@ -317,14 +373,12 @@ def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
             model = car.get('model', '')
             year = int(car.get('year', 0))
 
-            # 1. Kiểm tra Cache SQLite
-            cached_url = get_cached_image(car_id, make, model, year)
+            cached_url = None if force else get_cached_image(car_id, make, model, year)
             if cached_url:
                 image_url = cached_url
                 with counter_lock:
                     counters['cached'] += 1
             else:
-                # 2. Gọi API lấy ảnh
                 try:
                     image_url = get_car_image(http_client, car, thread_id, request_delay=delay)
                     if image_url:
@@ -332,9 +386,8 @@ def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
                         with counter_lock:
                             counters['fetched'] += 1
                     else:
-                        # Ghi nhận không tìm thấy ảnh
                         save_cached_image(car_id, make, model, year, None, status="not_found")
-                        save_failed_record(car, "Image not found from any provider")
+                        save_failed_record(car, "Image not found from Wikimedia/Wikipedia")
                         with counter_lock:
                             counters['failed'] += 1
                             failed_record_ids.add(car_id)
@@ -356,7 +409,6 @@ def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
                         data_queue.task_done()
                         continue
 
-            # 3. Chuẩn bị row để cập nhật
             updated_car = car.copy()
             updated_car['image_url'] = image_url
             batch_upsert.append(updated_car)
@@ -377,7 +429,6 @@ def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
 
             data_queue.task_done()
 
-        # Flush lượng data còn lại
         if batch_upsert:
             upsert_batch_cars(supabase_worker, batch_upsert, thread_id, dry_run)
 
@@ -389,19 +440,19 @@ def worker_thread(thread_id: int, batch_size: int, delay: float, dry_run: bool):
 # 5. MAIN PIPELINE
 # ==========================================
 
-def run_pipeline(limit: Optional[int] = None, num_workers: int = 3, batch_size: int = 20, delay: float = 0.3, dry_run: bool = False):
+def run_pipeline(limit: Optional[int] = None, num_workers: int = 4, batch_size: int = 20, delay: float = 0.2, dry_run: bool = False, force: bool = False):
     init_cache_db()
     
     print("=" * 60)
-    print("🚗 KHỞI ĐỘNG DATA PIPELINE CẬP NHẬT ẢNH XE")
-    print(f"• Workers: {num_workers} | Batch size: {batch_size} | Delay: {delay}s | Dry run: {dry_run}")
+    print("🚗 KHỞI ĐỘNG DATA PIPELINE CẬP NHẬT ẢNH XE (WIKIMEDIA/WIKIPEDIA)")
+    print(f"• Workers: {num_workers} | Batch size: {batch_size} | Delay: {delay}s | Force: {force} | Dry run: {dry_run}")
     if limit:
-        print(f"• Giới hạn số lượng chạy thử: {limit} xe")
+        print(f"• Giới hạn số lượng chạy: {limit} xe")
     print("=" * 60)
 
     threads = []
     for i in range(num_workers):
-        t = threading.Thread(target=worker_thread, args=(i + 1, batch_size, delay, dry_run))
+        t = threading.Thread(target=worker_thread, args=(i + 1, batch_size, delay, dry_run, force))
         t.start()
         threads.append(t)
 
@@ -418,7 +469,6 @@ def run_pipeline(limit: Optional[int] = None, num_workers: int = 3, batch_size: 
                 time.sleep(1)
                 continue
 
-            # Tính số lượng cần fetch đợt này
             fetch_size = 100
             if limit:
                 remaining = limit - total_enqueued
@@ -426,13 +476,13 @@ def run_pipeline(limit: Optional[int] = None, num_workers: int = 3, batch_size: 
                     break
                 fetch_size = min(fetch_size, remaining)
 
-            print(f"\n[Producer] Đang truy vấn Supabase lấy tối đa {fetch_size} xe chưa có ảnh...")
+            print(f"\n[Producer] Đang truy vấn Supabase lấy tối đa {fetch_size} xe...")
             try:
-                response = supabase_main.table('cars') \
-                    .select('*') \
-                    .is_('image_url', 'null') \
-                    .limit(fetch_size) \
-                    .execute()
+                query = supabase_main.table('cars').select('*')
+                if not force:
+                    query = query.or_("image_url.is.null,image_url.ilike.%regcheck%")
+                
+                response = query.limit(fetch_size).execute()
                 cars = response.data
             except Exception as e:
                 print(f"[Producer] Lỗi truy vấn Supabase: {e}")
@@ -478,7 +528,6 @@ def run_pipeline(limit: Optional[int] = None, num_workers: int = 3, batch_size: 
         print("\n\n⚠️ Nhận tín hiệu dừng từ người dùng (Ctrl+C). Đang hoàn tất lưu dữ liệu...")
         stop_event.set()
 
-    # Gửi poison pill cho các workers
     for t in threads:
         if t.is_alive():
             data_queue.put(None)
@@ -505,11 +554,12 @@ def run_pipeline(limit: Optional[int] = None, num_workers: int = 3, batch_size: 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Batch update car images from CarImagery / Google Search to Supabase.")
+    parser = argparse.ArgumentParser(description="Batch update car images from Wikimedia/Wikipedia to Supabase.")
     parser.add_argument("--limit", type=int, default=None, help="Chỉ xử lý tối đa N xe (dùng để test thử nghiệm)")
-    parser.add_argument("--workers", type=int, default=3, help="Số lượng luồng worker chạy song song (mặc định: 3)")
+    parser.add_argument("--workers", type=int, default=4, help="Số lượng luồng worker chạy song song (mặc định: 4)")
     parser.add_argument("--batch-size", type=int, default=20, help="Kích thước batch upsert lên Supabase (mặc định: 20)")
-    parser.add_argument("--delay", type=float, default=0.3, help="Khoảng nghỉ giữa các request (giây) để tránh rate limit (mặc định: 0.3)")
+    parser.add_argument("--delay", type=float, default=0.2, help="Khoảng nghỉ giữa các request (giây) (mặc định: 0.2)")
+    parser.add_argument("--force", action="store_true", help="Cập nhật lại toàn bộ xe kể cả đã có URL")
     parser.add_argument("--dry-run", action="store_true", help="Chỉ fetch ảnh và lưu cache SQLite, không ghi vào Supabase")
     
     args = parser.parse_args()
@@ -518,5 +568,6 @@ if __name__ == "__main__":
         num_workers=args.workers,
         batch_size=args.batch_size,
         delay=args.delay,
-        dry_run=args.dry_run
+        dry_run=args.dry_run,
+        force=args.force
     )

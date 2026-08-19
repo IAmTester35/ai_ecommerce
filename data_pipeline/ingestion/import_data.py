@@ -1,31 +1,46 @@
 import os
+import uuid
 import pandas as pd
+from pathlib import Path
 from dotenv import load_dotenv
 from supabase import create_client, Client
-import uuid
 from tqdm import tqdm
 
-# Load env variables
-load_dotenv()
+# Load env variables from data_pipeline or root
+for p in [Path(__file__).parent, Path(__file__).parent.parent, Path(__file__).parent.parent.parent]:
+    env_file = p / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Missing environment variables. Please check .env file.")
+    raise ValueError("Missing environment variables (SUPABASE_URL, SUPABASE_KEY). Please check .env file.")
 
 # Initialize clients
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# Configuration
-CSV_PATH = "../car/data/merged_golden_reviews.csv"
+# Locate Golden Dataset CSV
+BASE_DIR = Path(__file__).resolve().parent
+CANDIDATE_PATHS = [
+    BASE_DIR.parent.parent / "car" / "data" / "merged_golden_reviews.csv",
+    BASE_DIR.parent / "car" / "data" / "merged_golden_reviews.csv",
+    Path.cwd() / "car" / "data" / "merged_golden_reviews.csv"
+]
+CSV_PATH = next((p for p in CANDIDATE_PATHS if p.exists()), None)
+
 
 def main():
-    print("Loading golden dataset...")
+    if not CSV_PATH or not CSV_PATH.exists():
+        print(f"❌ Không tìm thấy file dữ liệu merged_golden_reviews.csv. Đã thử tìm tại: {[str(p) for p in CANDIDATE_PATHS]}")
+        return
+
+    print(f"Loading golden dataset from: {CSV_PATH}...")
     df = pd.read_csv(CSV_PATH)
     
     # Drop rows without essential data
     df = df.dropna(subset=['Year', 'Make', 'Model', 'Review'])
-    
     print(f"Total valid records: {len(df)}")
     
     CAR_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_DNS, 'ai_ecommerce.cars')
@@ -41,11 +56,9 @@ def main():
         
         car_key = f"{make}_{model}_{year}"
         if car_key not in unique_cars:
-            # Handle MSRP / Price
             price_val = row['MSRP']
             price = int(float(price_val)) if pd.notnull(price_val) and str(price_val).strip() != '' else None
             
-            # Handle HP
             hp_val = row['Engine_HP']
             hp = int(float(hp_val)) if pd.notnull(hp_val) and str(hp_val).strip() != '' else None
             
@@ -91,7 +104,7 @@ def main():
     except Exception as e:
         print(f"Error checking cars count: {e}")
 
-    # 2. PROCESS REVIEWS (Không gọi Embedding)
+    # 2. PROCESS REVIEWS
     print("\n=== STEP 2: Inserting reviews ===")
     reviews_to_insert = []
     seen_review_ids = set()
@@ -106,12 +119,10 @@ def main():
             continue
             
         car_id = unique_cars[car_key]['id']
-        
         review_text = str(row['Review']).strip()
         
         rating_val = row['Rating']
         rating = float(rating_val) if pd.notnull(rating_val) and str(rating_val).strip() != '' else None
-        
         source = str(row.get('Source', 'edmunds')).strip()
         
         review_unique_string = f"{car_id}_{review_text[:50]}"
@@ -127,11 +138,10 @@ def main():
             "rating": rating,
             "comment": review_text,
             "source": source
-            # embedding = null
         }
         reviews_to_insert.append(record)
         
-        if len(reviews_to_insert) >= 200: # Không gọi API nên tăng batch size lên cho nhanh
+        if len(reviews_to_insert) >= 200:
             try:
                 supabase.table('reviews').upsert(reviews_to_insert).execute()
             except Exception as e:
@@ -139,7 +149,6 @@ def main():
             finally:
                 reviews_to_insert = []
                 
-    # Insert remaining
     if len(reviews_to_insert) > 0:
         try:
             supabase.table('reviews').upsert(reviews_to_insert).execute()
@@ -147,6 +156,7 @@ def main():
             print(f"\nError inserting reviews to Supabase: {e}")
 
     print("\nImport data completed successfully!")
+
 
 if __name__ == "__main__":
     main()

@@ -30,24 +30,68 @@ def _schedule_image_cache(car_id: str, image_url: str):
     _background_tasks.add(task)
     task.add_done_callback(_background_tasks.discard)
 
-async def fetch_from_car_api(client: httpx.AsyncClient, make: str, model: str, year: str) -> Optional[str]:
+HTTP_HEADERS = {
+    "User-Agent": "CarEcommerceBackend/2.0 (contact@ecommerce-car.com)"
+}
+
+async def fetch_from_wikimedia_commons(client: httpx.AsyncClient, query: str) -> Optional[str]:
     """
-    Lấy ảnh từ CarImagery API (Miễn phí, không cần Key).
+    Lấy ảnh thật từ Wikimedia Commons API (Miễn phí, Direct CDN JPG/PNG).
     """
-    term = f"{year}+{make}+{model}".replace(" ", "+")
+    url = "https://commons.wikimedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "generator": "search",
+        "gsrsearch": f"{query} filetype:bitmap",
+        "gsrnamespace": 6,
+        "gsrlimit": 1,
+        "prop": "imageinfo",
+        "iiprop": "url",
+        "iiurlwidth": 960,
+        "format": "json"
+    }
     try:
-        response = await client.get(
-            f"http://www.carimagery.com/api.asmx/GetImageUrl?searchTerm={term}",
-            timeout=3.0
-        )
+        response = await client.get(url, params=params, headers=HTTP_HEADERS, timeout=4.0)
         if response.status_code == 200:
-            root = ET.fromstring(response.text)
-            url = root.text
-            if url and url.startswith("http"):
-                return url
+            data = response.json()
+            pages = data.get("query", {}).get("pages", {})
+            for pid, pdata in pages.items():
+                imageinfo = pdata.get("imageinfo", [])
+                if imageinfo:
+                    img_url = imageinfo[0].get("thumburl") or imageinfo[0].get("url")
+                    if img_url and img_url.startswith("http") and not img_url.endswith(".svg"):
+                        return img_url
     except Exception as e:
-        logger.warning(f"Car API error for {term}: {e}")
-        
+        logger.debug(f"Wikimedia Commons fetch error for {query}: {e}")
+    return None
+
+async def fetch_from_wikipedia_pageimages(client: httpx.AsyncClient, query: str) -> Optional[str]:
+    """
+    Lấy ảnh từ Wikipedia PageImages API (Miễn phí, Direct CDN JPG/PNG).
+    """
+    url = "https://en.wikipedia.org/w/api.php"
+    params = {
+        "action": "query",
+        "format": "json",
+        "generator": "search",
+        "gsrsearch": f"{query} car",
+        "gsrlimit": 1,
+        "prop": "pageimages",
+        "piprop": "thumbnail|original",
+        "pithumbsize": 960
+    }
+    try:
+        response = await client.get(url, params=params, headers=HTTP_HEADERS, timeout=4.0)
+        if response.status_code == 200:
+            data = response.json()
+            pages = data.get("query", {}).get("pages", {})
+            for pid, pdata in pages.items():
+                if "thumbnail" in pdata and pdata["thumbnail"].get("source"):
+                    return pdata["thumbnail"]["source"]
+                if "original" in pdata and pdata["original"].get("source"):
+                    return pdata["original"]["source"]
+    except Exception as e:
+        logger.debug(f"Wikipedia fetch error for {query}: {e}")
     return None
 
 async def fetch_from_google_search(client: httpx.AsyncClient, query: str) -> Optional[str]:
@@ -83,29 +127,42 @@ async def fetch_from_google_search(client: httpx.AsyncClient, query: str) -> Opt
 
 async def fetch_single_car_image(client: httpx.AsyncClient, car: dict) -> Optional[str]:
     """
-    Lấy ảnh cho một xe theo thứ tự ưu tiên: DB -> CarImagery API -> Google Search.
+    Lấy ảnh cho một xe theo thứ tự ưu tiên: DB -> Wikimedia Commons -> Wikipedia -> Google Search.
     """
     # 0. Ưu tiên đọc từ DB
-    if car.get("image_url"):
+    if car.get("image_url") and "regcheck" not in car["image_url"] and "fancybox" not in car["image_url"]:
         return car["image_url"]
         
-    make = car.get("make", "")
-    model = car.get("model", "")
-    year = str(car.get("year", ""))
+    make = car.get("make", "").strip()
+    model = car.get("model", "").strip()
+    year = str(car.get("year", "")).strip()
     car_id = car.get("id", "")
     
-    query = f"{year} {make} {model}".strip()
-    if not query:
+    search_terms = []
+    if year and make and model:
+        search_terms.append(f"{year} {make} {model}")
+    if make and model:
+        search_terms.append(f"{make} {model}")
+        
+    if not search_terms:
         return None
 
-    # 1. Gọi API chính (Không cần Key)
-    image_url = await fetch_from_car_api(client, make, model, year)
-    if image_url:
-        _schedule_image_cache(car_id, image_url)
-        return image_url
+    # 1. Gọi Wikimedia Commons
+    for term in search_terms:
+        image_url = await fetch_from_wikimedia_commons(client, term)
+        if image_url:
+            _schedule_image_cache(car_id, image_url)
+            return image_url
+
+    # 2. Gọi Wikipedia Pageimages
+    for term in search_terms:
+        image_url = await fetch_from_wikipedia_pageimages(client, term)
+        if image_url:
+            _schedule_image_cache(car_id, image_url)
+            return image_url
         
-    # 2. Gọi API dự phòng (Google Search)
-    image_url = await fetch_from_google_search(client, query)
+    # 3. Gọi API dự phòng (Google Search)
+    image_url = await fetch_from_google_search(client, search_terms[0])
     if image_url:
         _schedule_image_cache(car_id, image_url)
         return image_url
