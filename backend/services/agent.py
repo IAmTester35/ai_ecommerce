@@ -17,7 +17,15 @@ async def extract_constraints(query: str) -> ExtractedConstraints:
     Analyze the user query: "{query}"
 
     Extract constraints and perform Semantic Expansion according to these rules:
-    - max_price: Maximum budget integer mentioned (e.g. "under 30000" -> 30000). Return null if not specified.
+    - max_price: Maximum budget integer normalized to USD (MSRP integer).
+      * If user specifies USD (e.g. "under 30000", "$40k", "35000 USD"), extract the integer (e.g. 30000, 40000).
+      * If user specifies Vietnamese Dong (VNĐ/tỷ/triệu/tr) (e.g. "dưới 1 tỷ", "tầm 800 triệu", "dưới 500tr"), CONVERT to USD equivalent using exchange rate 25,400 VND = 1 USD:
+        - "1 tỷ" / "1 tỉ" (1,000,000,000 / 25400) -> 39370
+        - "2 tỷ" (2,000,000,000 / 25400) -> 78740
+        - "1.5 tỷ" (1,500,000,000 / 25400) -> 59055
+        - "800 triệu" / "800tr" (800,000,000 / 25400) -> 31496
+        - "500 triệu" / "500tr" (500,000,000 / 25400) -> 19685
+      * Return null if not specified.
     - min_hp: Minimum engine horsepower constraint. If user demands a powerful engine (e.g. "động cơ mạnh", "xe khỏe", "high horsepower"), set a reasonable threshold (e.g. 200), otherwise null.
     - make: Car brand in lowercase (e.g. "toyota", "ford"). Return null if not specified.
     - target_year: Specific year integer mentioned (e.g. 2020). Return null if not specified.
@@ -87,11 +95,22 @@ async def generate_ai_response(
         review_snippet = c.get('review', '')
         engine_hp = c.get('engine_hp')
         meta = c.get('metadata') or {}
+        price_usd = c.get('price')
 
         hp_str = f", Engine: {engine_hp} HP" if engine_hp else ""
         meta_str = ", ".join([f"{k}: {v}" for k, v in meta.items() if v]) if isinstance(meta, dict) else ""
 
-        cars_info += f"- Option {idx+1}: {c.get('year')} {c.get('make')} {c.get('model')} (Price: ${c.get('price')}{hp_str})\n"
+        if price_usd and price_usd > 0:
+            price_vnd = price_usd * 25400
+            if price_vnd >= 1_000_000_000:
+                vnd_fmt = f"{(price_vnd / 1_000_000_000):.2f} tỷ VNĐ".replace(".00", "")
+            else:
+                vnd_fmt = f"{(price_vnd / 1_000_000):.0f} triệu VNĐ"
+            price_display = f"${price_usd:,} USD (~{vnd_fmt})"
+        else:
+            price_display = "Liên hệ giá"
+
+        cars_info += f"- Option {idx+1}: {c.get('year')} {c.get('make')} {c.get('model')} (Price: {price_display}{hp_str})\n"
         if meta_str:
             cars_info += f"  Technical Specs/Metadata: {meta_str}\n"
         if review_snippet:
@@ -132,7 +151,11 @@ async def generate_ai_response(
     3. STRICT HARD CONSTRAINT ADHERENCE:
        - Never recommend a vehicle that violates the user's hard constraints (e.g., if fuel_type is electric, NEVER suggest hybrid or gasoline cars).
 
-    4. PERSUASIVE & CONCISE STYLE:
+    4. CURRENCY & PRICING TRANSPARENCY:
+       - Present prices in Vietnamese Dong (VNĐ) with USD MSRP context (e.g., "khoảng 533 triệu VNĐ (~$20,990 USD)").
+       - Note that database inventory stores MSRP in USD and converts to VNĐ at current exchange rate (~25,400 VNĐ/USD).
+
+    5. PERSUASIVE & CONCISE STYLE:
        - Explain WHY retrieved cars fit the user's needs based on provided metadata and highlights.
        - If budget/constraints were relaxed due to conflict (e.g. budget expanded, make dropped), transparently but politely explain to the user what exactly was compromised to find these alternative options.
     """

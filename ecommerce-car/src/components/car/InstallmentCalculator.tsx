@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
-import { formatVndPrice } from '../ui/PriceTag';
+import { formatVnd, usdToVnd } from '../../utils/currency';
 import { Card } from '../ui/Card';
 
 interface InstallmentCalculatorProps {
@@ -17,8 +17,9 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
   const [termYears, setTermYears] = useState<number>(5);
   const interestRateYear = 0.085; // 8.5% / year fixed average
 
-  const downPaymentAmount = Math.round((price * downPercent) / 100);
-  const loanAmount = price - downPaymentAmount;
+  const priceVnd = usdToVnd(price);
+  const downPaymentAmount = Math.round((priceVnd * downPercent) / 100);
+  const loanAmount = priceVnd - downPaymentAmount;
   const totalMonths = termYears * 12;
 
   // Monthly principal + monthly interest (simple amortization estimation)
@@ -90,12 +91,12 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
       <View style={styles.resultBox}>
         <View style={styles.resultRow}>
           <Text style={styles.resultLabel}>Trả trước ({downPercent}%):</Text>
-          <Text style={styles.resultValue}>{formatVndPrice(downPaymentAmount)}</Text>
+          <Text style={styles.resultValue}>{formatVnd(downPaymentAmount)}</Text>
         </View>
 
         <View style={styles.resultRow}>
           <Text style={styles.resultLabel}>Số tiền vay:</Text>
-          <Text style={styles.resultValue}>{formatVndPrice(loanAmount)}</Text>
+          <Text style={styles.resultValue}>{formatVnd(loanAmount)}</Text>
         </View>
 
         <View style={styles.divider} />

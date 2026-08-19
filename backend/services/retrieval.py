@@ -141,9 +141,13 @@ async def hybrid_search(
         for c in results:
             metadata_str = str(c.get('metadata') or '')
             review_str = c.get('review') or ''
+            p_usd = c.get('price') or 0
+            p_vnd = p_usd * 25400
+            vnd_str = f"{(p_vnd / 1e9):.2f} tỷ VNĐ" if p_vnd >= 1e9 else f"{(p_vnd / 1e6):.0f} triệu VNĐ"
+            price_info = f"${p_usd:,} USD ({vnd_str})" if p_usd > 0 else "Contact for price"
             doc_text = (
                 f"Car: {c.get('year')} {c.get('make')} {c.get('model')} - "
-                f"Price: ${c.get('price')} - Engine: {c.get('engine_hp')}HP. "
+                f"Price: {price_info} - Engine: {c.get('engine_hp')}HP. "
                 f"Specs: {metadata_str}. Review: {review_str}"
             )
             documents.append(doc_text)

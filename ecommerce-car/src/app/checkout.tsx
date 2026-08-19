@@ -18,7 +18,7 @@ import { usePaymentStore } from '../store/usePaymentStore';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { formatVndPrice } from '../components/ui/PriceTag';
+import { formatVnd, formatVndPrice, usdToVnd } from '../utils/currency';
 import { FALLBACK_CAR_URL } from '../constants/images';
 
 export default function CheckoutScreen() {
@@ -40,9 +40,10 @@ export default function CheckoutScreen() {
 
   const fallbackImage = FALLBACK_CAR_URL;
 
-  const rawTotal = getTotalPrice();
+  const rawTotalUsd = getTotalPrice();
+  const rawTotalVnd = usdToVnd(rawTotalUsd);
   // 10% standard deposit
-  const depositAmount = Math.round(rawTotal * 0.10);
+  const depositAmountVnd = Math.round(rawTotalVnd * 0.10);
 
   const handleProcessPayment = async () => {
     if (!user) {
@@ -89,13 +90,13 @@ export default function CheckoutScreen() {
         const paymentItems = items.map((item) => ({
           id: item.car_id,
           name: item.car ? `${item.car.make} ${item.car.model}` : 'Xe ô tô AutoMatch',
-          price: Math.round((item.car?.price || 0) * 0.10),
+          price: Math.round(usdToVnd(item.car?.price || 0) * 0.10),
           itemCount: item.quantity,
         }));
 
         const payload = {
           order_id: orderId,
-          amount: depositAmount,
+          amount: depositAmountVnd,
           items: paymentItems,
           email,
           address,
@@ -178,7 +179,7 @@ export default function CheckoutScreen() {
             <Text style={styles.totalLabel}>Tiền đặt cọc giữ xe (10%):</Text>
             <Text style={styles.totalSub}>Bao gồm hợp đồng điện tử & bảo lưu giá</Text>
           </View>
-          <Text style={styles.totalAmount}>{formatVndPrice(depositAmount)}</Text>
+          <Text style={styles.totalAmount}>{formatVnd(depositAmountVnd)}</Text>
         </View>
 
         {/* Delivery / Pickup Address */}
@@ -348,12 +349,12 @@ export default function CheckoutScreen() {
           <Button
             title={
               selectedPaymentMethod === 'zalopay'
-                ? `Thanh toán cọc ${formatVndPrice(depositAmount)} qua ZaloPay`
-                : `Xác nhận đặt cọc ${formatVndPrice(depositAmount)}`
+                ? `Thanh toán cọc ${formatVnd(depositAmountVnd)} qua ZaloPay`
+                : `Xác nhận đặt cọc ${formatVnd(depositAmountVnd)}`
             }
             onPress={handleProcessPayment}
-            loading={isLoading}
-            disabled={isLoading}
+            loading={isProcessing || isCheckingOut}
+            disabled={isProcessing || isCheckingOut}
             icon={<Ionicons name="shield-checkmark-outline" size={14} color="#FFFFFF" />}
             style={styles.submitBtn}
             size="md"

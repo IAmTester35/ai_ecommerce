@@ -16,7 +16,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
-import { formatVndPrice } from '../components/ui/PriceTag';
+import { formatVnd, formatVndPrice, usdToVnd } from '../utils/currency';
 import { FALLBACK_CAR_URL } from '../constants/images';
 
 export default function CartScreen() {
@@ -27,10 +27,11 @@ export default function CartScreen() {
     fetchCart(user?.id);
   }, [fetchCart, user]);
 
-  const rawTotal = getTotalPrice();
+  const rawTotalUsd = getTotalPrice();
+  const rawTotalVnd = usdToVnd(rawTotalUsd);
   // 10% standard deposit for car reservations
   const depositRate = 0.10;
-  const depositAmount = Math.round(rawTotal * depositRate);
+  const depositAmountVnd = Math.round(rawTotalVnd * depositRate);
 
   const fallbackImage = FALLBACK_CAR_URL;
 
@@ -140,12 +141,12 @@ export default function CartScreen() {
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tổng giá trị niêm yết:</Text>
-            <Text style={styles.summaryValue}>{formatVndPrice(rawTotal)}</Text>
+            <Text style={styles.summaryValue}>{formatVnd(rawTotalVnd)}</Text>
           </View>
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tiền cọc giữ xe (10%):</Text>
-            <Text style={styles.summaryValue}>{formatVndPrice(depositAmount)}</Text>
+            <Text style={styles.summaryValue}>{formatVnd(depositAmountVnd)}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -155,7 +156,7 @@ export default function CartScreen() {
               <Text style={styles.totalLabel}>Tổng tiền cọc:</Text>
               <Text style={styles.totalSub}>Hoàn cọc 100% trong 7 ngày</Text>
             </View>
-            <Text style={styles.totalAmount}>{formatVndPrice(depositAmount)}</Text>
+            <Text style={styles.totalAmount}>{formatVnd(depositAmountVnd)}</Text>
           </View>
         </Card>
 
@@ -174,7 +175,7 @@ export default function CartScreen() {
       <View style={styles.bottomCheckoutBar}>
         <View style={styles.bottomTotalGroup}>
           <Text style={styles.bottomDepositLabel}>Tiền cọc:</Text>
-          <Text style={styles.bottomDepositAmount}>{formatVndPrice(depositAmount)}</Text>
+          <Text style={styles.bottomDepositAmount}>{formatVnd(depositAmountVnd)}</Text>
         </View>
 
         <Button

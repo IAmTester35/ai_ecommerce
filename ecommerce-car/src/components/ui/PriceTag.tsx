@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
+import { formatVndPrice, usdToVnd, formatCarPrice } from '../../utils/currency';
+
+export { formatVndPrice, usdToVnd, formatCarPrice };
 
 interface PriceTagProps {
   price?: number | null;
@@ -10,16 +13,6 @@ interface PriceTagProps {
   showInstallment?: boolean;
   style?: ViewStyle;
 }
-
-export const formatVndPrice = (price?: number | null): string => {
-  if (!price || price <= 0) return 'Liên hệ giá';
-  if (price >= 1_000_000_000) {
-    const billions = (price / 1_000_000_000).toFixed(2).replace(/\.00$/, '');
-    return `${billions} tỷ VNĐ`;
-  }
-  const millions = (price / 1_000_000).toFixed(0);
-  return `${millions} triệu VNĐ`;
-};
 
 export const PriceTag: React.FC<PriceTagProps> = ({
   price,
@@ -43,12 +36,13 @@ export const PriceTag: React.FC<PriceTagProps> = ({
   };
 
   const formattedPrice = formatVndPrice(price);
+  const priceVnd = usdToVnd(price);
 
-  // Estimate monthly installment: ~80% loan, 7 years, ~8.5% interest
-  const monthlyEst =
-    price && price > 0
-      ? Math.round(((price * 0.8) / (7 * 12)) * 1.08 / 1_000_000)
-      : 0;
+  // Estimate monthly installment: ~80% loan, 7 years, ~8.5% interest on VND price
+  const monthlyEstMillion =
+    priceVnd > 0
+      ? (((priceVnd * 0.8) / (7 * 12)) * 1.085 / 1_000_000).toFixed(1)
+      : '0';
 
   return (
     <View style={[styles.container, style]}>
@@ -71,11 +65,11 @@ export const PriceTag: React.FC<PriceTagProps> = ({
         )}
       </View>
 
-      {showInstallment && monthlyEst > 0 && (
+      {showInstallment && priceVnd > 0 && (
         <View style={styles.installmentPill}>
           <Ionicons name="card-outline" size={10} color={colors.primaryHover} style={{ marginRight: 3 }} />
           <Text style={styles.installmentText}>
-            Góp từ ~{monthlyEst} tr/tháng
+            Góp từ ~{monthlyEstMillion} tr/tháng
           </Text>
         </View>
       )}

@@ -1,5 +1,6 @@
 import { supabase } from '../api/supabaseClient';
 import { Car, CarFilterParams, SavedCar } from '../types';
+import { vndToUsd } from '../utils/currency';
 
 export const carService = {
   getTopCars: async (limit = 20): Promise<Car[]> => {
@@ -40,11 +41,13 @@ export const carService = {
     if (params.make && params.make !== 'all') {
       query = query.ilike('make', `%${params.make}%`);
     }
-    if (params.minPrice) {
-      query = query.gte('price', params.minPrice);
+    if (params.minPrice !== undefined && params.minPrice !== null) {
+      const minPriceUsd = vndToUsd(params.minPrice);
+      query = query.gte('price', minPriceUsd);
     }
-    if (params.maxPrice) {
-      query = query.lte('price', params.maxPrice);
+    if (params.maxPrice !== undefined && params.maxPrice !== null) {
+      const maxPriceUsd = vndToUsd(params.maxPrice);
+      query = query.lte('price', maxPriceUsd);
     }
     if (params.targetYear) {
       query = query.gte('year', params.targetYear);

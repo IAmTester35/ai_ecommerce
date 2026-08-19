@@ -126,8 +126,8 @@ export default function OrdersScreen() {
 
           <View style={styles.cardFooter}>
             <View>
-              <Text style={styles.depositLabel}>Tổng cọc:</Text>
-              <Text style={styles.depositAmount}>{formatVndPrice(item.total_amount)}</Text>
+              <Text style={styles.depositLabel}>Tiền cọc (10%):</Text>
+              <Text style={styles.depositAmount}>{formatVndPrice(Math.round(item.total_amount * 0.10))}</Text>
             </View>
 
             <View style={styles.trackingLink}>

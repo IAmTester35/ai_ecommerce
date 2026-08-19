@@ -188,8 +188,8 @@ export default function OrderDetailScreen() {
           <View style={styles.divider} />
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Tổng tiền cọc:</Text>
-            <Text style={styles.totalAmount}>{formatVndPrice(selectedOrder.total_amount)}</Text>
+            <Text style={styles.totalLabel}>Tiền cọc (10%):</Text>
+            <Text style={styles.totalAmount}>{formatVndPrice(Math.round(selectedOrder.total_amount * 0.10))}</Text>
           </View>
         </Card>
 
@@ -246,7 +246,7 @@ export default function OrderDetailScreen() {
               </Text>
               <Text style={styles.itemQuantity}>Số lượng: x{item.quantity} xe</Text>
               <Text style={styles.itemDepositPrice}>
-                Đơn giá: {formatVndPrice(item.price)}
+                Giá niêm yết: {formatVndPrice(item.price)}
               </Text>
             </View>
           </Card>
