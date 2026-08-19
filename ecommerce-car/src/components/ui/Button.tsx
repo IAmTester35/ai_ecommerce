@@ -53,15 +53,15 @@ export const Button: React.FC<ButtonProps> = ({
         return {
           bg: colors.surfaceElevated,
           text: colors.text,
-          border: 'transparent',
-          borderWidth: 0,
+          border: 'rgba(255, 255, 255, 0.08)',
+          borderWidth: 1,
         };
       case 'outline':
         return {
-          bg: 'rgba(59, 130, 246, 0.08)',
+          bg: 'rgba(37, 99, 235, 0.08)',
           text: colors.primaryHover,
-          border: 'transparent',
-          borderWidth: 0,
+          border: 'rgba(59, 130, 246, 0.25)',
+          borderWidth: 1,
         };
       case 'ghost':
         return {
@@ -74,15 +74,15 @@ export const Button: React.FC<ButtonProps> = ({
         return {
           bg: colors.dangerMuted,
           text: colors.danger,
-          border: 'transparent',
-          borderWidth: 0,
+          border: 'rgba(239, 68, 68, 0.25)',
+          borderWidth: 1,
         };
       case 'conflict':
         return {
           bg: colors.conflictMuted,
           text: colors.conflict,
-          border: 'transparent',
-          borderWidth: 0,
+          border: 'rgba(245, 158, 11, 0.25)',
+          borderWidth: 1,
         };
       default:
         return {
@@ -98,24 +98,24 @@ export const Button: React.FC<ButtonProps> = ({
     switch (size) {
       case 'sm':
         return {
-          height: 36,
+          height: 34,
           paddingHorizontal: spacing.md,
-          fontSize: typography.sizes.xs + 1,
+          fontSize: typography.sizes.xs,
           borderRadius: radii.sm,
         };
       case 'lg':
         return {
-          height: 52,
-          paddingHorizontal: spacing['2xl'],
-          fontSize: typography.sizes.base,
-          borderRadius: radii.lg,
+          height: 48,
+          paddingHorizontal: spacing.xl,
+          fontSize: typography.sizes.sm + 1,
+          borderRadius: radii.md,
         };
       case 'md':
       default:
         return {
-          height: 44,
-          paddingHorizontal: spacing.xl,
-          fontSize: typography.sizes.sm + 1,
+          height: 40,
+          paddingHorizontal: spacing.lg,
+          fontSize: typography.sizes.sm,
           borderRadius: radii.md,
         };
     }
@@ -188,10 +188,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   iconLeft: {
-    marginRight: 8,
+    marginRight: 6,
   },
   iconRight: {
-    marginLeft: 8,
+    marginLeft: 6,
   },
   disabled: {
     opacity: 0.45,

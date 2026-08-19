@@ -4,58 +4,58 @@
  */
 
 export const colors = {
-  // Backgrounds & Base Surfaces (Obsidian & Graphite)
-  background: '#090A0C',          // Deep Obsidian Black
-  surface: '#11141B',             // Refined Slate Surface
-  surfaceElevated: '#151922',     // Elevated Card & Sheet Surface
-  surfaceElevatedHover: '#1C222E',// Interactive state
-  surfaceGlass: 'rgba(17, 20, 27, 0.90)', // Glass backdrop
-  surfaceSubtle: 'rgba(255, 255, 255, 0.03)',
+  // Backgrounds & Base Surfaces (Deep Obsidian & Slate Graphite)
+  background: '#0B0D11',          // Obsidian Black
+  surface: '#11151F',             // Header, Navigation, Sheet Backdrop
+  surfaceElevated: '#171C28',     // Cards, Filter Inputs, Elevated Elements
+  surfaceElevatedHover: '#1E2433',// Interactive hover state
+  surfaceGlass: 'rgba(17, 21, 31, 0.88)', // Frosted glass backdrop
+  surfaceSubtle: 'rgba(255, 255, 255, 0.04)',
 
-  // Borders & Outlines (Subtle & clean - minimal use)
-  border: 'rgba(255, 255, 255, 0.05)',
-  borderLight: 'rgba(255, 255, 255, 0.02)',
-  borderHighlight: 'rgba(59, 130, 246, 0.30)',
+  // Borders & Outlines (Hairline & subtle)
+  border: 'rgba(255, 255, 255, 0.06)',
+  borderLight: 'rgba(255, 255, 255, 0.03)',
+  borderHighlight: 'rgba(59, 130, 246, 0.35)',
 
   // Primary Electric Sapphire / Porsche Blue
-  primary: '#3B82F6',             // Clean Sapphire Blue
-  primaryHover: '#60A5FA',
-  primaryMuted: 'rgba(59, 130, 246, 0.10)',
-  primaryGlow: 'rgba(59, 130, 246, 0.18)',
+  primary: '#2563EB',             // Electric Sapphire
+  primaryHover: '#3B82F6',        // Bright Blue highlight
+  primaryMuted: 'rgba(37, 99, 235, 0.12)',
+  primaryGlow: 'rgba(37, 99, 235, 0.20)',
 
   // Secondary Accents (Soft Indigo)
   secondary: '#6366F1',           // Soft Indigo
   secondaryHover: '#818CF8',
-  secondaryMuted: 'rgba(99, 102, 241, 0.10)',
+  secondaryMuted: 'rgba(99, 102, 241, 0.12)',
 
   // Semantic & Feedback Colors
-  conflict: '#F59E0B',            // Warm Amber (Ratings & Notices)
-  conflictMuted: 'rgba(245, 158, 11, 0.10)',
+  conflict: '#F59E0B',            // Amber Gold
+  conflictMuted: 'rgba(245, 158, 11, 0.12)',
   
   success: '#10B981',             // Emerald
-  successMuted: 'rgba(16, 185, 129, 0.10)',
+  successMuted: 'rgba(16, 185, 129, 0.12)',
   
   danger: '#EF4444',              // Rose Red
-  dangerMuted: 'rgba(239, 68, 68, 0.10)',
+  dangerMuted: 'rgba(239, 68, 68, 0.12)',
   
   warning: '#F97316',             // Soft Orange
-  warningMuted: 'rgba(249, 115, 22, 0.10)',
+  warningMuted: 'rgba(249, 115, 22, 0.12)',
 
   info: '#0EA5E9',                // Sky Blue
-  infoMuted: 'rgba(14, 165, 233, 0.10)',
+  infoMuted: 'rgba(14, 165, 233, 0.12)',
 
   // Typography Palette
   text: '#F8FAFC',                // Crisp Ice White
   textSecondary: '#94A3B8',       // Slate Grey
   textMuted: '#64748B',           // Dark Slate for microcopy
-  textDark: '#090A0C',            // Dark text for bright badges
+  textDark: '#0B0D11',            // Dark text on bright surfaces
 
   // Card specific tokens
-  cardBg: '#13161F',
-  cardBorder: 'transparent',
+  cardBg: '#131722',
+  cardBorder: 'rgba(255, 255, 255, 0.05)',
 
   // TabBar tokens
-  tabBarBg: '#11141B',
+  tabBarBg: '#0F131C',
   tabBarBorder: 'rgba(255, 255, 255, 0.04)',
   tabBarActive: '#3B82F6',
   tabBarInactive: '#64748B',

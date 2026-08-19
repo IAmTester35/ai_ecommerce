@@ -12,7 +12,7 @@ import {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -138,11 +138,12 @@ export default function CarDetailScreen() {
   if (error || !selectedCar) {
     return (
       <View style={[styles.container, styles.centerBox]}>
-        <Ionicons name="alert-circle-outline" size={40} color={colors.danger} />
+        <Ionicons name="alert-circle-outline" size={36} color={colors.danger} />
         <Text style={styles.errorText}>{error || 'Không tìm thấy thông tin xe'}</Text>
         <Button
           title="Quay lại Kho xe"
           variant="outline"
+          size="sm"
           onPress={() => router.back()}
           style={{ marginTop: spacing.md }}
         />
@@ -164,7 +165,7 @@ export default function CarDetailScreen() {
             style={styles.floatingBackBtn}
             onPress={() => router.back()}
           >
-            <Ionicons name="arrow-back" size={18} color={colors.text} />
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -173,7 +174,7 @@ export default function CarDetailScreen() {
           >
             <Ionicons
               name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={18}
+              size={16}
               color={isSaved ? colors.primaryHover : colors.text}
             />
           </TouchableOpacity>
@@ -191,7 +192,7 @@ export default function CarDetailScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             style={styles.thumbScroll}
-            contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: spacing.xs + 2 }}
+            contentContainerStyle={{ paddingHorizontal: spacing.lg, gap: 6 }}
           >
             {galleryImages.map((uri, idx) => (
               <TouchableOpacity
@@ -226,7 +227,7 @@ export default function CarDetailScreen() {
           <View style={styles.priceCardRow}>
             <PriceTag
               price={selectedCar.price}
-              size="lg"
+              size="md"
               showInstallment
             />
             <Badge
@@ -236,7 +237,7 @@ export default function CarDetailScreen() {
                   : 'Đặt trước'
               }
               variant={selectedCar.stock_quantity > 0 ? 'success' : 'warning'}
-              size="sm"
+              size="xs"
               dot
             />
           </View>
@@ -307,12 +308,12 @@ export default function CarDetailScreen() {
                   {reviews.length > 0 ? (
                     <RatingStars
                       rating={reviews.reduce((acc, curr) => acc + (curr.rating || 0), 0) / reviews.length}
-                      size={14}
+                      size={12}
                       showScore
                       scoreText={`${(reviews.reduce((acc, curr) => acc + (curr.rating || 0), 0) / reviews.length).toFixed(1)} / 5 (${reviews.length} đánh giá)`}
                     />
                   ) : (
-                    <Text style={{ color: colors.textMuted, fontSize: typography.sizes.xs }}>
+                    <Text style={{ color: colors.textMuted, fontSize: 11 }}>
                       Chưa có đánh giá nào
                     </Text>
                   )}
@@ -322,12 +323,12 @@ export default function CarDetailScreen() {
                   size="sm"
                   variant="outline"
                   onPress={() => setIsReviewModalVisible(true)}
-                  icon={<Ionicons name="create-outline" size={13} color={colors.primaryHover} />}
+                  icon={<Ionicons name="create-outline" size={12} color={colors.primaryHover} />}
                 />
               </View>
 
               {reviews.map((rev) => (
-                <Card key={rev.id} style={styles.reviewCard} padding={spacing.sm + 2}>
+                <Card key={rev.id} style={styles.reviewCard} padding={spacing.sm}>
                   <View style={styles.reviewUserRow}>
                     <View style={styles.reviewAvatar}>
                       <Text style={styles.reviewAvatarText}>
@@ -338,7 +339,7 @@ export default function CarDetailScreen() {
                       <Text style={styles.reviewUserName}>
                         {rev.profiles?.full_name || 'Khách Hàng AutoMatch'}
                       </Text>
-                      <RatingStars rating={rev.rating || 5} size={11} />
+                      <RatingStars rating={rev.rating || 5} size={10} />
                     </View>
                     <Text style={styles.reviewDate}>
                       {rev.created_at ? new Date(rev.created_at).toLocaleDateString('vi-VN') : 'Gần đây'}
@@ -360,14 +361,14 @@ export default function CarDetailScreen() {
                   size="sm"
                   variant="outline"
                   onPress={() => setIsQAModalVisible(true)}
-                  icon={<Ionicons name="chatbubbles-outline" size={13} color={colors.primaryHover} />}
+                  icon={<Ionicons name="chatbubbles-outline" size={12} color={colors.primaryHover} />}
                 />
               </View>
 
               {qaList.map((qa) => (
-                <Card key={qa.id} style={styles.qaCard} padding={spacing.sm + 2}>
+                <Card key={qa.id} style={styles.qaCard} padding={spacing.sm}>
                   <View style={styles.qaQuestionRow}>
-                    <Ionicons name="help-circle-outline" size={16} color={colors.primaryHover} />
+                    <Ionicons name="help-circle-outline" size={14} color={colors.primaryHover} />
                     <Text style={styles.qaQuestionText}>{qa.question}</Text>
                   </View>
 
@@ -401,7 +402,7 @@ export default function CarDetailScreen() {
           />
         </View>
 
-        <View style={{ height: 90 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
 
       {/* Sticky Bottom Action Bar */}
@@ -416,7 +417,7 @@ export default function CarDetailScreen() {
             })
           }
         >
-          <Ionicons name="sparkles" size={16} color={colors.primaryHover} />
+          <Ionicons name="sparkles" size={15} color={colors.primaryHover} />
           <Text style={styles.chatAiText}>Hỏi AI</Text>
         </TouchableOpacity>
 
@@ -434,7 +435,7 @@ export default function CarDetailScreen() {
           size="sm"
           onPress={handleAddToCart}
           style={styles.addToCartBtn}
-          icon={<Ionicons name="bag-handle-outline" size={14} color={colors.text} />}
+          icon={<Ionicons name="bag-handle-outline" size={13} color={colors.text} />}
         />
 
         <Button
@@ -443,7 +444,7 @@ export default function CarDetailScreen() {
           size="sm"
           onPress={handleDirectDeposit}
           style={styles.depositBtn}
-          icon={<Ionicons name="flash-outline" size={14} color="#FFFFFF" />}
+          icon={<Ionicons name="flash-outline" size={13} color="#FFFFFF" />}
         />
       </View>
 
@@ -489,11 +490,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: colors.danger,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     textAlign: 'center',
   },
   imageContainer: {
-    height: 230,
+    height: 220,
     width: '100%',
     position: 'relative',
     backgroundColor: colors.surfaceElevated,
@@ -504,112 +505,115 @@ const styles = StyleSheet.create({
   },
   floatingBackBtn: {
     position: 'absolute',
-    top: 46,
+    top: 44,
     left: spacing.md,
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
-    backgroundColor: 'rgba(9, 10, 12, 0.75)',
+    backgroundColor: 'rgba(11, 13, 17, 0.75)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   floatingSaveBtn: {
     position: 'absolute',
-    top: 46,
+    top: 44,
     right: spacing.md,
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
-    backgroundColor: 'rgba(9, 10, 12, 0.75)',
+    backgroundColor: 'rgba(11, 13, 17, 0.75)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   galleryBadge: {
     position: 'absolute',
-    bottom: spacing.md,
-    right: spacing.md,
-    backgroundColor: 'rgba(9, 10, 12, 0.8)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    bottom: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: 'rgba(11, 13, 17, 0.75)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: radii.full,
   },
   galleryBadgeText: {
     color: colors.text,
-    fontSize: 11,
-    fontWeight: typography.weights.bold,
+    fontSize: 10,
+    fontWeight: typography.weights.semibold,
   },
   thumbScroll: {
     backgroundColor: colors.surface,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   thumbItem: {
-    width: 60,
-    height: 42,
-    borderRadius: radii.sm,
+    width: 54,
+    height: 36,
+    borderRadius: radii.xs,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   thumbItemActive: {
-    borderColor: colors.primary,
-    borderWidth: 2,
+    borderColor: colors.primaryHover,
   },
   thumbImg: {
     width: '100%',
     height: '100%',
   },
   content: {
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.lg,
-    paddingBottom: 110,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 90,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   makeModel: {
     color: colors.text,
-    fontSize: typography.sizes['2xl'],
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    lineHeight: 30,
+    lineHeight: 24,
     letterSpacing: -0.2,
   },
   yearSubtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
-    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
   },
   priceCardRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginVertical: spacing.md,
+    marginVertical: spacing.sm,
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    padding: 3,
-    marginVertical: spacing.lg,
+    borderRadius: radii.sm,
+    padding: 2,
+    marginVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radii.sm,
+    borderRadius: radii.xs,
   },
   tabBtnActive: {
     backgroundColor: colors.primaryMuted,
   },
   tabText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   tabTextActive: {
@@ -617,101 +621,103 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   tabContent: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
   },
   reviewHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   reviewSectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
     marginBottom: 2,
   },
   reviewCard: {
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
+    marginBottom: spacing.xs + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   reviewUserRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   reviewAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 6,
   },
   reviewAvatarText: {
     color: '#FFF',
     fontWeight: typography.weights.bold,
-    fontSize: 11,
+    fontSize: 10,
   },
   reviewUserName: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   reviewDate: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   reviewComment: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
-    lineHeight: 22,
+    fontSize: typography.sizes.xs,
+    lineHeight: 18,
   },
   qaCard: {
-    marginBottom: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
+    marginBottom: spacing.xs + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   qaQuestionRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 6,
-    marginBottom: 6,
+    gap: 4,
+    marginBottom: 4,
   },
   qaQuestionText: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
-    lineHeight: 20,
+    lineHeight: 18,
     flex: 1,
   },
   qaAnswerBox: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginTop: 6,
+    borderRadius: radii.xs,
+    padding: spacing.sm,
+    marginTop: 4,
   },
   qaAnswerBadge: {
     color: colors.primaryHover,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: typography.weights.semibold,
     marginBottom: 2,
   },
   qaAnswerText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
-    lineHeight: 20,
+    fontSize: 11,
+    lineHeight: 16,
   },
   relatedSectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    lineHeight: 20,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   bottomBar: {
     position: 'absolute',
@@ -719,36 +725,37 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
-    paddingBottom: 28,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs + 2,
+    paddingBottom: 22,
     backgroundColor: colors.surface,
     alignItems: 'center',
-    gap: spacing.sm,
-    ...shadows.md,
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   chatAiBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   chatAiText: {
     color: colors.primaryHover,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: typography.weights.medium,
-    marginTop: 2,
+    marginTop: 1,
   },
   testDriveBtn: {
-    flex: 1.1,
-    height: 44,
+    flex: 1,
+    height: 38,
   },
   addToCartBtn: {
-    flex: 1.1,
-    height: 44,
+    flex: 1,
+    height: 38,
   },
   depositBtn: {
-    flex: 1.2,
-    height: 44,
+    flex: 1.1,
+    height: 38,
   },
 });
 

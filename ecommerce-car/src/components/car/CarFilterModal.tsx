@@ -35,7 +35,7 @@ const SORT_OPTIONS: { id: CarSortOption; label: string }[] = [
   { id: 'recommended', label: 'Gợi ý từ AI' },
   { id: 'price_asc', label: 'Giá tăng dần' },
   { id: 'price_desc', label: 'Giá giảm dần' },
-  { id: 'hp_desc', label: 'Công suất (HP) cao' },
+  { id: 'hp_desc', label: 'Công suất (HP)' },
   { id: 'year_desc', label: 'Đời xe mới' },
 ];
 
@@ -222,12 +222,14 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
         <Button
           title="Đặt lại"
           variant="outline"
+          size="sm"
           onPress={handleReset}
           style={styles.resetBtn}
         />
         <Button
           title="Áp Dụng"
           variant="primary"
+          size="sm"
           onPress={handleApply}
           style={styles.applyBtn}
         />
@@ -238,35 +240,38 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 460,
+    maxHeight: 440,
   },
   sectionHeader: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs + 0.5,
     fontWeight: typography.weights.semibold,
-    lineHeight: 20,
-    marginTop: spacing.lg,
-    marginBottom: 8,
+    lineHeight: 18,
+    marginTop: spacing.md,
+    marginBottom: 6,
   },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
+    gap: 6,
+    marginBottom: 2,
   },
   chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+    borderRadius: radii.sm,
+    borderWidth: 1,
   },
   chipInactive: {
     backgroundColor: colors.surfaceElevated,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   chipActive: {
     backgroundColor: colors.primaryMuted,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   chipText: {
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   chipTextInactive: {
@@ -278,8 +283,8 @@ const styles = StyleSheet.create({
   },
   footer: {
     flexDirection: 'row',
-    gap: spacing.md,
-    marginTop: spacing.xl,
+    gap: spacing.sm,
+    marginTop: spacing.md,
     paddingTop: spacing.xs,
   },
   resetBtn: {

@@ -29,8 +29,8 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           {iconName && (
             <Ionicons
               name={iconName}
-              size={16}
-              color={colors.primary}
+              size={15}
+              color={colors.primaryHover}
               style={styles.iconBox}
             />
           )}
@@ -47,7 +47,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
           style={styles.actionBtn}
         >
           <Text style={styles.actionText}>{actionText}</Text>
-          <Ionicons name="chevron-forward" size={13} color={colors.primary} />
+          <Ionicons name="chevron-forward" size={12} color={colors.primaryHover} />
         </TouchableOpacity>
       )}
     </View>
@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: spacing['2xl'],
-    marginBottom: spacing.md,
+    marginTop: spacing.xl,
+    marginBottom: spacing.xs,
   },
   titleGroup: {
     flex: 1,
@@ -70,32 +70,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBox: {
-    marginRight: 8,
+    marginRight: 6,
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 20,
     letterSpacing: -0.1,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
-    marginTop: 3,
+    fontSize: typography.sizes['2xs'],
+    lineHeight: 15,
+    marginTop: 2,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.xs,
-    paddingLeft: spacing.md,
+    paddingLeft: spacing.sm,
   },
   actionText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
-    marginRight: 3,
+    marginRight: 2,
   },
 });
 

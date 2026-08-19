@@ -40,50 +40,50 @@ export const Badge: React.FC<BadgeProps> = ({
         return {
           bg: colors.primaryMuted,
           text: colors.primaryHover,
-          border: 'transparent',
-          dotColor: colors.primary,
+          border: 'rgba(59, 130, 246, 0.20)',
+          dotColor: colors.primaryHover,
         };
       case 'secondary':
         return {
           bg: colors.secondaryMuted,
           text: colors.secondaryHover,
-          border: 'transparent',
-          dotColor: colors.secondary,
+          border: 'rgba(99, 102, 241, 0.20)',
+          dotColor: colors.secondaryHover,
         };
       case 'conflict':
       case 'warning':
         return {
           bg: colors.conflictMuted,
           text: colors.conflict,
-          border: 'transparent',
+          border: 'rgba(245, 158, 11, 0.20)',
           dotColor: colors.conflict,
         };
       case 'success':
         return {
           bg: colors.successMuted,
           text: colors.success,
-          border: 'transparent',
+          border: 'rgba(16, 185, 129, 0.20)',
           dotColor: colors.success,
         };
       case 'danger':
         return {
           bg: colors.dangerMuted,
           text: colors.danger,
-          border: 'transparent',
+          border: 'rgba(239, 68, 68, 0.20)',
           dotColor: colors.danger,
         };
       case 'gold':
         return {
           bg: 'rgba(245, 158, 11, 0.12)',
           text: '#FBBF24',
-          border: 'transparent',
+          border: 'rgba(245, 158, 11, 0.25)',
           dotColor: '#FBBF24',
         };
       case 'outline':
         return {
-          bg: 'rgba(255, 255, 255, 0.05)',
+          bg: 'rgba(255, 255, 255, 0.04)',
           text: colors.textSecondary,
-          border: 'transparent',
+          border: 'rgba(255, 255, 255, 0.08)',
           dotColor: colors.textSecondary,
         };
       case 'neutral':
@@ -91,7 +91,7 @@ export const Badge: React.FC<BadgeProps> = ({
         return {
           bg: colors.surfaceElevated,
           text: colors.textSecondary,
-          border: 'transparent',
+          border: 'rgba(255, 255, 255, 0.06)',
           dotColor: colors.textSecondary,
         };
     }
@@ -101,28 +101,28 @@ export const Badge: React.FC<BadgeProps> = ({
     switch (size) {
       case 'xs':
         return {
-          paddingHorizontal: 8,
-          paddingVertical: 3,
-          fontSize: 11,
+          paddingHorizontal: 6,
+          paddingVertical: 2,
+          fontSize: 10,
           borderRadius: radii.full,
-          dotSize: 5,
+          dotSize: 4,
         };
       case 'md':
-        return {
-          paddingHorizontal: 14,
-          paddingVertical: 6,
-          fontSize: typography.sizes.sm,
-          borderRadius: radii.full,
-          dotSize: 6,
-        };
-      case 'sm':
-      default:
         return {
           paddingHorizontal: 10,
           paddingVertical: 4,
           fontSize: typography.sizes.xs,
           borderRadius: radii.full,
           dotSize: 5,
+        };
+      case 'sm':
+      default:
+        return {
+          paddingHorizontal: 8,
+          paddingVertical: 2.5,
+          fontSize: typography.sizes['2xs'],
+          borderRadius: radii.full,
+          dotSize: 4.5,
         };
     }
   };
@@ -139,6 +139,8 @@ export const Badge: React.FC<BadgeProps> = ({
           paddingHorizontal: sizeConfig.paddingHorizontal,
           paddingVertical: sizeConfig.paddingVertical,
           borderRadius: sizeConfig.borderRadius,
+          borderColor: styleConfig.border,
+          borderWidth: 0.5,
         },
         style,
       ]}
@@ -180,14 +182,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dot: {
-    marginRight: 5,
-  },
-  iconBox: {
     marginRight: 4,
   },
+  iconBox: {
+    marginRight: 3,
+  },
   text: {
-    fontWeight: typography.weights.medium,
-    letterSpacing: 0.2,
+    fontWeight: typography.weights.semibold,
+    letterSpacing: 0.15,
   },
 });
 

@@ -89,27 +89,30 @@ const styles = StyleSheet.create({
     flexGrow: 0,
   },
   content: {
-    paddingVertical: spacing.xs,
-    gap: spacing.sm,
+    paddingVertical: 4,
+    gap: spacing.xs,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
     borderRadius: radii.full,
+    borderWidth: 1,
   },
   pillDefault: {
     backgroundColor: colors.surfaceElevated,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   pillSelected: {
     backgroundColor: colors.primaryMuted,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   iconBox: {
-    marginRight: 6,
+    marginRight: 4,
   },
   label: {
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
   },
   labelDefault: {
@@ -120,9 +123,9 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   countBadge: {
-    marginLeft: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    marginLeft: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
     borderRadius: radii.full,
   },
   countBadgeDefault: {
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   countText: {
-    fontSize: typography.sizes['2xs'],
+    fontSize: 10,
     fontWeight: typography.weights.semibold,
   },
   countTextDefault: {

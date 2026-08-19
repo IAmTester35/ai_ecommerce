@@ -11,7 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTestDriveStore } from '../../store/useTestDriveStore';
 import { useCarStore } from '../../store/useCarStore';
@@ -115,7 +115,7 @@ export default function ProfileScreen() {
             <Text style={styles.userEmail} numberOfLines={1}>{user.email}</Text>
             {profile?.phone ? (
               <View style={styles.phoneRow}>
-                <Ionicons name="call-outline" size={11} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                <Ionicons name="call-outline" size={10} color={colors.textSecondary} style={{ marginRight: 3 }} />
                 <Text style={styles.membershipTier}>{profile.phone}</Text>
               </View>
             ) : null}
@@ -125,7 +125,7 @@ export default function ProfileScreen() {
             style={styles.editProfileBtn}
             onPress={() => router.push('/(auth)/edit-profile' as any)}
           >
-            <Ionicons name="create-outline" size={16} color={colors.primaryHover} />
+            <Ionicons name="create-outline" size={15} color={colors.primaryHover} />
           </TouchableOpacity>
         </View>
       ) : (
@@ -133,35 +133,35 @@ export default function ProfileScreen() {
         <View style={styles.guestCard}>
           <View style={styles.guestHeaderRow}>
             <View style={styles.guestIconBox}>
-              <Ionicons name="person-circle-outline" size={28} color={colors.primaryHover} />
+              <Ionicons name="person-circle-outline" size={24} color={colors.primaryHover} />
             </View>
             <View style={styles.guestHeaderText}>
               <View style={styles.badgeLine}>
                 <Badge label="TÀI KHOẢN KHÁCH" variant="secondary" size="xs" />
               </View>
-              <Text style={styles.guestTitle}>Trải Nghiệm Đẳng Cấp</Text>
+              <Text style={styles.guestTitle}>Trải Nghiệm AutoMatch</Text>
             </View>
           </View>
           <Text style={styles.guestDesc}>
-            Đăng nhập để đồng bộ danh sách xe yêu thích, đặt lịch lái thử độc quyền và nhận tư vấn thông minh từ AI.
+            Đăng nhập để đồng bộ gara xe yêu thích, đặt lịch lái thử độc quyền và nhận tư vấn thông minh từ AI.
           </Text>
 
           <View style={styles.guestActionButtons}>
             <Button
               title="Đăng Nhập"
-              size="md"
+              size="sm"
               variant="primary"
               onPress={() => router.push('/(auth)/login' as any)}
               style={styles.guestBtn}
-              icon={<Ionicons name="log-in-outline" size={16} color="#FFFFFF" />}
+              icon={<Ionicons name="log-in-outline" size={14} color="#FFFFFF" />}
             />
             <Button
               title="Đăng Ký"
-              size="md"
+              size="sm"
               variant="secondary"
               onPress={() => router.push('/(auth)/register' as any)}
               style={styles.guestBtn}
-              icon={<Ionicons name="person-add-outline" size={16} color={colors.text} />}
+              icon={<Ionicons name="person-add-outline" size={14} color={colors.text} />}
             />
           </View>
         </View>
@@ -221,7 +221,7 @@ export default function ProfileScreen() {
           style={styles.statItem}
           onPress={() => router.push('/cart' as any)}
         >
-          <Ionicons name="bag-handle-outline" size={16} color={colors.primaryHover} />
+          <Ionicons name="bag-handle-outline" size={15} color={colors.primaryHover} />
           <Text style={styles.statLabel}>Giỏ Cọc</Text>
         </TouchableOpacity>
       </View>
@@ -231,26 +231,19 @@ export default function ProfileScreen() {
         <>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleGroup}>
-              <Ionicons name="calendar-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+              <Ionicons name="calendar-outline" size={14} color={colors.primaryHover} style={{ marginRight: 6 }} />
               <Text style={styles.sectionTitle}>Lịch Lái Thử</Text>
             </View>
             <Badge label={`${testDrives.length} Lịch hẹn`} variant="primary" size="xs" />
           </View>
 
           {testDrives.length === 0 ? (
-            <Card style={styles.emptyCard}>
+            <Card style={styles.emptyCard} padding={spacing.md}>
               <Text style={styles.emptyText}>Chưa có lịch hẹn lái thử nào.</Text>
-              <Button
-                title="Đăng ký trải nghiệm"
-                size="sm"
-                variant="outline"
-                onPress={() => router.push('/(tabs)/catalog' as any)}
-                style={{ marginTop: spacing.sm }}
-              />
             </Card>
           ) : (
             testDrives.map((item) => (
-              <Card key={item.id} style={styles.bookingCard}>
+              <Card key={item.id} style={styles.bookingCard} padding={spacing.sm}>
                 <View style={styles.bookingHeader}>
                   <Image
                     source={{ uri: item.car?.image_url || fallbackImage }}
@@ -258,11 +251,11 @@ export default function ProfileScreen() {
                     contentFit="cover"
                   />
                   <View style={styles.bookingDetails}>
-                    <Text style={styles.bookingCarName}>
+                    <Text style={styles.bookingCarName} numberOfLines={1}>
                       {item.car ? `${item.car.make} ${item.car.model}` : 'Mẫu xe AutoMatch'}
                     </Text>
                     <View style={styles.dateInfoRow}>
-                      <Ionicons name="time-outline" size={11} color={colors.primaryHover} style={{ marginRight: 3 }} />
+                      <Ionicons name="time-outline" size={10} color={colors.primaryHover} style={{ marginRight: 3 }} />
                       <Text style={styles.bookingDate}>
                         {new Date(item.scheduled_date).toLocaleDateString('vi-VN', {
                           weekday: 'short',
@@ -272,11 +265,6 @@ export default function ProfileScreen() {
                         })}
                       </Text>
                     </View>
-                    {item.notes ? (
-                      <Text style={styles.showroomText} numberOfLines={1}>
-                        {item.notes}
-                      </Text>
-                    ) : null}
                   </View>
 
                   <Badge
@@ -312,7 +300,7 @@ export default function ProfileScreen() {
                       size="sm"
                       variant="outline"
                       onPress={() => router.push(`/car/${item.car_id}` as any)}
-                      style={{ height: 30 }}
+                      style={{ height: 28 }}
                     />
                   </View>
                 )}
@@ -327,7 +315,7 @@ export default function ProfileScreen() {
         <>
           <View style={styles.sectionHeaderRow}>
             <View style={styles.sectionTitleGroup}>
-              <Ionicons name="bookmark-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+              <Ionicons name="bookmark-outline" size={14} color={colors.primaryHover} style={{ marginRight: 6 }} />
               <Text style={styles.sectionTitle}>Xe Đã Lưu ({savedCars.length})</Text>
             </View>
             <TouchableOpacity onPress={() => router.push('/(tabs)/catalog' as any)}>
@@ -336,7 +324,7 @@ export default function ProfileScreen() {
           </View>
 
           {savedCars.length === 0 ? (
-            <Card style={styles.emptyCard}>
+            <Card style={styles.emptyCard} padding={spacing.md}>
               <Text style={styles.emptyText}>Chưa có xe nào trong danh sách đã lưu.</Text>
             </Card>
           ) : (
@@ -368,7 +356,7 @@ export default function ProfileScreen() {
                       style={styles.unsaveBtn}
                       onPress={() => toggleSaveCar(sc.car_id, user?.id)}
                     >
-                      <Ionicons name="trash-outline" size={12} color={colors.danger} />
+                      <Ionicons name="trash-outline" size={11} color={colors.danger} />
                       <Text style={styles.unsaveText}>Xóa</Text>
                     </TouchableOpacity>
                   </View>
@@ -381,35 +369,25 @@ export default function ProfileScreen() {
 
       {/* 5. Member Privileges Highlight (For Guests) */}
       {!user && (
-        <Card style={styles.perksCard}>
-          <Text style={styles.perksCardTitle}>Đặc Quyền Thành Viên AutoMatch</Text>
+        <Card style={styles.perksCard} padding={spacing.md}>
+          <Text style={styles.perksCardTitle}>Đặc Quyền Thành Viên</Text>
           <View style={styles.perkItem}>
             <View style={[styles.perkIconBox, { backgroundColor: colors.primaryMuted }]}>
-              <Ionicons name="heart-outline" size={16} color={colors.primaryHover} />
+              <Ionicons name="heart-outline" size={14} color={colors.primaryHover} />
             </View>
             <View style={styles.perkContent}>
-              <Text style={styles.perkName}>Gara Lưu Trữ Đa Nền Tảng</Text>
+              <Text style={styles.perkName}>Gara Lưu Trữ</Text>
               <Text style={styles.perkDesc}>Đồng bộ danh sách xe yêu thích và so sánh chi tiết tức thì.</Text>
             </View>
           </View>
 
           <View style={styles.perkItem}>
             <View style={[styles.perkIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-              <Ionicons name="car-sport-outline" size={16} color={colors.success} />
+              <Ionicons name="car-sport-outline" size={14} color={colors.success} />
             </View>
             <View style={styles.perkContent}>
-              <Text style={styles.perkName}>Đặt Lái Thử Độc Quyền</Text>
-              <Text style={styles.perkDesc}>Trải nghiệm xe tại hệ thống showroom đối tác trên toàn quốc.</Text>
-            </View>
-          </View>
-
-          <View style={styles.perkItem}>
-            <View style={[styles.perkIconBox, { backgroundColor: colors.secondaryMuted }]}>
-              <Ionicons name="sparkles-outline" size={16} color={colors.secondaryHover} />
-            </View>
-            <View style={styles.perkContent}>
-              <Text style={styles.perkName}>Cá Nhân Hóa Với Trợ Lý AI</Text>
-              <Text style={styles.perkDesc}>Tư vấn xe dựa trên tài chính, phong cách và thói quen lái xe của bạn.</Text>
+              <Text style={styles.perkName}>Lái Thử Độc Quyền</Text>
+              <Text style={styles.perkDesc}>Trải nghiệm xe tại hệ thống đối tác toàn quốc.</Text>
             </View>
           </View>
         </Card>
@@ -418,7 +396,7 @@ export default function ProfileScreen() {
       {/* 6. Settings & Support Services */}
       <View style={styles.sectionHeaderRow}>
         <View style={styles.sectionTitleGroup}>
-          <Ionicons name="settings-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Ionicons name="settings-outline" size={14} color={colors.primaryHover} style={{ marginRight: 6 }} />
           <Text style={styles.sectionTitle}>Dịch Vụ & Cài Đặt</Text>
         </View>
       </View>
@@ -435,13 +413,13 @@ export default function ProfileScreen() {
           }}
         >
           <View style={[styles.settingIconBox, { backgroundColor: colors.primaryMuted }]}>
-            <Ionicons name="receipt-outline" size={16} color={colors.primaryHover} />
+            <Ionicons name="receipt-outline" size={15} color={colors.primaryHover} />
           </View>
           <View style={styles.settingTextGroup}>
             <Text style={styles.settingTitle}>Đơn hàng & Đặt cọc</Text>
             <Text style={styles.settingSubtitle}>Theo dõi tiến độ hợp đồng và thanh toán</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -450,13 +428,13 @@ export default function ProfileScreen() {
           onPress={() => router.push('/cart' as any)}
         >
           <View style={[styles.settingIconBox, { backgroundColor: colors.secondaryMuted }]}>
-            <Ionicons name="bag-handle-outline" size={16} color={colors.secondaryHover} />
+            <Ionicons name="bag-handle-outline" size={15} color={colors.secondaryHover} />
           </View>
           <View style={styles.settingTextGroup}>
             <Text style={styles.settingTitle}>Giỏ hàng cọc xe</Text>
-            <Text style={styles.settingSubtitle}>Quản lý danh sách xe chuẩn bị đặt cọc</Text>
+            <Text style={styles.settingSubtitle}>Danh sách xe giữ chỗ</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -465,13 +443,13 @@ export default function ProfileScreen() {
           onPress={() => router.push('/notifications' as any)}
         >
           <View style={[styles.settingIconBox, { backgroundColor: colors.conflictMuted }]}>
-            <Ionicons name="notifications-outline" size={16} color={colors.conflict} />
+            <Ionicons name="notifications-outline" size={15} color={colors.conflict} />
           </View>
           <View style={styles.settingTextGroup}>
             <Text style={styles.settingTitle}>Thông báo hệ thống</Text>
             <Text style={styles.settingSubtitle}>Cập nhật trạng thái đơn hàng & ưu đãi</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -480,13 +458,13 @@ export default function ProfileScreen() {
           onPress={() => router.push('/(tabs)/ai-chat' as any)}
         >
           <View style={[styles.settingIconBox, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-            <Ionicons name="sparkles-outline" size={16} color={colors.success} />
+            <Ionicons name="sparkles-outline" size={15} color={colors.success} />
           </View>
           <View style={styles.settingTextGroup}>
             <Text style={styles.settingTitle}>Trợ lý AutoMatch AI</Text>
             <Text style={styles.settingSubtitle}>Tư vấn mua xe thông minh 24/7</Text>
           </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
         </TouchableOpacity>
 
         {/* Member-Only Options */}
@@ -498,13 +476,13 @@ export default function ProfileScreen() {
               onPress={() => router.push('/(auth)/edit-profile' as any)}
             >
               <View style={[styles.settingIconBox, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                <Ionicons name="person-outline" size={16} color={colors.primaryHover} />
+                <Ionicons name="person-outline" size={15} color={colors.primaryHover} />
               </View>
               <View style={styles.settingTextGroup}>
                 <Text style={styles.settingTitle}>Chỉnh sửa thông tin</Text>
                 <Text style={styles.settingSubtitle}>Cập nhật họ tên và số điện thoại</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -513,13 +491,13 @@ export default function ProfileScreen() {
               onPress={() => router.push('/(auth)/change-password' as any)}
             >
               <View style={[styles.settingIconBox, { backgroundColor: 'rgba(99, 102, 241, 0.12)' }]}>
-                <Ionicons name="key-outline" size={16} color={colors.secondaryHover} />
+                <Ionicons name="key-outline" size={15} color={colors.secondaryHover} />
               </View>
               <View style={styles.settingTextGroup}>
                 <Text style={styles.settingTitle}>Đổi mật khẩu</Text>
-                <Text style={styles.settingSubtitle}>Thiết lập mật khẩu bảo mật mới</Text>
+                <Text style={styles.settingSubtitle}>Thiết lập mật khẩu bảo mật</Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -528,7 +506,7 @@ export default function ProfileScreen() {
               onPress={handleSignOut}
             >
               <View style={[styles.settingIconBox, { backgroundColor: colors.dangerMuted }]}>
-                <Ionicons name="log-out-outline" size={16} color={colors.danger} />
+                <Ionicons name="log-out-outline" size={15} color={colors.danger} />
               </View>
               <Text style={[styles.settingTitle, { color: colors.danger }]}>Đăng xuất tài khoản</Text>
             </TouchableOpacity>
@@ -536,7 +514,7 @@ export default function ProfileScreen() {
         )}
       </View>
 
-      <View style={{ height: 32 }} />
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
@@ -545,35 +523,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 50,
-    marginBottom: spacing.lg,
+    marginTop: 48,
+    marginBottom: spacing.md,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    ...shadows.sm,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   avatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm + 2,
   },
   avatarText: {
     color: '#FFFFFF',
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   profileInfo: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   nameRow: {
     flexDirection: 'row',
@@ -582,105 +561,107 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.sm + 0.5,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 18,
     flex: 1,
     marginRight: 6,
   },
   userEmail: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
+    fontSize: 11,
   },
   phoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 3,
+    marginTop: 2,
   },
   membershipTier: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
   },
   editProfileBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.md,
+    width: 32,
+    height: 32,
+    borderRadius: radii.sm,
     backgroundColor: colors.surfaceSubtle,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: spacing.xs,
   },
   guestCard: {
-    marginTop: 50,
-    marginBottom: spacing.lg,
+    marginTop: 48,
+    marginBottom: spacing.md,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    ...shadows.glowCyan,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
   },
   guestHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs + 2,
   },
   guestIconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: radii.md,
+    width: 38,
+    height: 38,
+    borderRadius: radii.sm,
     backgroundColor: colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm + 2,
   },
   guestHeaderText: {
     flex: 1,
   },
   badgeLine: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   guestTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
-    lineHeight: 24,
+    lineHeight: 20,
   },
   guestDesc: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
+    fontSize: 11,
+    lineHeight: 16,
+    marginBottom: spacing.md,
   },
   guestActionButtons: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   guestBtn: {
     flex: 1,
-    height: 42,
+    height: 38,
   },
   perksCard: {
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
-    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   perksCardTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
+    lineHeight: 18,
+    marginBottom: spacing.sm,
   },
   perkItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
-    gap: spacing.md,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
   },
   perkIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
+    width: 30,
+    height: 30,
+    borderRadius: radii.xs,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -689,25 +670,24 @@ const styles = StyleSheet.create({
   },
   perkName: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
-    lineHeight: 18,
   },
   perkDesc: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
-    lineHeight: 16,
+    fontSize: 10,
+    marginTop: 1,
   },
   statsRow: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing['2xl'],
+    borderRadius: radii.md,
+    paddingVertical: spacing.sm + 2,
+    marginBottom: spacing.md,
     alignItems: 'center',
     justifyContent: 'space-around',
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   statItem: {
     alignItems: 'center',
@@ -715,25 +695,25 @@ const styles = StyleSheet.create({
   },
   statNumber: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   statLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     marginTop: 2,
   },
   statDivider: {
     width: 1,
-    height: 24,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    height: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing['2xl'],
-    marginBottom: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   sectionTitleGroup: {
     flexDirection: 'row',
@@ -741,49 +721,52 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 18,
   },
   seeAllText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   emptyCard: {
-    padding: spacing.xl,
+    padding: spacing.md,
     alignItems: 'center',
-    marginBottom: spacing.md,
-    borderRadius: radii.lg,
+    marginBottom: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   emptyText: {
     color: colors.textMuted,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
   },
   bookingCard: {
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg,
+    marginBottom: spacing.xs + 2,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   bookingHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   carThumb: {
-    width: 60,
-    height: 42,
-    borderRadius: radii.sm,
-    marginRight: spacing.md,
+    width: 50,
+    height: 35,
+    borderRadius: radii.xs,
+    marginRight: spacing.sm,
   },
   bookingDetails: {
     flex: 1,
-    gap: 2,
+    gap: 1,
   },
   bookingCarName: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
-    lineHeight: 18,
   },
   dateInfoRow: {
     flexDirection: 'row',
@@ -791,94 +774,91 @@ const styles = StyleSheet.create({
   },
   bookingDate: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     fontWeight: typography.weights.medium,
-  },
-  showroomText: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.xs,
   },
   bookingActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-    paddingTop: spacing.xs,
+    gap: spacing.xs,
+    marginTop: 6,
+    paddingTop: 4,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   savedScroll: {
-    paddingBottom: spacing.md,
+    paddingVertical: 4,
+    gap: spacing.sm,
   },
   savedCarCard: {
-    width: 155,
+    width: 140,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    marginRight: spacing.md,
+    borderRadius: radii.sm,
     overflow: 'hidden',
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   savedCarImg: {
     width: '100%',
-    height: 90,
+    height: 75,
   },
   savedCarContent: {
-    padding: spacing.sm,
+    padding: 6,
   },
   savedCarTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   savedCarPrice: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
     marginTop: 2,
-    marginBottom: 6,
   },
   unsaveBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
+    marginTop: 4,
   },
   unsaveText: {
     color: colors.danger,
-    fontSize: 11,
-    fontWeight: typography.weights.medium,
+    fontSize: 10,
   },
   settingsList: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    marginBottom: spacing['2xl'],
-    overflow: 'hidden',
-    ...shadows.sm,
+    gap: 4,
+    marginBottom: spacing.md,
   },
   settingItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.sm,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   settingIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
+    width: 32,
+    height: 32,
+    borderRadius: radii.xs,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: spacing.sm,
   },
   settingTextGroup: {
     flex: 1,
   },
   settingTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    lineHeight: 18,
+    fontSize: typography.sizes.xs + 0.5,
+    fontWeight: typography.weights.medium,
   },
   settingSubtitle: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
   },
 });

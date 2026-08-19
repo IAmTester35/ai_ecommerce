@@ -24,7 +24,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <View style={[styles.container, style]}>
       <View style={styles.iconCircle}>
-        <Ionicons name={icon} size={32} color={colors.textMuted} />
+        <Ionicons name={icon} size={22} color={colors.textMuted} />
       </View>
       <Text style={styles.title}>{title}</Text>
       {description && <Text style={styles.description}>{description}</Text>}
@@ -45,36 +45,39 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing['4xl'],
-    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   iconCircle: {
-    width: 72,
-    height: 72,
+    width: 48,
+    height: 48,
     borderRadius: radii.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 24,
+    lineHeight: 20,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   description: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing['2xl'],
-    maxWidth: 300,
+    lineHeight: 16,
+    marginBottom: spacing.md,
+    maxWidth: 260,
   },
   actionBtn: {
-    minWidth: 160,
+    minWidth: 130,
+    height: 36,
   },
 });
 

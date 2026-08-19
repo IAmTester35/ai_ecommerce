@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -45,21 +45,21 @@ export default function RegisterScreen() {
     clearError();
 
     if (!fullName.trim()) {
-      setFullNameError('Vui lòng nhập họ và tên của bạn.');
+      setFullNameError('Vui lòng nhập họ và tên.');
       isValid = false;
     }
 
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setEmailError('Vui lòng nhập địa chỉ email.');
+      setEmailError('Vui lòng nhập email.');
       isValid = false;
     } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
-      setEmailError('Địa chỉ email không hợp lệ.');
+      setEmailError('Email không hợp lệ.');
       isValid = false;
     }
 
     if (phone.trim() && !/^[0-9+ ]{9,15}$/.test(phone.trim())) {
-      setPhoneError('Số điện thoại không đúng định dạng.');
+      setPhoneError('Số điện thoại không hợp lệ.');
       isValid = false;
     }
 
@@ -67,12 +67,12 @@ export default function RegisterScreen() {
       setPasswordError('Vui lòng nhập mật khẩu.');
       isValid = false;
     } else if (password.length < 6) {
-      setPasswordError('Mật khẩu phải chứa ít nhất 6 ký tự.');
+      setPasswordError('Mật khẩu tối thiểu 6 ký tự.');
       isValid = false;
     }
 
     if (!confirmPassword) {
-      setConfirmPasswordError('Vui lòng xác nhận lại mật khẩu.');
+      setConfirmPasswordError('Vui lòng xác nhận mật khẩu.');
       isValid = false;
     } else if (password !== confirmPassword) {
       setConfirmPasswordError('Mật khẩu xác nhận không khớp.');
@@ -80,7 +80,7 @@ export default function RegisterScreen() {
     }
 
     if (!agreeTerms) {
-      Alert.alert('Điều khoản', 'Vui lòng đồng ý với Điều khoản dịch vụ và Chính sách của AutoMatch.');
+      Alert.alert('Điều khoản', 'Vui lòng đồng ý với Điều khoản dịch vụ.');
       isValid = false;
     }
 
@@ -101,7 +101,7 @@ export default function RegisterScreen() {
       if (needEmailConfirmation) {
         Alert.alert(
           'Đăng ký thành công',
-          'Vui lòng kiểm tra email và nhấp vào liên kết kích hoạt để hoàn tất đăng ký.',
+          'Vui lòng kiểm tra email kích hoạt tài khoản.',
           [
             {
               text: 'Đăng nhập',
@@ -155,7 +155,7 @@ export default function RegisterScreen() {
               }
             }}
           >
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -169,11 +169,11 @@ export default function RegisterScreen() {
         {/* Brand Header */}
         <View style={styles.brandContainer}>
           <View style={styles.badgeRow}>
-            <Badge label="GIA NHẬP HỆ THỐNG" variant="primary" size="xs" />
+            <Badge label="GIA NHẬP" variant="primary" size="xs" />
           </View>
           <Text style={styles.screenTitle}>Tạo Tài Khoản</Text>
           <Text style={styles.screenSubtitle}>
-            Trải nghiệm nền tảng mua sắm ô tô kỹ thuật số & tư vấn AI thông minh
+            Nền tảng mua sắm ô tô & tư vấn AI thông minh
           </Text>
         </View>
 
@@ -182,7 +182,7 @@ export default function RegisterScreen() {
           {/* Error Banner */}
           {error ? (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+              <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginRight: 5 }} />
               <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           ) : null}
@@ -201,7 +201,7 @@ export default function RegisterScreen() {
             autoCapitalize="words"
             error={fullNameError}
             leftIcon={
-              <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="person-outline" size={15} color={colors.textSecondary} />
             }
           />
 
@@ -221,7 +221,7 @@ export default function RegisterScreen() {
             autoCorrect={false}
             error={emailError}
             leftIcon={
-              <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="mail-outline" size={15} color={colors.textSecondary} />
             }
           />
 
@@ -238,7 +238,7 @@ export default function RegisterScreen() {
             keyboardType="phone-pad"
             error={phoneError}
             leftIcon={
-              <Ionicons name="call-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="call-outline" size={15} color={colors.textSecondary} />
             }
           />
 
@@ -257,12 +257,12 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             error={passwordError}
             leftIcon={
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="lock-closed-outline" size={15} color={colors.textSecondary} />
             }
             rightIcon={
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={18}
+                size={15}
                 color={colors.textSecondary}
               />
             }
@@ -284,12 +284,12 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             error={confirmPasswordError}
             leftIcon={
-              <Ionicons name="shield-checkmark-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="shield-checkmark-outline" size={15} color={colors.textSecondary} />
             }
             rightIcon={
               <Ionicons
                 name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={18}
+                size={15}
                 color={colors.textSecondary}
               />
             }
@@ -304,41 +304,41 @@ export default function RegisterScreen() {
           >
             <Ionicons
               name={agreeTerms ? 'checkbox' : 'square-outline'}
-              size={18}
+              size={15}
               color={agreeTerms ? colors.primaryHover : colors.textMuted}
-              style={{ marginRight: spacing.sm, marginTop: 1 }}
+              style={{ marginRight: spacing.xs + 2, marginTop: 1 }}
             />
             <Text style={styles.termsText}>
               Tôi đồng ý với{' '}
-              <Text style={styles.termsHighlight}>Điều khoản dịch vụ</Text> và{' '}
-              <Text style={styles.termsHighlight}>Chính sách bảo mật</Text> của AutoMatch AI.
+              <Text style={styles.termsHighlight}>Điều khoản</Text> và{' '}
+              <Text style={styles.termsHighlight}>Chính sách</Text> của AutoMatch.
             </Text>
           </TouchableOpacity>
 
           {/* Submit Button */}
           <Button
             title="Đăng Ký Tài Khoản"
-            size="lg"
+            size="sm"
             variant="primary"
             loading={isLoading}
             onPress={handleRegister}
-            iconRight={<Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />}
+            iconRight={<Ionicons name="checkmark-circle-outline" size={15} color="#FFFFFF" />}
             style={styles.submitBtn}
           />
         </View>
 
         {/* Footer Navigation */}
         <View style={styles.footerRow}>
-          <Text style={styles.footerPrompt}>Đã có tài khoản AutoMatch?</Text>
+          <Text style={styles.footerPrompt}>Đã có tài khoản?</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => router.push('/(auth)/login' as any)}
           >
-            <Text style={styles.footerLink}>Đăng nhập ngay</Text>
+            <Text style={styles.footerLink}>Đăng nhập</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: spacing['2xl'] }} />
+        <View style={{ height: spacing.lg }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -351,83 +351,85 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: Platform.OS === 'ios' ? 52 : 40,
-    paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? 48 : 36,
+    paddingBottom: spacing.lg,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs + 2,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   loginLinkText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   brandContainer: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   badgeRow: {
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   screenTitle: {
     color: colors.text,
-    fontSize: typography.sizes['2xl'],
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    lineHeight: 32,
-    letterSpacing: -0.3,
+    lineHeight: 24,
   },
   screenSubtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
-    marginTop: 6,
+    fontSize: 11,
+    marginTop: 2,
     textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: spacing.md,
+    lineHeight: 16,
   },
   card: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    ...shadows.md,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.dangerMuted,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorBannerText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: spacing.sm,
-    marginBottom: spacing.lg,
-    paddingHorizontal: 2,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
   },
   termsText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 20,
+    fontSize: 10,
+    lineHeight: 15,
     flex: 1,
   },
   termsHighlight: {
@@ -435,22 +437,23 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
   },
   submitBtn: {
-    marginTop: spacing.sm,
+    marginTop: 2,
+    height: 40,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    marginTop: spacing['2xl'],
+    gap: 5,
+    marginTop: spacing.lg,
   },
   footerPrompt: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
   },
   footerLink: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
   },
 });

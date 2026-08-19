@@ -11,7 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../theme';
+import { colors, radii, spacing, typography } from '../theme';
 import { useAuthStore } from '../store/useAuthStore';
 import { useOrderStore } from '../store/useOrderStore';
 import { Card } from '../components/ui/Card';
@@ -78,10 +78,10 @@ export default function OrdersScreen() {
 
     return (
       <TouchableOpacity
-        activeOpacity={0.88}
+        activeOpacity={0.85}
         onPress={() => router.push(`/order/${item.id}` as any)}
       >
-        <Card style={styles.orderCard} padding={spacing.sm + 2}>
+        <Card style={styles.orderCard} padding={spacing.sm}>
           {/* Header Row */}
           <View style={styles.cardHeader}>
             <View style={{ flex: 1 }}>
@@ -89,7 +89,7 @@ export default function OrdersScreen() {
                 Đơn #{item.id.slice(0, 8).toUpperCase()}
               </Text>
               <View style={styles.dateRow}>
-                <Ionicons name="time-outline" size={11} color={colors.textMuted} style={{ marginRight: 3 }} />
+                <Ionicons name="time-outline" size={10} color={colors.textMuted} style={{ marginRight: 3 }} />
                 <Text style={styles.dateText}>{createdDate}</Text>
               </View>
             </View>
@@ -116,20 +116,20 @@ export default function OrdersScreen() {
                 label={item.payment_status === 'paid' ? 'Đã cọc ZaloPay' : 'Chưa thanh toán'}
                 variant={item.payment_status === 'paid' ? 'success' : 'warning'}
                 size="xs"
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 3 }}
               />
             </View>
           </View>
 
           <View style={styles.cardFooter}>
             <View>
-              <Text style={styles.depositLabel}>Tổng tiền cọc:</Text>
+              <Text style={styles.depositLabel}>Tổng cọc:</Text>
               <Text style={styles.depositAmount}>{formatVndPrice(item.total_amount)}</Text>
             </View>
 
             <View style={styles.trackingLink}>
               <Text style={styles.trackingLinkText}>Xem tiến độ</Text>
-              <Ionicons name="chevron-forward" size={12} color={colors.primaryHover} />
+              <Ionicons name="chevron-forward" size={11} color={colors.primaryHover} />
             </View>
           </View>
         </Card>
@@ -142,7 +142,7 @@ export default function OrdersScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={18} color={colors.text} />
+          <Ionicons name="arrow-back" size={16} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Đơn Hàng & Hợp Đồng</Text>
       </View>
@@ -169,13 +169,13 @@ export default function OrdersScreen() {
       {isLoading && !refreshing ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="small" color={colors.primary} />
-          <Text style={styles.loadingText}>Đang tải danh sách đơn hàng...</Text>
+          <Text style={styles.loadingText}>Đang tải danh sách...</Text>
         </View>
       ) : filteredOrders.length === 0 ? (
         <EmptyState
           icon="receipt-outline"
           title="Chưa có đơn hàng"
-          description="Bạn chưa thực hiện giao dịch hoặc đặt cọc giữ xe nào trong mục này."
+          description="Bạn chưa thực hiện giao dịch nào trong mục này."
           actionTitle="Khám phá Showroom"
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
@@ -207,45 +207,51 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: spacing['2xl'],
-    paddingBottom: spacing.md,
+    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   backBtn: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 24,
+    lineHeight: 20,
   },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: 8,
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 6,
+    gap: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 6,
     alignItems: 'center',
-    borderRadius: radii.full,
+    borderRadius: radii.xs,
   },
   tabBtnActive: {
     backgroundColor: colors.primaryMuted,
   },
   tabText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   tabTextActive: {
@@ -253,15 +259,15 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   listContent: {
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
-    paddingBottom: 40,
-    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: 32,
+    gap: spacing.xs + 2,
   },
   orderCard: {
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    ...shadows.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -270,32 +276,32 @@ const styles = StyleSheet.create({
   },
   orderIdText: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs + 0.5,
     fontWeight: typography.weights.semibold,
   },
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: 1,
   },
   dateText: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs + 2,
   },
   carPreviewRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   carThumb: {
-    width: 70,
-    height: 50,
-    borderRadius: radii.sm,
+    width: 60,
+    height: 42,
+    borderRadius: radii.xs,
     backgroundColor: colors.surfaceElevated,
   },
   carInfo: {
@@ -303,54 +309,56 @@ const styles = StyleSheet.create({
   },
   carName: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
-    lineHeight: 18,
+    lineHeight: 15,
   },
   itemCountText: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
   },
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     paddingTop: spacing.xs,
   },
   depositLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   depositAmount: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.bold,
   },
   trackingLink: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: radii.full,
-    gap: 4,
+    gap: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   trackingLinkText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     fontWeight: typography.weights.semibold,
   },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
 });
 

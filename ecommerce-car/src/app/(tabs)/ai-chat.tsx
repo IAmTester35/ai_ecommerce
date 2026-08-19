@@ -43,7 +43,7 @@ export default function AIChatScreen() {
       id: 'welcome-msg',
       role: 'assistant',
       content:
-        'Xin chào! Tôi là trợ lý AI AutoMatch. Bạn có thể nêu ngân sách, dòng xe hoặc thông số mong muốn để nhận tư vấn chính xác.',
+        'Xin chào! Tôi là trợ lý AI AutoMatch. Hãy nêu ngân sách, dòng xe hoặc thông số bạn mong muốn để nhận tư vấn chính xác.',
       timestamp: '09:00',
     },
   ]);
@@ -171,11 +171,11 @@ export default function AIChatScreen() {
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
+      keyboardVerticalOffset={85}
     >
       <View style={styles.headerInfo}>
         <View style={styles.liveDot} />
-        <Text style={styles.headerText}>AutoMatch RAG Intelligence • Trực Tuyến</Text>
+        <Text style={styles.headerText}>AutoMatch RAG AI • Trực Tuyến</Text>
       </View>
 
       <FlatList
@@ -194,7 +194,7 @@ export default function AIChatScreen() {
           isTyping ? (
             <View style={styles.typingIndicator}>
               <ActivityIndicator size="small" color={colors.primaryHover} style={{ marginRight: 6 }} />
-              <Text style={styles.typingText}>AI đang phân tích & đối chiếu thông số...</Text>
+              <Text style={styles.typingText}>AI đang phân tích & đối chiếu...</Text>
             </View>
           ) : null
         }
@@ -208,7 +208,7 @@ export default function AIChatScreen() {
       <View style={styles.inputBar}>
         <TextInput
           style={styles.textInput}
-          placeholder="Nhập yêu cầu tìm xe của bạn..."
+          placeholder="Nhập yêu cầu tìm xe..."
           placeholderTextColor={colors.textMuted}
           value={input}
           onChangeText={setInput}
@@ -221,7 +221,7 @@ export default function AIChatScreen() {
           disabled={!input.trim()}
           onPress={() => handleSendMessage()}
         >
-          <Ionicons name="arrow-up" size={18} color={input.trim() ? '#FFFFFF' : colors.textMuted} />
+          <Ionicons name="arrow-up" size={16} color={input.trim() ? '#FFFFFF' : colors.textMuted} />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -238,56 +238,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
+    paddingVertical: 6,
     backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.success,
   },
   headerText: {
     color: colors.textSecondary,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: typography.weights.medium,
     letterSpacing: 0.2,
   },
   chatList: {
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
   },
   typingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 4,
   },
   typingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontStyle: 'italic',
   },
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.04)',
+    gap: spacing.xs + 2,
   },
   textInput: {
     flex: 1,
-    height: 46,
+    height: 42,
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs + 1,
     paddingVertical: 0,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   sendBtn: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     borderRadius: radii.md,
     backgroundColor: colors.primary,
     alignItems: 'center',

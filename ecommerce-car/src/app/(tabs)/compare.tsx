@@ -11,7 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
@@ -97,7 +97,7 @@ export default function CompareScreen() {
       <View style={styles.header}>
         <View style={styles.titleRow}>
           <View style={styles.titleLeft}>
-            <Ionicons name="git-compare-outline" size={18} color={colors.primaryHover} style={{ marginRight: 6 }} />
+            <Ionicons name="git-compare-outline" size={16} color={colors.primaryHover} style={{ marginRight: 6 }} />
             <Text style={styles.title}>So Sánh Thông Số Xe</Text>
           </View>
           <TouchableOpacity
@@ -105,13 +105,10 @@ export default function CompareScreen() {
             style={styles.addCarBtn}
             onPress={() => setIsAddModalVisible(true)}
           >
-            <Ionicons name="add" size={15} color="#FFFFFF" />
+            <Ionicons name="add" size={13} color="#FFFFFF" />
             <Text style={styles.addCarBtnText}>Thêm xe</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.subtitle}>
-          Đối chiếu trực tiếp thông số kỹ thuật các dòng xe
-        </Text>
       </View>
 
       {/* Comparison Options Bar */}
@@ -123,10 +120,10 @@ export default function CompareScreen() {
         >
           <Ionicons
             name={highlightDifferences ? 'checkbox' : 'square-outline'}
-            size={16}
+            size={15}
             color={colors.primaryHover}
           />
-          <Text style={styles.toggleDiffText}>Làm nổi bật thông số khác biệt giữa các xe</Text>
+          <Text style={styles.toggleDiffText}>Làm nổi bật thông số khác biệt</Text>
         </TouchableOpacity>
       </Card>
 
@@ -146,7 +143,7 @@ export default function CompareScreen() {
                     style={styles.closeBtn}
                     onPress={() => removeCar(car.id)}
                   >
-                    <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -296,7 +293,7 @@ export default function CompareScreen() {
         title="Thêm Xe So Sánh"
         subtitle="Chọn mẫu xe từ kho showroom"
       >
-        <ScrollView style={{ maxHeight: 380 }}>
+        <ScrollView style={{ maxHeight: 360 }}>
           {topCars
             .filter((c) => !activeComparedIds.includes(c.id))
             .map((c) => (
@@ -311,13 +308,13 @@ export default function CompareScreen() {
                   <Text style={styles.addCarTitle}>{c.make} {c.model} ({c.year})</Text>
                   <Text style={styles.addCarPrice}>{formatVndPrice(c.price)}</Text>
                 </View>
-                <Ionicons name="add-circle" size={20} color={colors.primaryHover} />
+                <Ionicons name="add-circle" size={18} color={colors.primaryHover} />
               </TouchableOpacity>
             ))}
         </ScrollView>
       </ModalSheet>
 
-      <View style={{ height: 32 }} />
+      <View style={{ height: 24 }} />
     </ScrollView>
   );
 }
@@ -326,11 +323,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
   },
   header: {
-    paddingTop: 50,
-    paddingBottom: spacing.md,
+    paddingTop: 48,
+    paddingBottom: spacing.sm,
   },
   titleRow: {
     flexDirection: 'row',
@@ -343,40 +340,35 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    lineHeight: 28,
+    lineHeight: 24,
     letterSpacing: -0.2,
   },
   addCarBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
     borderRadius: radii.full,
-    gap: 4,
+    gap: 3,
   },
   addCarBtnText: {
     color: '#FFFFFF',
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
-  subtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
-    marginTop: 3,
-  },
   aiSummaryCard: {
-    marginBottom: spacing.lg,
-    borderRadius: radii.lg,
-    ...shadows.sm,
+    marginBottom: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   toggleDiffRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   toggleDiffText: {
     color: colors.textSecondary,
@@ -384,114 +376,117 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
   },
   tableScroll: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   table: {
     backgroundColor: colors.cardBg,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     overflow: 'hidden',
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   tableRowAlt: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.025)',
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
   diffRow: {
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
   },
   labelCol: {
-    width: 110,
-    paddingHorizontal: spacing.md,
+    width: 100,
+    paddingHorizontal: spacing.sm + 2,
   },
   tableHeaderLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   carCol: {
-    width: 155,
+    width: 140,
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.xs,
     position: 'relative',
   },
   closeBtn: {
     position: 'absolute',
-    top: -4,
-    right: 4,
+    top: -2,
+    right: 2,
     zIndex: 10,
   },
   thumbImage: {
-    width: 125,
-    height: 75,
-    borderRadius: radii.md,
-    marginBottom: 6,
+    width: 115,
+    height: 70,
+    borderRadius: radii.sm,
+    marginBottom: 4,
   },
   carName: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
     textAlign: 'center',
-    lineHeight: 16,
-    height: 32,
+    lineHeight: 15,
+    height: 30,
   },
   colActionBtn: {
     width: '100%',
-    height: 34,
-    marginTop: 6,
+    height: 30,
+    marginTop: 4,
   },
   metricLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.regular,
   },
   metricValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   metricValueHighlight: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
   },
   metricValueSmall: {
     color: colors.text,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     textAlign: 'center',
   },
   addCarItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.sm,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    marginBottom: spacing.sm,
+    borderRadius: radii.sm,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   addCarThumb: {
-    width: 60,
-    height: 40,
+    width: 50,
+    height: 35,
     borderRadius: radii.xs,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   addCarInfo: {
     flex: 1,
   },
   addCarTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   addCarPrice: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
-    marginTop: 2,
+    marginTop: 1,
   },
 });

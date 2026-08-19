@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { historyService } from '../../services/historyService';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -20,25 +20,25 @@ const DEFAULT_SEARCH_PROMPTS: PromptItem[] = [
   {
     id: '1',
     iconName: 'speedometer-outline',
-    title: 'Động cơ V12 & Thể thao',
+    title: 'Xe Thể Thao',
     prompt: 'Tìm xe thể thao động cơ mạnh mẽ, phong cách sang trọng dưới 3 tỷ',
   },
   {
     id: '2',
     iconName: 'car-sport-outline',
-    title: 'SUV Gia đình 7 chỗ',
+    title: 'SUV 7 Chỗ',
     prompt: 'Tìm xe SUV 7 chỗ gầm cao, an toàn tốt, cách âm êm trong tầm giá 2 tỷ',
   },
   {
     id: '3',
     iconName: 'flash-outline',
-    title: 'Xe Điện Thông Minh',
+    title: 'Xe Điện EV',
     prompt: 'Đề xuất xe điện pin trên 450km/lần sạc, hỗ trợ lái tự động ADAS',
   },
   {
     id: '4',
     iconName: 'briefcase-outline',
-    title: 'Sedan Doanh Nhân',
+    title: 'Sedan Hạng Sang',
     prompt: 'Tư vấn xe Sedan hạng sang êm ái cho doanh nhân tầm giá 2.5 tỷ',
   },
 ];
@@ -69,7 +69,7 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Gợi ý câu hỏi:</Text>
+      <Text style={styles.header}>Gợi ý nhanh:</Text>
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -78,12 +78,12 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            activeOpacity={0.7}
+            activeOpacity={0.75}
             style={styles.chip}
             onPress={() => onSelectPrompt(item.prompt)}
           >
             <View style={styles.iconCircle}>
-              <Ionicons name={item.iconName} size={14} color={colors.primaryHover} />
+              <Ionicons name={item.iconName} size={12} color={colors.primaryHover} />
             </View>
             <View style={styles.textContainer}>
               <Text style={styles.title}>{item.title}</Text>
@@ -100,51 +100,52 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
   },
   header: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    color: colors.textMuted,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
-    marginBottom: 8,
-    paddingHorizontal: spacing['2xl'],
+    marginBottom: 6,
+    paddingHorizontal: spacing.lg,
   },
   scroll: {
-    paddingHorizontal: spacing['2xl'],
-    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.xs + 2,
   },
   chip: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 7,
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: 250,
-    ...shadows.sm,
+    maxWidth: 220,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   iconCircle: {
-    width: 32,
-    height: 32,
+    width: 26,
+    height: 26,
     borderRadius: radii.full,
     backgroundColor: colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 8,
   },
   textContainer: {
     flex: 1,
   },
   title: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   subtitle: {
-    color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
-    marginTop: 2,
+    color: colors.textSecondary,
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 1,
   },
 });
 

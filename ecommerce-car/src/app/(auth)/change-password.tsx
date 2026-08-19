@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -36,15 +36,15 @@ export default function ChangePasswordScreen() {
       setPasswordError('Vui lòng nhập mật khẩu mới.');
       isValid = false;
     } else if (password.length < 6) {
-      setPasswordError('Mật khẩu mới phải có tối thiểu 6 ký tự.');
+      setPasswordError('Mật khẩu tối thiểu 6 ký tự.');
       isValid = false;
     }
 
     if (!confirmPassword) {
-      setConfirmPasswordError('Vui lòng xác nhận lại mật khẩu mới.');
+      setConfirmPasswordError('Vui lòng xác nhận mật khẩu mới.');
       isValid = false;
     } else if (password !== confirmPassword) {
-      setConfirmPasswordError('Mật khẩu xác nhận không trùng khớp.');
+      setConfirmPasswordError('Mật khẩu xác nhận không khớp.');
       isValid = false;
     }
 
@@ -58,7 +58,7 @@ export default function ChangePasswordScreen() {
       await updatePassword(password);
       Alert.alert(
         'Thành công',
-        'Mật khẩu của bạn đã được cập nhật thành công.',
+        'Mật khẩu của bạn đã được cập nhật.',
         [
           {
             text: 'Đóng',
@@ -83,18 +83,18 @@ export default function ChangePasswordScreen() {
       >
         <View style={styles.headerBox}>
           <View style={styles.iconCircle}>
-            <Ionicons name="shield-checkmark-outline" size={26} color={colors.primaryHover} />
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primaryHover} />
           </View>
           <Text style={styles.title}>Thiết Lập Mật Khẩu</Text>
           <Text style={styles.subtitle}>
-            Tạo mật khẩu mạnh với ít nhất 6 ký tự để bảo vệ tài khoản AutoMatch của bạn
+            Tạo mật khẩu với ít nhất 6 ký tự để bảo vệ tài khoản
           </Text>
         </View>
 
         <View style={styles.card}>
           {error ? (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+              <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginRight: 5 }} />
               <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           ) : null}
@@ -113,12 +113,12 @@ export default function ChangePasswordScreen() {
             autoCapitalize="none"
             error={passwordError}
             leftIcon={
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="lock-closed-outline" size={15} color={colors.textSecondary} />
             }
             rightIcon={
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={18}
+                size={15}
                 color={colors.textSecondary}
               />
             }
@@ -139,12 +139,12 @@ export default function ChangePasswordScreen() {
             autoCapitalize="none"
             error={confirmPasswordError}
             leftIcon={
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="lock-closed-outline" size={15} color={colors.textSecondary} />
             }
             rightIcon={
               <Ionicons
                 name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={18}
+                size={15}
                 color={colors.textSecondary}
               />
             }
@@ -153,7 +153,7 @@ export default function ChangePasswordScreen() {
 
           <Button
             title="Lưu Mật Khẩu Mới"
-            size="lg"
+            size="sm"
             variant="primary"
             loading={isLoading}
             onPress={handleChangePassword}
@@ -161,7 +161,7 @@ export default function ChangePasswordScreen() {
           />
         </View>
 
-        <View style={{ height: spacing['2xl'] }} />
+        <View style={{ height: spacing.lg }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -174,60 +174,65 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: Platform.OS === 'ios' ? 52 : 40,
-    paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? 48 : 36,
+    paddingBottom: spacing.lg,
   },
   headerBox: {
     alignItems: 'center',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
   },
   iconCircle: {
-    width: 64,
-    height: 64,
+    width: 48,
+    height: 48,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    ...shadows.glowCyan,
+    marginBottom: spacing.xs + 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
-    lineHeight: 28,
-    marginBottom: 6,
+    lineHeight: 22,
+    marginBottom: 4,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 16,
     paddingHorizontal: spacing.md,
   },
   card: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    ...shadows.md,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.dangerMuted,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorBannerText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   submitBtn: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+    height: 40,
   },
 });

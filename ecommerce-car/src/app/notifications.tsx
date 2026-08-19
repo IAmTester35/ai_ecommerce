@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../theme';
+import { colors, radii, spacing, typography } from '../theme';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -75,10 +75,10 @@ export default function NotificationsScreen() {
             styles.notifCard,
             !item.is_read ? styles.notifCardUnread : null,
           ]}
-          padding={spacing.sm + 2}
+          padding={spacing.sm}
         >
           <View style={[styles.iconCircle, { backgroundColor: iconConfig.bg }]}>
-            <Ionicons name={iconConfig.icon} size={18} color={iconConfig.color} />
+            <Ionicons name={iconConfig.icon} size={15} color={iconConfig.color} />
           </View>
 
           <View style={styles.notifContent}>
@@ -114,7 +114,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={18} color={colors.text} />
+          <Ionicons name="arrow-back" size={16} color={colors.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>Thông Báo & Tin Nhắn</Text>
@@ -199,54 +199,63 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: spacing['2xl'],
-    paddingBottom: spacing.md,
+    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   backBtn: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 24,
+    lineHeight: 20,
   },
   markAllBtn: {
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingHorizontal: spacing.xs,
   },
   markAllText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   filterStrip: {
     flexDirection: 'row',
-    paddingHorizontal: spacing['2xl'],
-    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 6,
     backgroundColor: colors.surface,
-    gap: spacing.sm,
+    gap: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   filterPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+    borderRadius: radii.xs,
     backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   filterPillActive: {
     backgroundColor: colors.primaryMuted,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   filterPillText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   filterPillTextActive: {
@@ -254,27 +263,28 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   listContent: {
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
-    gap: spacing.md,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    gap: spacing.xs + 2,
+    paddingBottom: 32,
   },
   notifCard: {
     flexDirection: 'row',
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    ...shadows.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   notifCardUnread: {
-    backgroundColor: 'rgba(59, 130, 246, 0.06)',
+    backgroundColor: 'rgba(37, 99, 235, 0.06)',
+    borderColor: 'rgba(59, 130, 246, 0.25)',
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   notifContent: {
     flex: 1,
@@ -283,45 +293,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   notifTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.semibold,
-    lineHeight: 18,
+    fontSize: typography.sizes.xs + 0.5,
+    fontWeight: typography.weights.medium,
+    lineHeight: 16,
     flex: 1,
   },
   unreadPill: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.primaryHover,
-    marginLeft: 8,
+    marginLeft: 6,
   },
   notifDesc: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 16,
   },
   timeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
   notifTime: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'] + 1,
+    fontSize: 10,
   },
   centerBox: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
 });
 

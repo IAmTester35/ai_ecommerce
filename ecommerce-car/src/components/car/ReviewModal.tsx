@@ -48,14 +48,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
       visible={visible}
       onClose={onClose}
       title="Đánh Giá & Nhận Xét"
-      subtitle={`Chia sẻ trải nghiệm về ${carName}`}
+      subtitle={carName}
     >
       <View style={styles.content}>
         <Text style={styles.label}>Mức độ hài lòng</Text>
         <View style={styles.ratingRow}>
           <RatingStars
             rating={rating}
-            size={22}
+            size={18}
             interactive
             onRatingChange={setRating}
           />
@@ -71,11 +71,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
         <Input
           label="Nhận xét chi tiết *"
-          placeholder="Cảm giác lái, nội thất, mức tiêu hao nhiên liệu..."
+          placeholder="Cảm giác lái, nội thất, mức tiêu hao..."
           value={comment}
           onChangeText={setComment}
           multiline
-          numberOfLines={4}
+          numberOfLines={3}
           inputStyle={styles.textArea}
           required
         />
@@ -83,6 +83,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         <Button
           title="Gửi Đánh Giá"
           variant="primary"
+          size="sm"
           loading={isSubmitting}
           disabled={isSubmitting}
           onPress={handleSubmit}
@@ -96,32 +97,32 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
-    marginBottom: spacing.xs,
+    gap: spacing.md,
+    marginBottom: 2,
   },
   ratingScore: {
     color: colors.conflict,
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
   textArea: {
-    height: 84,
+    height: 70,
     textAlignVertical: 'top',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   submitBtn: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
 });
 

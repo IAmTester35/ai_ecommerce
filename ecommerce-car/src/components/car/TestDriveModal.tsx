@@ -85,13 +85,13 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
       visible={visible}
       onClose={onClose}
       title="Đăng Ký Lái Thử"
-      subtitle={car ? `Trải nghiệm xe ${car.make} ${car.model}` : 'Chọn lịch lái thử'}
+      subtitle={car ? `${car.make} ${car.model}` : 'Chọn lịch lái thử'}
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         {/* Date Selector */}
         <View style={styles.sectionHeaderRow}>
-          <Ionicons name="calendar-outline" size={14} color={colors.primaryHover} />
-          <Text style={styles.sectionTitle}>1. Chọn ngày trải nghiệm</Text>
+          <Ionicons name="calendar-outline" size={13} color={colors.primaryHover} />
+          <Text style={styles.sectionTitle}>1. Chọn ngày</Text>
         </View>
         <View style={styles.dateRow}>
           {[1, 2, 3, 4].map((offset) => (
@@ -117,9 +117,9 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         </View>
 
         {/* Time Slot */}
-        <View style={[styles.sectionHeaderRow, { marginTop: spacing.md }]}>
-          <Ionicons name="time-outline" size={14} color={colors.primaryHover} />
-          <Text style={styles.sectionTitle}>2. Khung giờ thuận tiện</Text>
+        <View style={[styles.sectionHeaderRow, { marginTop: spacing.sm }]}>
+          <Ionicons name="time-outline" size={13} color={colors.primaryHover} />
+          <Text style={styles.sectionTitle}>2. Khung giờ</Text>
         </View>
         <View style={styles.timeGrid}>
           {TIME_SLOTS.map((slot) => (
@@ -147,16 +147,16 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         {/* Location & Preferred Address */}
         <Input
           label="Địa điểm mong muốn (Tùy chọn)"
-          placeholder="Ví dụ: Showroom Quận 1 hoặc tận nơi..."
+          placeholder="Showroom Quận 1 hoặc tại nhà..."
           value={locationNote}
           onChangeText={setLocationNote}
-          containerStyle={{ marginTop: spacing.md }}
+          containerStyle={{ marginTop: spacing.sm }}
         />
 
         {/* Special Notes */}
         <Input
-          label="Ghi chú thêm (Tùy chọn)"
-          placeholder="Ví dụ: Tư vấn màu xe, bảo hiểm..."
+          label="Ghi chú (Tùy chọn)"
+          placeholder="Tư vấn màu xe, bảo hiểm..."
           value={notes}
           onChangeText={setNotes}
           containerStyle={{ marginTop: spacing.xs }}
@@ -167,6 +167,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         <Button
           title="Xác Nhận Đăng Ký"
           variant="primary"
+          size="sm"
           loading={isSubmitting}
           disabled={isSubmitting}
           onPress={handleConfirm}
@@ -179,39 +180,42 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 460,
+    maxHeight: 420,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 6,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   dateRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   dateBox: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: radii.md,
+    paddingVertical: 7,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   dateBoxInactive: {
     backgroundColor: colors.surfaceElevated,
   },
   dateBoxActive: {
-    backgroundColor: colors.primaryMuted,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+    borderColor: 'rgba(59, 130, 246, 0.4)',
   },
   dateText: {
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   dateTextInactive: {
@@ -224,21 +228,24 @@ const styles = StyleSheet.create({
   timeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   timeSlot: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 6,
+    borderRadius: radii.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   timeSlotInactive: {
     backgroundColor: colors.surfaceElevated,
   },
   timeSlotActive: {
-    backgroundColor: colors.primaryMuted,
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+    borderColor: 'rgba(59, 130, 246, 0.4)',
   },
   timeSlotText: {
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     fontWeight: typography.weights.medium,
   },
   timeSlotTextInactive: {
@@ -249,7 +256,7 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   footer: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
     paddingTop: spacing.xs,
   },
 });

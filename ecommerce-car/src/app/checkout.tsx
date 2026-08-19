@@ -9,9 +9,9 @@ import {
   Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, radii, spacing, typography } from '../theme';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCartStore } from '../store/useCartStore';
 import { usePaymentStore } from '../store/usePaymentStore';
@@ -126,7 +126,7 @@ export default function CheckoutScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={18} color={colors.text} />
+          <Ionicons name="arrow-back" size={16} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Xác Nhận Đặt Cọc</Text>
       </View>
@@ -134,7 +134,7 @@ export default function CheckoutScreen() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         {/* Items Summary Header */}
         <View style={styles.sectionHeaderRow}>
-          <Ionicons name="car-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Ionicons name="car-outline" size={14} color={colors.primaryHover} style={{ marginRight: 5 }} />
           <Text style={styles.sectionTitle}>Sản phẩm đặt cọc ({items.length})</Text>
         </View>
 
@@ -168,7 +168,7 @@ export default function CheckoutScreen() {
 
         {/* Delivery / Pickup Address */}
         <View style={styles.sectionHeaderRow}>
-          <Ionicons name="location-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Ionicons name="location-outline" size={14} color={colors.primaryHover} style={{ marginRight: 5 }} />
           <Text style={styles.sectionTitle}>Địa chỉ giao nhận xe</Text>
         </View>
         <View style={styles.formCard}>
@@ -187,7 +187,7 @@ export default function CheckoutScreen() {
         {/* Guest Banner */}
         {!user && (
           <View style={styles.guestBanner}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.primaryHover} style={{ marginRight: 6 }} />
+            <Ionicons name="information-circle-outline" size={14} color={colors.primaryHover} style={{ marginRight: 5 }} />
             <Text style={styles.guestBannerText}>
               Bạn đang đặt cọc với tư cách Khách.{' '}
               <Text
@@ -202,7 +202,7 @@ export default function CheckoutScreen() {
 
         {/* Customer Information Form */}
         <View style={styles.sectionHeaderRow}>
-          <Ionicons name="person-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Ionicons name="person-outline" size={14} color={colors.primaryHover} style={{ marginRight: 5 }} />
           <Text style={styles.sectionTitle}>Thông tin người đặt</Text>
         </View>
         <View style={styles.formCard}>
@@ -257,7 +257,7 @@ export default function CheckoutScreen() {
 
         {/* Payment Method Options */}
         <View style={styles.sectionHeaderRow}>
-          <Ionicons name="card-outline" size={15} color={colors.primaryHover} style={{ marginRight: 6 }} />
+          <Ionicons name="card-outline" size={14} color={colors.primaryHover} style={{ marginRight: 5 }} />
           <Text style={styles.sectionTitle}>Phương thức thanh toán cọc</Text>
         </View>
 
@@ -271,7 +271,7 @@ export default function CheckoutScreen() {
         >
           <View style={styles.paymentOptionHeader}>
             <View style={styles.paymentIconCircle}>
-              <Ionicons name="qr-code-outline" size={18} color="#0088FF" />
+              <Ionicons name="qr-code-outline" size={16} color="#0088FF" />
             </View>
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -284,7 +284,7 @@ export default function CheckoutScreen() {
             </View>
           </View>
           {selectedPaymentMethod === 'zalopay' && (
-            <Ionicons name="checkmark-circle" size={18} color={colors.primaryHover} />
+            <Ionicons name="checkmark-circle" size={16} color={colors.primaryHover} />
           )}
         </TouchableOpacity>
 
@@ -298,7 +298,7 @@ export default function CheckoutScreen() {
         >
           <View style={styles.paymentOptionHeader}>
             <View style={styles.paymentIconCircle}>
-              <Ionicons name="business-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="business-outline" size={16} color={colors.textSecondary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.paymentOptionTitle}>Thanh toán tại Showroom</Text>
@@ -308,7 +308,7 @@ export default function CheckoutScreen() {
             </View>
           </View>
           {selectedPaymentMethod === 'cash' && (
-            <Ionicons name="checkmark-circle" size={18} color={colors.primaryHover} />
+            <Ionicons name="checkmark-circle" size={16} color={colors.primaryHover} />
           )}
         </TouchableOpacity>
 
@@ -320,7 +320,7 @@ export default function CheckoutScreen() {
         >
           <Ionicons
             name={agreedTerms ? 'checkbox' : 'square-outline'}
-            size={16}
+            size={15}
             color={colors.primaryHover}
           />
           <Text style={styles.termsText}>
@@ -339,7 +339,7 @@ export default function CheckoutScreen() {
             onPress={handleProcessPayment}
             loading={isLoading}
             disabled={isLoading}
-            icon={<Ionicons name="shield-checkmark-outline" size={16} color="#FFFFFF" />}
+            icon={<Ionicons name="shield-checkmark-outline" size={14} color="#FFFFFF" />}
             style={styles.submitBtn}
             size="md"
           />
@@ -357,206 +357,220 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: spacing['2xl'],
-    paddingBottom: spacing.md,
+    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   backBtn: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 24,
+    lineHeight: 20,
   },
   container: {
     flex: 1,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing['2xl'],
-    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 18,
   },
   itemCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.sm,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    marginBottom: spacing.sm,
-    ...shadows.sm,
+    borderRadius: radii.md,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   itemImage: {
-    width: 70,
-    height: 48,
-    borderRadius: radii.sm,
-    marginRight: spacing.md,
+    width: 60,
+    height: 42,
+    borderRadius: radii.xs,
+    marginRight: spacing.sm,
   },
   itemDetails: {
     flex: 1,
   },
   itemTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
-    lineHeight: 18,
+    lineHeight: 15,
   },
   itemYear: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
   },
   itemPrice: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
-    marginTop: 2,
+    marginTop: 1,
   },
   totalBox: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
+    borderRadius: radii.md,
+    padding: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
-    ...shadows.sm,
+    marginTop: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   totalLabel: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
   totalSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
   },
   totalAmount: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
   },
   formCard: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-    ...shadows.sm,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   inputGroup: {
-    gap: 4,
+    gap: 3,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   input: {
     backgroundColor: colors.background,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: 0,
-    height: 48,
+    height: 40,
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   textArea: {
-    height: 80,
-    paddingVertical: 10,
+    height: 65,
+    paddingVertical: 8,
     textAlignVertical: 'top',
   },
   paymentOptionCard: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
+    borderRadius: radii.md,
+    padding: spacing.sm + 2,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    ...shadows.sm,
+    marginBottom: spacing.xs + 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   paymentOptionSelected: {
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   paymentOptionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     flex: 1,
-    marginRight: spacing.sm,
+    marginRight: spacing.xs,
   },
   paymentIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   paymentOptionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   paymentOptionSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
-    marginTop: 2,
+    fontSize: 10,
+    lineHeight: 14,
+    marginTop: 1,
   },
   termsRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   termsText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: 10,
+    lineHeight: 15,
     flex: 1,
   },
   actionSection: {
-    marginTop: spacing.xl,
-    marginBottom: 50,
+    marginTop: spacing.md,
+    marginBottom: 40,
   },
   submitBtn: {
-    height: 48,
+    height: 42,
   },
   guestBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(59, 130, 246, 0.08)',
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
   },
   guestBannerText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   guestBannerLink: {
     color: colors.primaryHover,

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -98,7 +98,7 @@ export default function LoginScreen() {
               }
             }}
           >
-            <Ionicons name="arrow-back" size={20} color={colors.text} />
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -112,14 +112,14 @@ export default function LoginScreen() {
         {/* Brand Header */}
         <View style={styles.brandContainer}>
           <View style={styles.logoIconWrapper}>
-            <Ionicons name="speedometer-outline" size={32} color={colors.primary} />
+            <Ionicons name="speedometer-outline" size={24} color={colors.primaryHover} />
           </View>
           <View style={styles.brandTitleRow}>
             <Text style={styles.brandTitle}>AUTOMATCH</Text>
             <Badge label="AI LUXURY" variant="primary" size="xs" />
           </View>
           <Text style={styles.brandSubtitle}>
-            Hệ thống Thương Mại & Tư Vấn Xe Hơi Kỹ Thuật Số
+            Thương Mại & Tư Vấn Xe Hơi Kỹ Thuật Số
           </Text>
         </View>
 
@@ -128,14 +128,14 @@ export default function LoginScreen() {
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Đăng Nhập Tài Khoản</Text>
             <Text style={styles.cardDescription}>
-              Truy cập để quản lý đơn đặt cọc, lịch lái thử và gara cá nhân
+              Quản lý đơn cọc, lịch lái thử và gara xe cá nhân
             </Text>
           </View>
 
           {/* Error Banner */}
           {error ? (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+              <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginRight: 5 }} />
               <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           ) : null}
@@ -156,7 +156,7 @@ export default function LoginScreen() {
             autoCorrect={false}
             error={emailError}
             leftIcon={
-              <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="mail-outline" size={15} color={colors.textSecondary} />
             }
           />
 
@@ -175,12 +175,12 @@ export default function LoginScreen() {
             autoCapitalize="none"
             error={passwordError}
             leftIcon={
-              <Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="lock-closed-outline" size={15} color={colors.textSecondary} />
             }
             rightIcon={
               <Ionicons
                 name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                size={18}
+                size={15}
                 color={colors.textSecondary}
               />
             }
@@ -200,30 +200,30 @@ export default function LoginScreen() {
           {/* Submit Button */}
           <Button
             title="Đăng Nhập"
-            size="lg"
+            size="sm"
             variant="primary"
             loading={isLoading}
             onPress={handleLogin}
-            iconRight={<Ionicons name="arrow-forward" size={16} color="#FFFFFF" />}
+            iconRight={<Ionicons name="arrow-forward" size={14} color="#FFFFFF" />}
             style={styles.submitBtn}
           />
 
           {/* Quick Demo Helper for instant testing */}
           <View style={styles.demoBox}>
-            <Text style={styles.demoLabel}>Mẫu kiểm thử nhanh:</Text>
+            <Text style={styles.demoLabel}>Mẫu thử nhanh:</Text>
             <View style={styles.demoChips}>
               <TouchableOpacity
                 style={styles.demoChip}
                 onPress={() => handleQuickFill('demo@automatch.ai', '123456')}
               >
-                <Ionicons name="flash-outline" size={12} color={colors.primaryHover} />
-                <Text style={styles.demoChipText}>Tài khoản Demo</Text>
+                <Ionicons name="flash-outline" size={11} color={colors.primaryHover} />
+                <Text style={styles.demoChipText}>Demo</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.demoChip}
                 onPress={() => handleQuickFill('khachhang@gmail.com', '123456')}
               >
-                <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
+                <Ionicons name="person-outline" size={11} color={colors.textSecondary} />
                 <Text style={styles.demoChipText}>Khách hàng</Text>
               </TouchableOpacity>
             </View>
@@ -232,7 +232,7 @@ export default function LoginScreen() {
 
         {/* Footer Navigation */}
         <View style={styles.footerRow}>
-          <Text style={styles.footerPrompt}>Chưa có tài khoản AutoMatch?</Text>
+          <Text style={styles.footerPrompt}>Chưa có tài khoản?</Text>
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => router.push('/(auth)/register' as any)}
@@ -241,7 +241,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={{ height: spacing['2xl'] }} />
+        <View style={{ height: spacing.lg }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -254,156 +254,166 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: Platform.OS === 'ios' ? 52 : 40,
-    paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? 48 : 36,
+    paddingBottom: spacing.lg,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   guestButtonText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   brandContainer: {
     alignItems: 'center',
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
   logoIconWrapper: {
-    width: 68,
-    height: 68,
-    borderRadius: radii.xl,
+    width: 48,
+    height: 48,
+    borderRadius: radii.md,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    ...shadows.glowCyan,
+    marginBottom: spacing.xs + 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   brandTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
   },
   brandTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
   brandSubtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
-    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
     textAlign: 'center',
   },
   card: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    ...shadows.md,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   cardHeader: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   cardTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
-    lineHeight: 28,
-    marginBottom: 4,
+    lineHeight: 22,
+    marginBottom: 2,
   },
   cardDescription: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
-    lineHeight: 20,
+    fontSize: 11,
+    lineHeight: 16,
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.dangerMuted,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorBannerText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   forgotRow: {
     alignItems: 'flex-end',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     marginTop: -2,
   },
   forgotText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   submitBtn: {
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
+    marginTop: 2,
+    marginBottom: spacing.md,
+    height: 40,
   },
   demoBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginTop: spacing.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    borderRadius: radii.xs,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   demoLabel: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginBottom: 8,
+    fontSize: 10,
+    marginBottom: 6,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   demoChips: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   demoChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    borderRadius: radii.full,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 5,
+    borderRadius: radii.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   demoChipText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 6,
-    marginTop: spacing['2xl'],
+    gap: 5,
+    marginTop: spacing.lg,
   },
   footerPrompt: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
   },
   footerLink: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
   },
 });

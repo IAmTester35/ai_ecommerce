@@ -14,7 +14,7 @@ interface PriceTagProps {
 export const formatVndPrice = (price?: number | null): string => {
   if (!price || price <= 0) return 'Liên hệ giá';
   if (price >= 1_000_000_000) {
-    const billions = (price / 1_000_000_000).toFixed(2);
+    const billions = (price / 1_000_000_000).toFixed(2).replace(/\.00$/, '');
     return `${billions} tỷ VNĐ`;
   }
   const millions = (price / 1_000_000).toFixed(0);
@@ -31,14 +31,14 @@ export const PriceTag: React.FC<PriceTagProps> = ({
   const getPriceFontSize = () => {
     switch (size) {
       case 'sm':
-        return typography.sizes.sm;
+        return typography.sizes.xs + 1;
       case 'lg':
-        return typography.sizes.xl;
+        return typography.sizes.lg;
       case 'xl':
-        return typography.sizes['2xl'];
+        return typography.sizes.xl;
       case 'md':
       default:
-        return typography.sizes.md;
+        return typography.sizes.base;
     }
   };
 
@@ -73,9 +73,9 @@ export const PriceTag: React.FC<PriceTagProps> = ({
 
       {showInstallment && monthlyEst > 0 && (
         <View style={styles.installmentPill}>
-          <Ionicons name="card-outline" size={11} color={colors.primaryHover} style={{ marginRight: 4 }} />
+          <Ionicons name="card-outline" size={10} color={colors.primaryHover} style={{ marginRight: 3 }} />
           <Text style={styles.installmentText}>
-            Trả góp từ ~{monthlyEst} tr/tháng
+            Góp từ ~{monthlyEst} tr/tháng
           </Text>
         </View>
       )}
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: spacing.sm,
+    gap: 6,
   },
   price: {
     color: colors.primaryHover,
@@ -99,21 +99,21 @@ const styles = StyleSheet.create({
   },
   originalPrice: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     textDecorationLine: 'line-through',
   },
   installmentPill: {
-    marginTop: 6,
+    marginTop: 3,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primaryMuted,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: radii.full,
   },
   installmentText: {
-    color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    fontSize: 10,
     fontWeight: typography.weights.medium,
   },
 });

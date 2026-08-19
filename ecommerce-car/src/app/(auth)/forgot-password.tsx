@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -73,11 +73,11 @@ export default function ForgotPasswordScreen() {
         {/* Brand/Feature Icon */}
         <View style={styles.headerBox}>
           <View style={styles.iconCircle}>
-            <Ionicons name="key-outline" size={28} color={colors.primaryHover} />
+            <Ionicons name="key-outline" size={22} color={colors.primaryHover} />
           </View>
           <Text style={styles.title}>Quên Mật Khẩu?</Text>
           <Text style={styles.subtitle}>
-            Nhập email tài khoản của bạn để nhận liên kết hướng dẫn thiết lập lại mật khẩu mới
+            Nhập email tài khoản để nhận liên kết thiết lập lại mật khẩu
           </Text>
         </View>
 
@@ -85,27 +85,27 @@ export default function ForgotPasswordScreen() {
           /* Success Result Card */
           <Card style={styles.successCard}>
             <View style={styles.successIconWrapper}>
-              <Ionicons name="mail-unread-outline" size={36} color={colors.success} />
+              <Ionicons name="mail-unread-outline" size={28} color={colors.success} />
             </View>
-            <Text style={styles.successTitle}>Đã Gửi Email Khôi Phục!</Text>
+            <Text style={styles.successTitle}>Đã Gửi Email Khôi Phục</Text>
             <Text style={styles.successDesc}>
-              Liên kết đặt lại mật khẩu đã được gửi đến{' '}
-              <Text style={styles.emailHighlight}>{email.trim()}</Text>. Vui lòng kiểm tra hộp thư đến hoặc mục thư rác.
+              Liên kết đã gửi tới{' '}
+              <Text style={styles.emailHighlight}>{email.trim()}</Text>. Vui lòng kiểm tra hộp thư đến.
             </Text>
 
             <View style={styles.successActions}>
               <Button
                 title="Quay lại Đăng nhập"
-                size="md"
+                size="sm"
                 variant="primary"
                 onPress={() => router.replace('/(auth)/login' as any)}
                 fullWidth
-                style={{ marginBottom: spacing.sm }}
+                style={{ marginBottom: spacing.xs }}
               />
 
               <Button
                 title={countdown > 0 ? `Gửi lại sau (${countdown}s)` : 'Gửi lại mã'}
-                size="md"
+                size="sm"
                 variant="ghost"
                 disabled={countdown > 0 || isLoading}
                 onPress={handleResetPassword}
@@ -119,13 +119,13 @@ export default function ForgotPasswordScreen() {
             {/* Error Banner */}
             {error ? (
               <View style={styles.errorBanner}>
-                <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+                <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginRight: 5 }} />
                 <Text style={styles.errorBannerText}>{error}</Text>
               </View>
             ) : null}
 
             <Input
-              label="Địa chỉ Email tài khoản"
+              label="Địa chỉ Email"
               required
               placeholder="name@example.com"
               value={email}
@@ -139,18 +139,18 @@ export default function ForgotPasswordScreen() {
               autoCorrect={false}
               error={emailError}
               leftIcon={
-                <Ionicons name="mail-outline" size={18} color={colors.textSecondary} />
+                <Ionicons name="mail-outline" size={15} color={colors.textSecondary} />
               }
-              helperText="Hệ thống sẽ gửi một liên kết an toàn đến địa chỉ email này."
+              helperText="Hệ thống sẽ gửi liên kết an toàn đến email này."
             />
 
             <Button
               title="Gửi Yêu Cầu Khôi Phục"
-              size="lg"
+              size="sm"
               variant="primary"
               loading={isLoading}
               onPress={handleResetPassword}
-              iconRight={<Ionicons name="paper-plane-outline" size={16} color="#FFFFFF" />}
+              iconRight={<Ionicons name="paper-plane-outline" size={14} color="#FFFFFF" />}
               style={styles.submitBtn}
             />
 
@@ -159,13 +159,13 @@ export default function ForgotPasswordScreen() {
               style={styles.backToLoginRow}
               onPress={() => router.back()}
             >
-              <Ionicons name="arrow-back" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
+              <Ionicons name="arrow-back" size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
               <Text style={styles.backToLoginText}>Quay lại Đăng nhập</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <View style={{ height: spacing['2xl'] }} />
+        <View style={{ height: spacing.lg }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -178,62 +178,67 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: Platform.OS === 'ios' ? 52 : 40,
-    paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+    paddingTop: Platform.OS === 'ios' ? 48 : 36,
+    paddingBottom: spacing.lg,
   },
   headerBox: {
     alignItems: 'center',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
   },
   iconCircle: {
-    width: 64,
-    height: 64,
+    width: 48,
+    height: 48,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    ...shadows.glowCyan,
+    marginBottom: spacing.xs + 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes['2xl'],
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
-    lineHeight: 32,
-    marginBottom: 6,
+    lineHeight: 22,
+    marginBottom: 4,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 16,
     paddingHorizontal: spacing.md,
   },
   card: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    ...shadows.md,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.dangerMuted,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorBannerText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   submitBtn: {
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+    height: 40,
   },
   backToLoginRow: {
     flexDirection: 'row',
@@ -243,36 +248,38 @@ const styles = StyleSheet.create({
   },
   backToLoginText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   successCard: {
-    padding: spacing.xl,
-    borderRadius: radii.xl,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   successIconWrapper: {
-    width: 72,
-    height: 72,
+    width: 52,
+    height: 52,
     borderRadius: radii.full,
     backgroundColor: 'rgba(16, 185, 129, 0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   successTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
-    lineHeight: 28,
-    marginBottom: 8,
+    lineHeight: 20,
+    marginBottom: 4,
   },
   successDesc: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 11,
     textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: spacing['2xl'],
+    lineHeight: 16,
+    marginBottom: spacing.lg,
   },
   emailHighlight: {
     color: colors.text,

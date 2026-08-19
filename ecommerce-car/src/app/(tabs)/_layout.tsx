@@ -13,22 +13,23 @@ export default function TabLayout() {
         headerShadowVisible: false,
         headerTintColor: colors.text,
         headerTitleStyle: {
-          fontSize: typography.sizes.base + 1,
+          fontSize: typography.sizes.sm + 1,
           fontWeight: typography.weights.semibold,
           letterSpacing: -0.2,
         },
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
-          borderTopWidth: 0,
-          height: 62,
-          paddingBottom: 8,
-          paddingTop: 6,
+          borderTopWidth: 1,
+          borderTopColor: colors.tabBarBorder,
+          height: 56,
+          paddingBottom: 6,
+          paddingTop: 4,
           elevation: 0,
         },
         tabBarActiveTintColor: colors.tabBarActive,
         tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: typography.weights.medium,
         },
       }}
@@ -39,7 +40,7 @@ export default function TabLayout() {
           title: 'Khám phá',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass-outline" size={size - 2} color={color} />
+            <Ionicons name="compass-outline" size={size - 4} color={color} />
           ),
         }}
       />
@@ -49,7 +50,7 @@ export default function TabLayout() {
           title: 'Kho xe',
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={size - 2} color={color} />
+            <Ionicons name="grid-outline" size={size - 4} color={color} />
           ),
         }}
       />
@@ -59,7 +60,7 @@ export default function TabLayout() {
           title: 'AI Match',
           headerTitle: 'Trợ Lý AI',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="sparkles" size={size - 2} color={color} />
+            <Ionicons name="sparkles" size={size - 4} color={color} />
           ),
         }}
       />
@@ -69,7 +70,7 @@ export default function TabLayout() {
           title: 'So sánh',
           headerTitle: 'So Sánh Xe',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="git-compare-outline" size={size - 2} color={color} />
+            <Ionicons name="git-compare-outline" size={size - 4} color={color} />
           ),
         }}
       />
@@ -79,7 +80,7 @@ export default function TabLayout() {
           title: 'Cá nhân',
           headerTitle: 'Tài Khoản',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size - 2} color={color} />
+            <Ionicons name="person-outline" size={size - 4} color={color} />
           ),
         }}
       />

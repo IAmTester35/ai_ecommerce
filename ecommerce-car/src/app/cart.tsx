@@ -9,7 +9,7 @@ import {
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../theme';
+import { colors, radii, spacing, typography } from '../theme';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Card } from '../components/ui/Card';
@@ -38,7 +38,7 @@ export default function CartScreen() {
       <View style={styles.screen}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={18} color={colors.text} />
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Giỏ Hàng Đặt Cọc</Text>
         </View>
@@ -46,7 +46,7 @@ export default function CartScreen() {
         <EmptyState
           icon="bag-handle-outline"
           title="Giỏ hàng trống"
-          description="Bạn chưa chọn mẫu xe nào để đặt cọc. Hãy khám phá kho xe tại Showroom!"
+          description="Bạn chưa chọn mẫu xe nào để đặt cọc."
           actionTitle="Khám phá kho xe"
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
@@ -59,7 +59,7 @@ export default function CartScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={18} color={colors.text} />
+          <Ionicons name="arrow-back" size={16} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Giỏ Hàng Đặt Cọc ({items.length})</Text>
       </View>
@@ -69,7 +69,7 @@ export default function CartScreen() {
         <Text style={styles.sectionHeader}>Danh sách xe giữ chỗ</Text>
 
         {items.map((item) => (
-          <Card key={item.id} style={styles.itemCard} padding={spacing.sm + 2}>
+          <Card key={item.id} style={styles.itemCard} padding={spacing.sm}>
             <Image
               source={{ uri: item.car?.image_url || fallbackImage }}
               style={styles.itemThumb}
@@ -85,7 +85,7 @@ export default function CartScreen() {
                   onPress={() => removeFromCart(item.id)}
                   style={styles.deleteBtn}
                 >
-                  <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                  <Ionicons name="trash-outline" size={14} color={colors.danger} />
                 </TouchableOpacity>
               </View>
 
@@ -100,14 +100,14 @@ export default function CartScreen() {
                     onPress={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
                     style={styles.stepBtn}
                   >
-                    <Ionicons name="remove" size={13} color={colors.text} />
+                    <Ionicons name="remove" size={11} color={colors.text} />
                   </TouchableOpacity>
                   <Text style={styles.stepValue}>{item.quantity}</Text>
                   <TouchableOpacity
                     onPress={() => updateQuantity(item.id, item.quantity + 1)}
                     style={styles.stepBtn}
                   >
-                    <Ionicons name="add" size={13} color={colors.text} />
+                    <Ionicons name="add" size={11} color={colors.text} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -133,8 +133,8 @@ export default function CartScreen() {
 
           <View style={styles.totalRow}>
             <View>
-              <Text style={styles.totalLabel}>Tổng cọc cần thanh toán:</Text>
-              <Text style={styles.totalSub}>Cam kết hoàn cọc 100% trong 7 ngày</Text>
+              <Text style={styles.totalLabel}>Tổng tiền cọc:</Text>
+              <Text style={styles.totalSub}>Hoàn cọc 100% trong 7 ngày</Text>
             </View>
             <Text style={styles.totalAmount}>{formatVndPrice(depositAmount)}</Text>
           </View>
@@ -142,13 +142,13 @@ export default function CartScreen() {
 
         {/* Security & Warranty Notice */}
         <View style={styles.noticeBox}>
-          <Ionicons name="shield-checkmark-outline" size={16} color={colors.primaryHover} />
+          <Ionicons name="shield-checkmark-outline" size={14} color={colors.primaryHover} />
           <Text style={styles.noticeText}>
-            Giao dịch cọc được bảo mật và thực hiện qua cổng thanh toán ZaloPay hoặc chuyển khoản ngân hàng chính thức của AutoMatch.
+            Giao dịch cọc bảo mật qua cổng ZaloPay hoặc chuyển khoản ngân hàng AutoMatch.
           </Text>
         </View>
 
-        <View style={{ height: 90 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
 
       {/* Bottom Sticky Checkout Action */}
@@ -159,12 +159,12 @@ export default function CartScreen() {
         </View>
 
         <Button
-          title="Tiến Hành Đặt Cọc"
+          title="Tiến Hành Cọc"
           variant="primary"
-          size="md"
+          size="sm"
           onPress={() => router.push('/checkout' as any)}
           style={styles.checkoutBtn}
-          icon={<Ionicons name="arrow-forward" size={15} color="#FFFFFF" />}
+          icon={<Ionicons name="arrow-forward" size={13} color="#FFFFFF" />}
         />
       </View>
     </View>
@@ -179,54 +179,58 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingTop: 50,
-    paddingHorizontal: spacing['2xl'],
-    paddingBottom: spacing.md,
+    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   backBtn: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 24,
+    lineHeight: 20,
   },
   container: {
     flex: 1,
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
   },
   sectionHeader: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
+    lineHeight: 18,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
   },
   itemCard: {
     flexDirection: 'row',
-    marginBottom: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    ...shadows.sm,
+    marginBottom: spacing.xs + 2,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   itemThumb: {
-    width: 90,
-    height: 75,
-    borderRadius: radii.md,
+    width: 75,
+    height: 60,
+    borderRadius: radii.sm,
     backgroundColor: colors.surfaceElevated,
   },
   itemInfo: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm + 2,
     justifyContent: 'space-between',
   },
   itemTitleRow: {
@@ -236,65 +240,67 @@ const styles = StyleSheet.create({
   },
   itemCarName: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
-    lineHeight: 18,
+    lineHeight: 15,
     flex: 1,
   },
   deleteBtn: {
-    padding: 4,
+    padding: 2,
   },
   itemYear: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   itemPrice: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.sm + 1,
+    fontSize: 11,
     fontWeight: typography.weights.bold,
-    marginVertical: 2,
+    marginVertical: 1,
   },
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
+    marginTop: 2,
   },
   qtyLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   stepper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.sm,
+    borderRadius: radii.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   stepBtn: {
-    width: 28,
-    height: 26,
+    width: 24,
+    height: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepValue: {
     color: colors.text,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     fontWeight: typography.weights.bold,
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
   },
   summaryCard: {
-    marginTop: spacing.xl,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
-    gap: spacing.sm,
-    ...shadows.sm,
+    marginTop: spacing.md,
+    borderRadius: radii.md,
+    gap: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   summaryTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
-    marginBottom: 4,
+    lineHeight: 18,
+    marginBottom: 2,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -303,18 +309,18 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 16,
   },
   summaryValue: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginVertical: spacing.sm,
+    marginVertical: 4,
   },
   totalRow: {
     flexDirection: 'row',
@@ -323,32 +329,34 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
   },
   totalSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
   },
   totalAmount: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
   },
   noticeBox: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    marginTop: spacing.lg,
-    gap: spacing.sm,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
+    marginTop: spacing.md,
+    gap: spacing.xs + 2,
     alignItems: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   noticeText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: 10,
+    lineHeight: 14,
     flex: 1,
   },
   bottomCheckoutBar: {
@@ -357,29 +365,30 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.md,
-    paddingBottom: 28,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs + 2,
+    paddingBottom: 22,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    ...shadows.md,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   bottomTotalGroup: {
     flex: 1,
   },
   bottomDepositLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
   },
   bottomDepositAmount: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
   },
   checkoutBtn: {
-    flex: 1.2,
-    height: 46,
+    flex: 1,
+    height: 38,
   },
 });
 

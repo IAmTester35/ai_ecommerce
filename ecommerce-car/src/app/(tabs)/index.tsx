@@ -28,9 +28,9 @@ import { ASSET_IMAGES, FALLBACK_CAR_URL } from '../../constants/images';
 
 const CATEGORY_OPTIONS: PillOption<string>[] = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'Coupe', label: 'Thể thao & Coupe' },
-  { id: 'SUV', label: 'SUV Sang trọng' },
-  { id: 'Sedan', label: 'Sedan Doanh nhân' },
+  { id: 'Coupe', label: 'Coupe / Sport' },
+  { id: 'SUV', label: 'SUV' },
+  { id: 'Sedan', label: 'Sedan' },
   { id: 'Điện', label: 'Xe Điện EV' },
   { id: '7 chỗ', label: '7 Chỗ' },
 ];
@@ -109,11 +109,9 @@ export default function HomeScreen() {
             style={styles.actionIconBtn}
             onPress={() => router.push('/notifications' as any)}
           >
-            <Ionicons name="notifications-outline" size={18} color={colors.text} />
+            <Ionicons name="notifications-outline" size={17} color={colors.text} />
             {unreadNotifs > 0 && (
-              <View style={styles.unreadDot}>
-                <Text style={styles.unreadDotText}>{unreadNotifs}</Text>
-              </View>
+              <View style={styles.unreadDot} />
             )}
           </TouchableOpacity>
 
@@ -122,7 +120,7 @@ export default function HomeScreen() {
             style={styles.actionIconBtn}
             onPress={() => router.push('/cart' as any)}
           >
-            <Ionicons name="bag-handle-outline" size={18} color={colors.text} />
+            <Ionicons name="bag-handle-outline" size={17} color={colors.text} />
             {cartCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -139,10 +137,10 @@ export default function HomeScreen() {
           style={styles.searchTrigger}
           onPress={() => router.push('/(tabs)/catalog' as any)}
         >
-          <Ionicons name="search-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.searchPlaceholder}>Tìm kiếm Porsche, BMW, VinFast, SUV...</Text>
+          <Ionicons name="search-outline" size={15} color={colors.textSecondary} />
+          <Text style={styles.searchPlaceholder}>Tìm kiếm dòng xe, thương hiệu...</Text>
           <View style={styles.searchPill}>
-            <Ionicons name="sparkles" size={11} color="#FFFFFF" />
+            <Ionicons name="sparkles" size={10} color="#FFFFFF" />
             <Text style={styles.searchPillText}>AI Search</Text>
           </View>
         </TouchableOpacity>
@@ -168,7 +166,7 @@ export default function HomeScreen() {
 
               return (
                 <TouchableOpacity
-                  activeOpacity={0.9}
+                  activeOpacity={0.92}
                   style={styles.promoCard}
                   onPress={() => handleCarDetails(item.id)}
                 >
@@ -178,21 +176,21 @@ export default function HomeScreen() {
                     contentFit="cover"
                   />
                   <View style={styles.promoOverlay}>
-                    <Badge
-                      label={item.metadata?.fuel_type || 'Nổi bật'}
-                      variant="gold"
-                      size="xs"
-                      style={{ marginBottom: 4 }}
-                    />
+                    <View style={styles.promoBadgeRow}>
+                      <Badge
+                        label={item.metadata?.fuel_type || 'Nổi bật'}
+                        variant="gold"
+                        size="xs"
+                      />
+                    </View>
                     <Text style={styles.promoTitle}>
                       {item.make} {item.model}
                     </Text>
-                    <Text style={styles.promoSubtitle}>
-                      Năm {item.year} • {item.engine_hp ? `${item.engine_hp} HP` : 'Hiệu năng cao'}
-                    </Text>
-                    <View style={styles.voucherPill}>
-                      <Text style={styles.voucherLabel}>Giá từ: </Text>
-                      <Text style={styles.voucherCode}>{formatVndPrice(item.price)}</Text>
+                    <View style={styles.promoBottomRow}>
+                      <Text style={styles.promoSubtitle}>
+                        Năm {item.year} {item.engine_hp ? `• ${item.engine_hp} HP` : ''}
+                      </Text>
+                      <Text style={styles.promoPrice}>{formatVndPrice(item.price)}</Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -209,7 +207,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/ai-chat' as any)}
           >
             <View style={[styles.serviceIcon, { backgroundColor: colors.primaryMuted }]}>
-              <Ionicons name="sparkles" size={17} color={colors.primaryHover} />
+              <Ionicons name="sparkles" size={16} color={colors.primaryHover} />
             </View>
             <Text style={styles.serviceLabel}>Tư Vấn AI</Text>
           </TouchableOpacity>
@@ -220,7 +218,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/catalog' as any)}
           >
             <View style={[styles.serviceIcon, { backgroundColor: colors.secondaryMuted }]}>
-              <Ionicons name="grid-outline" size={17} color={colors.secondaryHover} />
+              <Ionicons name="grid-outline" size={16} color={colors.secondaryHover} />
             </View>
             <Text style={styles.serviceLabel}>Kho Xe</Text>
           </TouchableOpacity>
@@ -231,7 +229,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/(tabs)/compare' as any)}
           >
             <View style={[styles.serviceIcon, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
-              <Ionicons name="git-compare-outline" size={17} color={colors.success} />
+              <Ionicons name="git-compare-outline" size={16} color={colors.success} />
             </View>
             <Text style={styles.serviceLabel}>So Sánh</Text>
           </TouchableOpacity>
@@ -242,7 +240,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/orders' as any)}
           >
             <View style={[styles.serviceIcon, { backgroundColor: colors.conflictMuted }]}>
-              <Ionicons name="receipt-outline" size={17} color={colors.conflict} />
+              <Ionicons name="receipt-outline" size={16} color={colors.conflict} />
             </View>
             <Text style={styles.serviceLabel}>Đơn Hàng</Text>
           </TouchableOpacity>
@@ -250,8 +248,7 @@ export default function HomeScreen() {
 
         {/* Category Horizontal Filter Pills */}
         <SectionHeader
-          title="Bộ sưu tập theo phân khúc"
-          subtitle="Danh mục xe tuyển chọn tại Showroom"
+          title="Bộ sưu tập"
           iconName="shapes-outline"
           actionText="Xem tất cả"
           onAction={() => router.push('/(tabs)/catalog' as any)}
@@ -260,7 +257,7 @@ export default function HomeScreen() {
           options={CATEGORY_OPTIONS}
           selectedId={selectedCategory}
           onSelect={setSelectedCategory}
-          style={{ marginBottom: spacing.sm }}
+          style={{ marginBottom: spacing.xs }}
         />
 
         {/* Filtered Cars Horizontal Stream */}
@@ -293,26 +290,27 @@ export default function HomeScreen() {
         {/* AI Assistant Banner Teaser */}
         <View style={styles.aiAdvisorBanner}>
           <View style={styles.aiAdvisorLeft}>
-            <Badge label="AI Matchmaking" variant="secondary" size="xs" />
-            <Text style={styles.aiAdvisorTitle}>Tư vấn xe phù hợp theo nhu cầu</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Badge label="AI Matchmaking" variant="secondary" size="xs" />
+            </View>
+            <Text style={styles.aiAdvisorTitle}>Tư vấn xe thông minh</Text>
             <Text style={styles.aiAdvisorDesc}>
-              Trao đổi cùng AI để tìm dòng xe tối ưu ngân sách và thông số mong muốn.
+              Đối chiếu thông số kỹ thuật và ngân sách tối ưu tức thì cùng AI.
             </Text>
             <Button
-              title="Khám phá cùng AI"
+              title="Khám phá ngay"
               size="sm"
               variant="primary"
               onPress={() => router.push('/(tabs)/ai-chat' as any)}
-              icon={<Ionicons name="sparkles" size={13} color="#FFFFFF" />}
-              style={{ marginTop: spacing.xs + 2, alignSelf: 'flex-start' }}
+              icon={<Ionicons name="sparkles" size={12} color="#FFFFFF" />}
+              style={{ marginTop: spacing.xs, alignSelf: 'flex-start' }}
             />
           </View>
         </View>
 
         {/* Trending Supercars & Top Sellers */}
         <SectionHeader
-          title="Xe nổi bật tại Showroom"
-          subtitle="Các mẫu xe được quan tâm nhiều nhất"
+          title="Mẫu xe nổi bật"
           iconName="flame-outline"
           actionText="Tất cả"
           onAction={() => router.push('/(tabs)/catalog' as any)}
@@ -338,7 +336,6 @@ export default function HomeScreen() {
         {/* New EV & Luxury Highlights */}
         <SectionHeader
           title="Xe điện & Công nghệ mới"
-          subtitle="Tầm vận hành dài, hỗ trợ lái an toàn ADAS"
           iconName="flash-outline"
           actionText="Khám phá"
           onAction={() => router.push('/(tabs)/catalog' as any)}
@@ -361,7 +358,7 @@ export default function HomeScreen() {
           })}
         </View>
 
-        <View style={{ height: 32 }} />
+        <View style={{ height: 24 }} />
       </ScrollView>
     </View>
   );
@@ -376,116 +373,114 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: 50,
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: 48,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   brandText: {
     color: colors.text,
-    fontSize: typography.sizes.base + 2,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
-    letterSpacing: 1.2,
+    letterSpacing: 1,
   },
   topActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: 6,
   },
   actionIconBtn: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: radii.full,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   unreadDot: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    top: 6,
+    right: 6,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     backgroundColor: colors.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  unreadDotText: {
-    color: '#FFF',
-    fontSize: 9,
-    fontWeight: typography.weights.bold,
   },
   cartBadge: {
     position: 'absolute',
     top: -2,
     right: -2,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   cartBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9,
+    fontSize: 8,
     fontWeight: typography.weights.bold,
   },
   container: {
     flex: 1,
-    paddingHorizontal: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
   },
   searchTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.md,
-    height: 48,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
-    ...shadows.sm,
+    height: 42,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   searchPlaceholder: {
     color: colors.textMuted,
-    fontSize: typography.sizes.sm,
-    marginLeft: 10,
+    fontSize: typography.sizes.xs,
+    marginLeft: 8,
     flex: 1,
   },
   searchPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: radii.full,
-    gap: 4,
+    gap: 3,
   },
   searchPillText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: typography.weights.semibold,
   },
   promoSlider: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
   },
   promoCard: {
-    width: 310,
-    height: 160,
-    borderRadius: radii.lg,
+    width: 290,
+    height: 145,
+    borderRadius: radii.md,
     overflow: 'hidden',
-    marginRight: spacing.lg,
+    marginRight: spacing.md,
     position: 'relative',
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   promoImage: {
     width: '100%',
@@ -493,93 +488,88 @@ const styles = StyleSheet.create({
   },
   promoOverlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: 'rgba(9, 10, 12, 0.72)',
-    padding: spacing.lg,
+    backgroundColor: 'rgba(11, 13, 17, 0.65)',
+    padding: spacing.md,
     justifyContent: 'flex-end',
+  },
+  promoBadgeRow: {
+    marginBottom: 4,
   },
   promoTitle: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 20,
+  },
+  promoBottomRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 2,
   },
   promoSubtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 16,
-    marginTop: 3,
-    marginBottom: 8,
+    fontSize: 11,
   },
-  voucherPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radii.full,
-    alignSelf: 'flex-start',
-  },
-  voucherLabel: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-  },
-  voucherCode: {
+  promoPrice: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: 12,
     fontWeight: typography.weights.bold,
   },
   quickServicesGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
   },
   serviceBox: {
     alignItems: 'center',
     width: '23%',
   },
   serviceIcon: {
-    width: 48,
-    height: 48,
+    width: 42,
+    height: 42,
     borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   serviceLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
-    lineHeight: 16,
     textAlign: 'center',
   },
   horizontalCarList: {
-    paddingRight: spacing['2xl'],
-    paddingBottom: spacing.sm,
+    paddingRight: spacing.lg,
+    paddingVertical: 4,
   },
   aiAdvisorBanner: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.lg,
-    padding: spacing.lg,
-    marginVertical: spacing['2xl'],
-    ...shadows.sm,
+    borderRadius: radii.md,
+    padding: spacing.md,
+    marginVertical: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.20)',
   },
   aiAdvisorLeft: {
-    gap: 4,
+    gap: 3,
   },
   aiAdvisorTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base + 1,
+    fontSize: typography.sizes.sm + 0.5,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 20,
     marginTop: 4,
   },
   aiAdvisorDesc: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs + 1,
-    lineHeight: 20,
+    fontSize: 11,
+    lineHeight: 16,
   },
   verticalCarList: {
-    gap: spacing.md,
+    gap: spacing.xs,
   },
 });
 

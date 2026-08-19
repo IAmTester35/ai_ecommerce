@@ -32,7 +32,7 @@ export const QAModal: React.FC<QAModalProps> = ({
       await onSubmitQuestion(question.trim());
       Alert.alert(
         'Đã Tiếp Nhận',
-        'AutoMatch đã gửi câu hỏi tới đội ngũ chuyên gia. Phản hồi sẽ hiển thị trong mục Hỏi đáp.'
+        'AutoMatch đã gửi câu hỏi tới đội ngũ tư vấn.'
       );
       setQuestion('');
       onClose();
@@ -48,16 +48,16 @@ export const QAModal: React.FC<QAModalProps> = ({
       visible={visible}
       onClose={onClose}
       title="Hỏi Đáp Về Xe"
-      subtitle={`Đặt câu hỏi về ${carName}`}
+      subtitle={carName}
     >
       <View style={styles.content}>
         <Input
           label="Nội dung câu hỏi *"
-          placeholder="Ví dụ: Gói bảo hành, chi phí bảo dưỡng định kỳ..."
+          placeholder="Gói bảo hành, chi phí bảo dưỡng..."
           value={question}
           onChangeText={setQuestion}
           multiline
-          numberOfLines={4}
+          numberOfLines={3}
           inputStyle={styles.textArea}
           required
         />
@@ -65,6 +65,7 @@ export const QAModal: React.FC<QAModalProps> = ({
         <Button
           title="Gửi Câu Hỏi"
           variant="primary"
+          size="sm"
           loading={isSubmitting}
           disabled={isSubmitting}
           onPress={handleSubmit}
@@ -78,15 +79,15 @@ export const QAModal: React.FC<QAModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   textArea: {
-    height: 90,
+    height: 75,
     textAlignVertical: 'top',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   submitBtn: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
 });
 

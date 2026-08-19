@@ -24,7 +24,7 @@ interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
-  placeholder = 'Tìm hãng, mẫu xe, dòng xe...',
+  placeholder = 'Tìm kiếm xe...',
   onClear,
   onSubmit,
   onFilterPress,
@@ -37,7 +37,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       <View style={styles.searchBox}>
         <Ionicons
           name="search-outline"
-          size={16}
+          size={15}
           color={colors.textSecondary}
           style={styles.searchIcon}
         />
@@ -61,7 +61,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             }}
             style={styles.clearBtn}
           >
-            <Ionicons name="close-circle" size={15} color={colors.textMuted} />
+            <Ionicons name="close-circle" size={14} color={colors.textMuted} />
           </TouchableOpacity>
         )}
       </View>
@@ -77,12 +77,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         >
           <Ionicons
             name="options-outline"
-            size={16}
+            size={15}
             color={activeFilterCount > 0 ? '#FFFFFF' : colors.textSecondary}
           />
           {activeFilterCount > 0 && (
             <View style={styles.badgeCount}>
-              <Ionicons name="checkmark" size={8} color="#FFFFFF" />
+              <Ionicons name="checkmark" size={7} color="#FFFFFF" />
             </View>
           )}
         </TouchableOpacity>
@@ -94,7 +94,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onPress={onAiPress}
           style={styles.aiBtn}
         >
-          <Ionicons name="sparkles" size={15} color="#FFFFFF" />
+          <Ionicons name="sparkles" size={14} color="#FFFFFF" />
         </TouchableOpacity>
       )}
     </View>
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm + 2,
+    gap: spacing.xs + 2,
   },
   searchBox: {
     flex: 1,
@@ -113,56 +113,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    height: 46,
-    ...shadows.sm,
+    paddingHorizontal: spacing.md,
+    height: 42,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   searchIcon: {
-    marginRight: 10,
+    marginRight: 8,
   },
   input: {
     flex: 1,
     color: colors.text,
-    fontSize: typography.sizes.sm + 1,
+    fontSize: typography.sizes.xs + 1,
     height: '100%',
     padding: 0,
   },
   clearBtn: {
     padding: 4,
-    marginLeft: 6,
+    marginLeft: 4,
   },
   filterBtn: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     borderRadius: radii.md,
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    ...shadows.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   filterBtnActive: {
     backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   badgeCount: {
     position: 'absolute',
     top: -2,
     right: -2,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   aiBtn: {
-    width: 46,
-    height: 46,
+    width: 42,
+    height: 42,
     borderRadius: radii.md,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.glowCyan,
   },
 });
 

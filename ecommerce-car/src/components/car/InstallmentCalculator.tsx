@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { formatVndPrice } from '../ui/PriceTag';
 import { Card } from '../ui/Card';
 
@@ -27,13 +27,13 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
   const estimatedMonthlyPayment = Math.round(monthlyPrincipal + monthlyInterest);
 
   return (
-    <Card style={styles.container}>
+    <Card style={styles.container} padding={spacing.md}>
       <View style={styles.headerRow}>
-        <Ionicons name="calculator-outline" size={18} color={colors.primaryHover} />
+        <Ionicons name="calculator-outline" size={16} color={colors.primaryHover} />
         <Text style={styles.cardTitle}>Dự Toán Vay Trả Góp</Text>
       </View>
       <Text style={styles.cardSubtitle}>
-        Lãi suất tham khảo ~8.5%/năm từ các đối tác ngân hàng
+        Lãi suất tham khảo ~8.5%/năm
       </Text>
 
       {/* Down Payment Selection */}
@@ -112,7 +112,7 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
       </View>
 
       <Text style={styles.disclaimer}>
-        * Số liệu ước tính tham khảo. Tư vấn viên sẽ liên hệ để cung cấp lịch trả chi tiết.
+        * Số liệu ước tính tham khảo theo lãi suất liên ngân hàng.
       </Text>
     </Card>
   );
@@ -120,54 +120,56 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.xl,
-    marginVertical: spacing.md,
-    ...shadows.sm,
+    marginVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   cardTitle: {
     color: colors.text,
-    fontSize: typography.sizes.base,
+    fontSize: typography.sizes.sm + 0.5,
     fontWeight: typography.weights.semibold,
-    lineHeight: 22,
+    lineHeight: 20,
   },
   cardSubtitle: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
-    marginTop: 3,
-    marginBottom: spacing.lg,
+    fontSize: typography.sizes['2xs'],
+    marginTop: 2,
+    marginBottom: spacing.md,
   },
   fieldLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     fontWeight: typography.weights.medium,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   pillRow: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
   pill: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: radii.full,
+    paddingVertical: 6,
+    borderRadius: radii.sm,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
   },
   pillInactive: {
     backgroundColor: colors.surfaceElevated,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   pillActive: {
     backgroundColor: colors.primaryMuted,
+    borderColor: 'rgba(59, 130, 246, 0.35)',
   },
   pillText: {
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes['2xs'],
     fontWeight: typography.weights.medium,
   },
   pillTextInactive: {
@@ -179,30 +181,29 @@ const styles = StyleSheet.create({
   },
   resultBox: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    padding: spacing.lg,
-    marginTop: spacing.sm,
+    borderRadius: radii.sm,
+    padding: spacing.md,
+    marginTop: spacing.xs,
   },
   resultRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 4,
   },
   resultLabel: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
+    fontSize: typography.sizes['2xs'],
   },
   resultValue: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
   },
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs + 2,
   },
   highlightRow: {
     flexDirection: 'row',
@@ -211,25 +212,25 @@ const styles = StyleSheet.create({
   },
   highlightLabel: {
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
   highlightSub: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
-    marginTop: 2,
+    fontSize: 10,
+    marginTop: 1,
   },
   highlightAmount: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.md,
     fontWeight: typography.weights.bold,
   },
   disclaimer: {
     color: colors.textMuted,
-    fontSize: typography.sizes.xs,
+    fontSize: 10,
     fontStyle: 'italic',
-    marginTop: spacing.md,
-    lineHeight: 18,
+    marginTop: spacing.sm,
+    lineHeight: 14,
   },
 });
 

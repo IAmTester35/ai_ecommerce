@@ -94,7 +94,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Hãng: {filters.make}</Text>
-            <Ionicons name="close" size={11} color={colors.primaryHover} />
+            <Ionicons name="close" size={10} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         {filters.bodyType && filters.bodyType !== 'all' && (
@@ -106,7 +106,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Kiểu dáng: {filters.bodyType}</Text>
-            <Ionicons name="close" size={11} color={colors.primaryHover} />
+            <Ionicons name="close" size={10} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         {filters.fuelType && filters.fuelType !== 'all' && (
@@ -118,7 +118,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Nhiên liệu: {filters.fuelType}</Text>
-            <Ionicons name="close" size={11} color={colors.primaryHover} />
+            <Ionicons name="close" size={10} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         {(filters.minPrice || filters.maxPrice) && (
@@ -130,7 +130,7 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Khoảng giá</Text>
-            <Ionicons name="close" size={11} color={colors.primaryHover} />
+            <Ionicons name="close" size={10} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
         <TouchableOpacity
@@ -152,9 +152,6 @@ export default function CatalogScreen() {
       {/* Top Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Kho Xe Showroom</Text>
-        <Text style={styles.headerSubtitle}>
-          Bộ sưu tập ô tô cao cấp chính hãng
-        </Text>
 
         {/* Search Bar & Filter trigger */}
         <SearchBar
@@ -164,7 +161,7 @@ export default function CatalogScreen() {
           onFilterPress={() => setIsFilterModalVisible(true)}
           activeFilterCount={activeFilterCount}
           onAiPress={() => router.push('/(tabs)/ai-chat' as any)}
-          style={{ marginTop: spacing.sm + 2 }}
+          style={{ marginTop: spacing.xs + 2 }}
         />
 
         {/* Active Filter Tags */}
@@ -173,7 +170,7 @@ export default function CatalogScreen() {
         {/* Subheader with View Switcher & Result Count */}
         <View style={styles.toolBar}>
           <Text style={styles.resultCount}>
-            Hiển thị <Text style={styles.countBold}>{filteredCars.length}</Text> mẫu xe
+            <Text style={styles.countBold}>{filteredCars.length}</Text> mẫu xe
           </Text>
 
           <View style={styles.viewToggleGroup}>
@@ -187,7 +184,7 @@ export default function CatalogScreen() {
             >
               <Ionicons
                 name="grid"
-                size={14}
+                size={13}
                 color={layoutMode === 'grid' ? '#FFFFFF' : colors.textMuted}
               />
             </TouchableOpacity>
@@ -201,7 +198,7 @@ export default function CatalogScreen() {
             >
               <Ionicons
                 name="list"
-                size={14}
+                size={13}
                 color={layoutMode === 'list' ? '#FFFFFF' : colors.textMuted}
               />
             </TouchableOpacity>
@@ -218,8 +215,8 @@ export default function CatalogScreen() {
       ) : filteredCars.length === 0 ? (
         <EmptyState
           icon="search-outline"
-          title="Không tìm thấy mẫu xe phù hợp"
-          description="Hãy thử nới lỏng các tiêu chí lọc hoặc trao đổi với trợ lý AI để nhận đề xuất."
+          title="Không tìm thấy xe"
+          description="Hãy thử nới lỏng bộ lọc hoặc trao đổi với trợ lý AI."
           actionTitle="Xóa bộ lọc"
           onAction={() => {
             resetFilters();
@@ -268,59 +265,57 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 50,
-    paddingHorizontal: spacing['2xl'],
-    paddingBottom: spacing.md,
+    paddingTop: 48,
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   headerTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.bold,
-    lineHeight: 28,
+    lineHeight: 24,
     letterSpacing: -0.2,
-  },
-  headerSubtitle: {
-    color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
-    lineHeight: 18,
-    marginTop: 3,
   },
   activeFiltersRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.xs + 2,
-    marginTop: spacing.sm,
+    gap: 4,
+    marginTop: spacing.xs,
   },
   filterTag: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primaryMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radii.full,
-    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.sm,
+    gap: 3,
+    borderWidth: 0.5,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
   },
   filterTagText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.medium,
   },
   clearAllTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     justifyContent: 'center',
   },
   clearAllText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   toolBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: spacing.md,
+    marginTop: spacing.xs + 2,
   },
   resultCount: {
     color: colors.textSecondary,
@@ -333,12 +328,14 @@ const styles = StyleSheet.create({
   viewToggleGroup: {
     flexDirection: 'row',
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.sm,
-    padding: 3,
+    borderRadius: radii.xs,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.04)',
   },
   viewToggleBtn: {
-    width: 32,
-    height: 28,
+    width: 28,
+    height: 24,
     borderRadius: radii.xs,
     alignItems: 'center',
     justifyContent: 'center',
@@ -347,19 +344,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   listContainer: {
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.lg,
-    paddingBottom: 40,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm + 2,
+    paddingBottom: 32,
   },
   centerBox: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   loadingText: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.xs,
   },
 });
 

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -109,7 +109,7 @@ export default function EditProfileScreen() {
         <View style={styles.card}>
           {error ? (
             <View style={styles.errorBanner}>
-              <Ionicons name="alert-circle" size={16} color={colors.danger} style={{ marginRight: 6 }} />
+              <Ionicons name="alert-circle" size={14} color={colors.danger} style={{ marginRight: 5 }} />
               <Text style={styles.errorBannerText}>{error}</Text>
             </View>
           ) : null}
@@ -119,9 +119,9 @@ export default function EditProfileScreen() {
             label="Địa chỉ Email"
             value={user?.email || profile?.email || ''}
             editable={false}
-            helperText="Email được gắn liền với tài khoản Supabase và không thể đổi trực tiếp."
+            helperText="Email liên kết với tài khoản và không thể đổi trực tiếp."
             leftIcon={
-              <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
+              <Ionicons name="mail-outline" size={15} color={colors.textMuted} />
             }
           />
 
@@ -129,7 +129,7 @@ export default function EditProfileScreen() {
           <Input
             label="Họ và tên"
             required
-            placeholder="Nhập họ và tên của bạn"
+            placeholder="Nhập họ và tên"
             value={fullName}
             onChangeText={(text) => {
               setFullName(text);
@@ -138,13 +138,13 @@ export default function EditProfileScreen() {
             }}
             error={nameError}
             leftIcon={
-              <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="person-outline" size={15} color={colors.textSecondary} />
             }
           />
 
           {/* Phone Number */}
           <Input
-            label="Số điện thoại liên hệ"
+            label="Số điện thoại"
             placeholder="0912 345 678"
             value={phone}
             onChangeText={(text) => {
@@ -154,24 +154,24 @@ export default function EditProfileScreen() {
             }}
             keyboardType="phone-pad"
             error={phoneError}
-            helperText="Dùng để showroom liên hệ khi bạn đặt lịch lái thử hoặc cọc xe."
+            helperText="Dùng để liên hệ khi lái thử hoặc giữ xe."
             leftIcon={
-              <Ionicons name="call-outline" size={18} color={colors.textSecondary} />
+              <Ionicons name="call-outline" size={15} color={colors.textSecondary} />
             }
           />
 
           <Button
             title="Lưu Thay Đổi"
-            size="lg"
+            size="sm"
             variant="primary"
             loading={isLoading}
             onPress={handleSaveProfile}
-            iconRight={<Ionicons name="checkmark-outline" size={18} color="#FFFFFF" />}
+            iconRight={<Ionicons name="checkmark-outline" size={15} color="#FFFFFF" />}
             style={styles.submitBtn}
           />
         </View>
 
-        <View style={{ height: spacing['2xl'] }} />
+        <View style={{ height: spacing.lg }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -184,61 +184,66 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flexGrow: 1,
-    paddingHorizontal: spacing['2xl'],
-    paddingTop: spacing.xl,
-    paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
   },
   avatarCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: colors.primary,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.primaryHover,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    ...shadows.glowCyan,
+    marginBottom: spacing.xs + 2,
+    borderWidth: 2,
+    borderColor: 'rgba(59, 130, 246, 0.3)',
   },
   avatarText: {
     color: '#FFFFFF',
-    fontSize: typography.sizes.xl,
+    fontSize: typography.sizes.base,
     fontWeight: typography.weights.bold,
   },
   avatarName: {
     color: colors.text,
-    fontSize: typography.sizes.lg,
+    fontSize: typography.sizes.sm + 1,
     fontWeight: typography.weights.bold,
-    lineHeight: 24,
-    marginBottom: 4,
+    lineHeight: 20,
+    marginBottom: 2,
   },
   roleBadgeRow: {
-    marginTop: 4,
+    marginTop: 2,
   },
   card: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.xl,
-    padding: spacing.xl,
-    ...shadows.md,
+    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
   },
   errorBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.dangerMuted,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.3)',
   },
   errorBannerText: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
+    fontSize: 11,
     flex: 1,
-    lineHeight: 18,
+    lineHeight: 16,
   },
   submitBtn: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
+    height: 40,
   },
 });
