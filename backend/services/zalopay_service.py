@@ -1,28 +1,36 @@
-import os
 import json
 import time
 import random
 import hmac
 import hashlib
-import requests
+import asyncio
+import logging
 from datetime import datetime
 from typing import Dict, Any
+import httpx
 from supabase import Client
+
+from core.config import settings
 from models.payment import CreatePaymentRequest
+
+logger = logging.getLogger(__name__)
 
 class ZaloPayService:
     def __init__(self):
-        self.app_id = os.getenv("ZALOPAY_APP_ID", "your_app_id")
-        self.key1 = os.getenv("ZALOPAY_KEY1", "your_key_1")
-        self.key2 = os.getenv("ZALOPAY_KEY2", "your_key_2")
-        self.endpoint = os.getenv("ZALOPAY_ENDPOINT", "https://sb-openapi.zalopay.vn/v2/create")
-        self.query_endpoint = os.getenv("ZALOPAY_QUERY_ENDPOINT", "https://sb-openapi.zalopay.vn/v2/query")
-        self.callback_url = os.getenv("ZALOPAY_CALLBACK_URL", "http://localhost:8000/api/payment/callback")
+        self.app_id = settings.ZALOPAY_APP_ID
+        self.key1 = settings.ZALOPAY_KEY1
+        self.key2 = settings.ZALOPAY_KEY2
+        self.endpoint = settings.ZALOPAY_ENDPOINT
+        self.query_endpoint = settings.ZALOPAY_QUERY_ENDPOINT
+        self.callback_url = settings.ZALOPAY_CALLBACK_URL
 
     def _hmac_sha256(self, data: str, key: str) -> str:
         return hmac.new(key.encode('utf-8'), data.encode('utf-8'), hashlib.sha256).hexdigest()
 
     async def create_payment(self, req: CreatePaymentRequest) -> Dict[str, Any]:
+        """
+        Tạo đơn hàng thanh toán ZaloPay bất đồng bộ.
+        """
         trans_id = random.randint(100000, 999999)
         app_trans_id = f"{datetime.now().strftime('%y%m%d')}_{trans_id}"
         app_time = int(time.time() * 1000)
@@ -37,12 +45,12 @@ class ZaloPayService:
             "status": "Pending"
         })
 
-        items_data = json.dumps([item.model_dump() for item in req.items])
+        items_data = json.dumps([item.model_dump(by_alias=True) for item in req.items])
 
         order_params = {
-            "app_id": int(self.app_id),
+            "app_id": self.app_id,
             "app_trans_id": app_trans_id,
-            "app_user": req.userid,
+            "app_user": req.user_id,
             "app_time": app_time,
             "item": items_data,
             "embed_data": embed_data,
@@ -56,46 +64,66 @@ class ZaloPayService:
         data_to_sign = f"{order_params['app_id']}|{order_params['app_trans_id']}|{order_params['app_user']}|{order_params['amount']}|{order_params['app_time']}|{order_params['embed_data']}|{order_params['item']}"
         order_params["mac"] = self._hmac_sha256(data_to_sign, self.key1)
 
-        response = requests.post(self.endpoint, data=order_params)
-        result = response.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(self.endpoint, data=order_params, timeout=10.0)
+            response.raise_for_status()
+            result = response.json()
+
         result["app_trans_id"] = app_trans_id
         return result
 
     async def process_callback(self, data_str: str, req_mac: str, db: Client) -> Dict[str, Any]:
+        """
+        Xử lý Callback tự động từ ZaloPay webhook với kiểm tra MAC an toàn.
+        """
         mac = self._hmac_sha256(data_str, self.key2)
 
-        if req_mac != mac:
+        # Sử dụng hmac.compare_digest chống timing attack
+        if not hmac.compare_digest(req_mac, mac):
+            logger.warning("ZaloPay callback MAC verification failed.")
             return {"return_code": -1, "return_message": "mac not equal"}
 
-        data_json = json.loads(data_str)
-        embed_data = json.loads(data_json.get("embed_data", "{}"))
-        order_id = embed_data.get("order_id")
-        user_id = data_json.get("app_user")
+        try:
+            data_json = json.loads(data_str) if isinstance(data_str, str) else data_str
+            raw_embed = data_json.get("embed_data", "{}")
+            embed_data = json.loads(raw_embed) if isinstance(raw_embed, str) else (raw_embed or {})
+            
+            order_id = embed_data.get("order_id")
+            user_id = data_json.get("app_user")
+            app_trans_id = data_json.get("app_trans_id", "")
 
-        # Cap nhat trang thai don hang trong Supabase
-        if order_id:
-            db.table("orders").update({
-                "payment_status": "paid",
-                "status": "processing"
-            }).eq("id", order_id).execute()
+            # Cập nhật trạng thái đơn hàng trong Supabase bất đồng bộ
+            if order_id:
+                await asyncio.to_thread(
+                    db.table("orders").update({
+                        "payment_status": "paid",
+                        "status": "processing"
+                    }).eq("id", order_id).execute
+                )
 
-        # Luu thong bao vao Supabase
-        if user_id:
-            db.table("notifications").insert({
-                "user_id": user_id,
-                "title": "Thanh toán thành công",
-                "content": f"Đơn hàng của bạn ({data_json.get('app_trans_id')}) đã được cập nhật thành công.",
-                "type": "order"
-            }).execute()
+            # Lưu thông báo vào Supabase bất đồng bộ
+            if user_id:
+                await asyncio.to_thread(
+                    db.table("notifications").insert({
+                        "user_id": user_id,
+                        "title": "Thanh toán thành công",
+                        "content": f"Đơn hàng của bạn ({app_trans_id}) đã được cập nhật thành công.",
+                        "type": "order"
+                    }).execute
+                )
 
-        # TODO: Gui email thong bao qua Google Apps Script hoac Email Service
-        # TODO: Gui FCM Push Notification toi thiết bị người dùng qua Firebase Admin SDK
+            return {"return_code": 1, "return_message": "success"}
 
-        return {"return_code": 1, "return_message": "success"}
+        except Exception as e:
+            logger.error(f"Error processing ZaloPay callback: {e}")
+            return {"return_code": 0, "return_message": f"Error processing callback: {str(e)}"}
 
     async def check_order_status(self, app_trans_id: str) -> Dict[str, Any]:
+        """
+        Kiểm tra trạng thái đơn hàng ZaloPay bất đồng bộ.
+        """
         post_data = {
-            "app_id": int(self.app_id),
+            "app_id": self.app_id,
             "app_trans_id": app_trans_id
         }
 
@@ -103,5 +131,7 @@ class ZaloPayService:
         post_data["mac"] = self._hmac_sha256(data_to_sign, self.key1)
 
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        response = requests.post(self.query_endpoint, data=post_data, headers=headers)
-        return response.json()
+        async with httpx.AsyncClient() as client:
+            response = await client.post(self.query_endpoint, data=post_data, headers=headers, timeout=10.0)
+            response.raise_for_status()
+            return response.json()

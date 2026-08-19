@@ -101,12 +101,44 @@ export default function CarDetailScreen() {
 
   const handleDirectDeposit = async () => {
     if (!id) return;
+    if (!user) {
+      Alert.alert(
+        'Yêu Cầu Đăng Nhập',
+        'Vui lòng đăng nhập tài khoản để tiến hành đặt cọc và tạo hợp đồng điện tử.',
+        [
+          { text: 'Để sau', style: 'cancel' },
+          {
+            text: 'Đăng nhập',
+            onPress: () => router.push('/(auth)/login' as any),
+          },
+        ]
+      );
+      return;
+    }
     try {
-      await addToCart(user?.id, id, 1);
+      await addToCart(user.id, id, 1);
       router.push('/checkout' as any);
     } catch {
       Alert.alert('Lỗi', 'Không thể chuyển đến thanh toán.');
     }
+  };
+
+  const handleOpenTestDriveModal = () => {
+    if (!user) {
+      Alert.alert(
+        'Yêu Cầu Đăng Nhập',
+        'Vui lòng đăng nhập tài khoản để đăng ký trải nghiệm và lái thử mẫu xe này.',
+        [
+          { text: 'Để sau', style: 'cancel' },
+          {
+            text: 'Đăng nhập',
+            onPress: () => router.push('/(auth)/login' as any),
+          },
+        ]
+      );
+      return;
+    }
+    setIsTestDriveModalVisible(true);
   };
 
   const handleSubmitTestDrive = async (scheduledDate: string, notes?: string) => {
@@ -425,7 +457,7 @@ export default function CarDetailScreen() {
           title="Lái Thử"
           variant="outline"
           size="sm"
-          onPress={() => setIsTestDriveModalVisible(true)}
+          onPress={handleOpenTestDriveModal}
           style={styles.testDriveBtn}
         />
 

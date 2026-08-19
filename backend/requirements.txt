@@ -1,6 +1,8 @@
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 supabase
 python-dotenv
 requests
+httpx
+google-genai

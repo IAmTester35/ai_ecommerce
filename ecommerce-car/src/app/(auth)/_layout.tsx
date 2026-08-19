@@ -35,33 +35,25 @@ export default function AuthLayout() {
       <Stack.Screen
         name="forgot-password"
         options={{
-          title: 'Khôi Phục Mật Khẩu',
-          headerShown: true,
-          headerBackTitle: 'Đăng nhập',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="reset-password"
         options={{
-          title: 'Đặt Lại Mật Khẩu',
-          headerShown: true,
-          headerBackTitle: 'Quay lại',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="change-password"
         options={{
-          title: 'Đổi Mật Khẩu',
-          headerShown: true,
-          headerBackTitle: 'Tài khoản',
+          headerShown: false,
         }}
       />
       <Stack.Screen
         name="edit-profile"
         options={{
-          title: 'Hồ Sơ Cá Nhân',
-          headerShown: true,
-          headerBackTitle: 'Quay lại',
+          headerShown: false,
         }}
       />
     </Stack>

@@ -67,14 +67,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleQuickFill = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPass);
-    setEmailError('');
-    setPasswordError('');
-    clearError();
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.keyboardContainer}
@@ -207,27 +199,6 @@ export default function LoginScreen() {
             iconRight={<Ionicons name="arrow-forward" size={14} color="#FFFFFF" />}
             style={styles.submitBtn}
           />
-
-          {/* Quick Demo Helper for instant testing */}
-          <View style={styles.demoBox}>
-            <Text style={styles.demoLabel}>Mẫu thử nhanh:</Text>
-            <View style={styles.demoChips}>
-              <TouchableOpacity
-                style={styles.demoChip}
-                onPress={() => handleQuickFill('demo@automatch.ai', '123456')}
-              >
-                <Ionicons name="flash-outline" size={11} color={colors.primaryHover} />
-                <Text style={styles.demoChipText}>Demo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.demoChip}
-                onPress={() => handleQuickFill('khachhang@gmail.com', '123456')}
-              >
-                <Ionicons name="person-outline" size={11} color={colors.textSecondary} />
-                <Text style={styles.demoChipText}>Khách hàng</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
 
         {/* Footer Navigation */}
@@ -364,41 +335,8 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 2,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
     height: 40,
-  },
-  demoBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    borderRadius: radii.xs,
-    padding: spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  demoLabel: {
-    color: colors.textMuted,
-    fontSize: 10,
-    marginBottom: 6,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  demoChips: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  demoChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.surface,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 5,
-    borderRadius: radii.xs,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.04)',
-  },
-  demoChipText: {
-    color: colors.textSecondary,
-    fontSize: 10,
   },
   footerRow: {
     flexDirection: 'row',

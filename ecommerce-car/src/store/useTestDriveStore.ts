@@ -22,10 +22,10 @@ export const useTestDriveStore = create<TestDriveState>((set) => ({
   isLoading: false,
   error: null,
   
-  fetchTestDrives: async () => {
+  fetchTestDrives: async (userId?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await testDriveService.getTestDrives();
+      const data = await testDriveService.getTestDrives(userId);
       set({ testDrives: data, isLoading: false });
     } catch (err: any) {
       set({ error: err.message || 'Lỗi tải lịch đăng ký lái thử', isLoading: false });

@@ -1,15 +1,16 @@
-import os
+from typing import AsyncGenerator, List, Dict, Any, Optional
 from google import genai
+from core.config import settings
 from models.schemas import ExtractedConstraints
 
 # Khởi tạo Client theo chuẩn google-genai
 client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"),
+    api_key=settings.GEMINI_API_KEY,
 )
 
-def extract_constraints(query: str) -> ExtractedConstraints:
+async def extract_constraints(query: str) -> ExtractedConstraints:
     """
-    Sử dụng LLM để bóc tách yêu cầu cứng và yêu cầu mềm từ câu lệnh người dùng.
+    Sử dụng LLM bất đồng bộ để bóc tách yêu cầu cứng và yêu cầu mềm từ câu lệnh người dùng.
     """
     prompt = f"""
     You are an expert AI automotive query analyzer specializing in multi-layered intent extraction and semantic expansion.
@@ -28,10 +29,9 @@ def extract_constraints(query: str) -> ExtractedConstraints:
       3. Infer implicit requirements: Expand contextual phrases like "đi đường núi" into implicit features like "mountain driving, high ground clearance, off-road capability, durable suspension, steep incline hill climb, 4WD/AWD traction control".
       4. Capture soft preferences (e.g. "tốt nhất là 4WD" -> "prefer 4WD/AWD four-wheel drive over RWD/FWD").
     """
-    
-    # Dùng tính năng response_schema của google-genai
-    response = client.models.generate_content(
-        model='gemini-3.1-flash-lite',
+
+    response = await client.aio.models.generate_content(
+        model=settings.GEMINI_MODEL_EXTRACT,
         contents=prompt,
         config={
             'response_mime_type': 'application/json',
@@ -39,18 +39,25 @@ def extract_constraints(query: str) -> ExtractedConstraints:
             'temperature': 0,
         }
     )
-    
+
     return response.parsed
 
-def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: list, conflict_detected: bool, chat_history: list, relaxed_terms: list = None):
+async def generate_ai_response(
+    query: str,
+    constraints: ExtractedConstraints,
+    cars: List[Dict[str, Any]],
+    conflict_detected: bool,
+    chat_history: List[Dict[str, Any]],
+    relaxed_terms: Optional[List[str]] = None
+) -> AsyncGenerator[str, None]:
     """
-    Sinh ra câu trả lời tư vấn cho khách hàng (Streaming).
+    Sinh ra câu trả lời tư vấn cho khách hàng bằng Native Async Streaming.
     """
     # Xây dựng lịch sử trò chuyện để đưa vào model
     history_text = "Previous conversation:\n"
     for msg in chat_history:
-        history_text += f"{msg['role'].capitalize()}: {msg['content']}\n"
-    
+        history_text += f"{msg.get('role', 'user').capitalize()}: {msg.get('content', '')}\n"
+
     if constraints.is_out_of_scope:
         prompt = f"""
         You are an AI assistant for an automotive e-commerce platform specializing in cars.
@@ -60,17 +67,17 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
 
         Instructions:
         1. Write a polite, concise response.
-        2. Inform the user that your system specialized exclusively in searching and recommending cars/automobiles.
+        2. Inform the user that your system specializes exclusively in searching and recommending cars/automobiles.
         3. Politely invite them to rephrase their query with car preferences (e.g., budget, body style, or car requirements).
         """
-        response_stream = client.models.generate_content_stream(
-            model='gemini-3.6-flash',
+        response_stream = await client.aio.models.generate_content_stream(
+            model=settings.GEMINI_MODEL_GEN,
             contents=prompt,
             config={
                 'thinking_config': {'thinking_budget': 128}
             }
         )
-        for chunk in response_stream:
+        async for chunk in response_stream:
             if chunk.text:
                 yield chunk.text
         return
@@ -80,16 +87,16 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
         review_snippet = c.get('review', '')
         engine_hp = c.get('engine_hp')
         meta = c.get('metadata') or {}
-        
+
         hp_str = f", Engine: {engine_hp} HP" if engine_hp else ""
         meta_str = ", ".join([f"{k}: {v}" for k, v in meta.items() if v]) if isinstance(meta, dict) else ""
-        
-        cars_info += f"- Option {idx+1}: {c['year']} {c['make']} {c['model']} (Price: ${c['price']}{hp_str})\n"
+
+        cars_info += f"- Option {idx+1}: {c.get('year')} {c.get('make')} {c.get('model')} (Price: ${c.get('price')}{hp_str})\n"
         if meta_str:
             cars_info += f"  Technical Specs/Metadata: {meta_str}\n"
         if review_snippet:
             cars_info += f"  Highlight/User Review: \"{review_snippet}\"\n"
-            
+
     relaxed_context = ""
     if conflict_detected and relaxed_terms:
         relaxed_context = f"Yes. We relaxed these specific constraints: {', '.join(relaxed_terms)}."
@@ -97,7 +104,7 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
         relaxed_context = "Yes. The budget/constraints were relaxed to find alternative options."
     else:
         relaxed_context = "No."
-    
+
     prompt = f"""
     You are an expert, objective, and premium automotive sales consultant. 
     The user submitted the query: "{query}"
@@ -129,15 +136,15 @@ def generate_ai_response(query: str, constraints: ExtractedConstraints, cars: li
        - Explain WHY retrieved cars fit the user's needs based on provided metadata and highlights.
        - If budget/constraints were relaxed due to conflict (e.g. budget expanded, make dropped), transparently but politely explain to the user what exactly was compromised to find these alternative options.
     """
-    
-    response_stream = client.models.generate_content_stream(
-        model='gemini-3.6-flash',
+
+    response_stream = await client.aio.models.generate_content_stream(
+        model=settings.GEMINI_MODEL_GEN,
         contents=prompt,
         config={
             'thinking_config': {'thinking_budget': 256}
         }
     )
-    
-    for chunk in response_stream:
+
+    async for chunk in response_stream:
         if chunk.text:
             yield chunk.text

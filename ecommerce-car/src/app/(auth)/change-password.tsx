@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -81,6 +82,23 @@ export default function ChangePasswordScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Top Navigation Bar with Back Button */}
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.backButton}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/(tabs)/profile' as any);
+              }
+            }}
+          >
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.headerBox}>
           <View style={styles.iconCircle}>
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.primaryHover} />
@@ -175,8 +193,23 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: Platform.OS === 'ios' ? 48 : 36,
+    paddingTop: Platform.OS === 'ios' ? 52 : 36,
     paddingBottom: spacing.lg,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   headerBox: {
     alignItems: 'center',

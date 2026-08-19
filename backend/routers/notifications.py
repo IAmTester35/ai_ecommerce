@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from supabase import Client
 from core.dependencies import get_supabase
-from models.payment import SendNotificationRequest, SendUserNotificationRequest
+from models.notifications import SendNotificationRequest, SendUserNotificationRequest
 from services.notification_service import NotificationService
 
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])

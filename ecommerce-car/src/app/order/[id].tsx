@@ -13,27 +13,30 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, router } from 'expo-router';
 import { colors, radii, spacing, typography } from '../../theme';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useOrderStore } from '../../store/useOrderStore';
 import { usePaymentStore } from '../../store/usePaymentStore';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
+import { EmptyState } from '../../components/ui/EmptyState';
 import { formatVndPrice } from '../../components/ui/PriceTag';
 import { OrderStatus, PaymentStatus } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export default function OrderDetailScreen() {
   const { id, app_trans_id } = useLocalSearchParams<{ id: string; app_trans_id?: string }>();
+  const { user } = useAuthStore();
   const { selectedOrder, fetchOrderDetails, isLoading } = useOrderStore();
   const { checkPaymentStatus, isProcessing, statusResult } = usePaymentStore();
 
   const [checkingPayment, setCheckingPayment] = useState(false);
 
   useEffect(() => {
-    if (id) {
+    if (id && user?.id) {
       fetchOrderDetails(id);
     }
-  }, [id, fetchOrderDetails]);
+  }, [id, user?.id, fetchOrderDetails]);
 
   const handleCheckPaymentStatus = async () => {
     const transId = app_trans_id;
@@ -86,6 +89,26 @@ export default function OrderDetailScreen() {
   };
 
   const fallbackImage = FALLBACK_CAR_URL;
+
+  if (!user) {
+    return (
+      <View style={styles.screen}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Chi Tiết Đơn Hàng</Text>
+        </View>
+        <EmptyState
+          icon="lock-closed-outline"
+          title="Yêu cầu đăng nhập"
+          description="Vui lòng đăng nhập để xem thông tin hợp đồng và đơn hàng này."
+          actionTitle="Đăng Nhập Ngay"
+          onAction={() => router.push('/(auth)/login' as any)}
+        />
+      </View>
+    );
+  }
 
   if (isLoading || !selectedOrder) {
     return (

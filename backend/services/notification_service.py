@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any
+import asyncio
+from typing import Dict, Any, Optional
 from supabase import Client
 
 logger = logging.getLogger(__name__)
@@ -8,49 +9,72 @@ class NotificationService:
     async def send_broadcast_notification(self, title: str, body: str, db: Client) -> Dict[str, Any]:
         """
         Gửi thông báo tới tất cả người dùng.
-        Hiện tại lưu vào Supabase notifications table và có khung cho FCM TODO.
+        Lưu thông báo hệ thống vào bảng notifications của Supabase và hỗ trợ khung FCM.
         """
-        # 1. TODO: Khoi tao firebase_admin va gui push notification qua FCM Topic 'all_users'
-        # Example FCM logic:
-        # message = messaging.Message(
-        #     notification=messaging.Notification(title=title, body=body, image=logo_url),
-        #     topic='all_users'
-        # )
-        # messaging.send(message)
-        
-        logger.info(f"[TODO FCM] Broadcast notification scheduled: {title} - {body}")
+        try:
+            # Lấy danh sách profiles để tạo notification cho từng user hoặc lưu thông báo chung
+            profiles_resp = await asyncio.to_thread(
+                db.table("profiles").select("id").execute
+            )
+            user_ids = [p["id"] for p in (profiles_resp.data or []) if p.get("id")]
 
-        return {
-            "success": True,
-            "message": "Notification queued successfully (DB & FCM TODO)"
-        }
+            if user_ids:
+                records = [
+                    {
+                        "user_id": uid,
+                        "title": title,
+                        "content": body,
+                        "type": "broadcast"
+                    }
+                    for uid in user_ids
+                ]
+                # Chèn theo batch
+                await asyncio.to_thread(
+                    db.table("notifications").insert(records).execute
+                )
 
-    async def send_user_notification(self, user_id: str, title: str, body: str, token: str | None, db: Client) -> Dict[str, Any]:
+            # TODO: Gửi qua FCM Topic 'all_users' khi cấu hình Firebase Admin SDK
+            logger.info(f"Broadcast notification sent to {len(user_ids)} users: {title} - {body}")
+
+            return {
+                "success": True,
+                "recipients_count": len(user_ids),
+                "message": "Broadcast notification queued and saved to DB successfully"
+            }
+        except Exception as e:
+            logger.error(f"Failed to send broadcast notification: {e}")
+            raise
+
+    async def send_user_notification(
+        self,
+        user_id: Optional[str],
+        title: str,
+        body: str,
+        token: Optional[str],
+        db: Client
+    ) -> Dict[str, Any]:
         """
         Gửi thông báo cho một người dùng cụ thể.
-        Lưu thông báo vào Supabase notifications table và có khung cho FCM TODO.
+        Lưu thông báo vào Supabase notifications table bất đồng bộ.
         """
-        # Lưu vào Supabase notifications table
-        if user_id:
-            db.table("notifications").insert({
-                "user_id": user_id,
-                "title": title,
-                "content": body,
-                "type": "general"
-            }).execute()
+        try:
+            if user_id:
+                await asyncio.to_thread(
+                    db.table("notifications").insert({
+                        "user_id": user_id,
+                        "title": title,
+                        "content": body,
+                        "type": "personal"
+                    }).execute
+                )
 
-        # TODO: Gui push notification toi device token qua Firebase Admin SDK
-        # Example FCM logic:
-        # if token:
-        #     message = messaging.Message(
-        #         notification=messaging.Notification(title=title, body=body, image=logo_url),
-        #         token=token
-        #     )
-        #     messaging.send(message)
+            # TODO: Gửi push notification tới device token qua Firebase Admin SDK
+            logger.info(f"Direct notification sent to user {user_id}: {title} - {body}")
 
-        logger.info(f"[TODO FCM] Direct notification to user {user_id}: {title} - {body}")
-
-        return {
-            "success": True,
-            "message": "User notification sent successfully (Saved to DB, FCM TODO)"
-        }
+            return {
+                "success": True,
+                "message": "User notification sent and saved to DB successfully"
+            }
+        except Exception as e:
+            logger.error(f"Failed to send user notification to {user_id}: {e}")
+            raise

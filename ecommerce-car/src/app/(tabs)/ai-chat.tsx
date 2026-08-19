@@ -38,13 +38,13 @@ export default function AIChatScreen() {
   const { user } = useAuthStore();
   const [input, setInput] = useState('');
   const [sessionId] = useState(() => generateUUID());
-  const [messages, setMessages] = useState<UIChatMessage[]>([
+  const [messages, setMessages] = useState<UIChatMessage[]>(() => [
     {
       id: 'welcome-msg',
       role: 'assistant',
       content:
         'Xin chào! Tôi là trợ lý AI AutoMatch. Hãy nêu ngân sách, dòng xe hoặc thông số bạn mong muốn để nhận tư vấn chính xác.',
-      timestamp: '09:00',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
   const [isTyping, setIsTyping] = useState(false);

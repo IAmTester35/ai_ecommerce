@@ -35,12 +35,15 @@ export default function OrdersScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchOrders(user?.id);
-  }, [fetchOrders, user]);
+    if (user?.id) {
+      fetchOrders(user.id);
+    }
+  }, [fetchOrders, user?.id]);
 
   const onRefresh = async () => {
+    if (!user?.id) return;
     setRefreshing(true);
-    await fetchOrders(user?.id);
+    await fetchOrders(user.id);
     setRefreshing(false);
   };
 
@@ -147,26 +150,36 @@ export default function OrdersScreen() {
         <Text style={styles.headerTitle}>Đơn Hàng & Hợp Đồng</Text>
       </View>
 
-      {/* Filter Status Tabs */}
-      <View style={styles.tabBar}>
-        {STATUS_TABS.map((tab) => {
-          const isSelected = selectedStatusTab === tab.id;
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              activeOpacity={0.7}
-              onPress={() => setSelectedStatusTab(tab.id)}
-              style={[styles.tabBtn, isSelected && styles.tabBtnActive]}
-            >
-              <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Filter Status Tabs (Show only when authenticated) */}
+      {user ? (
+        <View style={styles.tabBar}>
+          {STATUS_TABS.map((tab) => {
+            const isSelected = selectedStatusTab === tab.id;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                activeOpacity={0.7}
+                onPress={() => setSelectedStatusTab(tab.id)}
+                style={[styles.tabBtn, isSelected && styles.tabBtnActive]}
+              >
+                <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      ) : null}
 
-      {isLoading && !refreshing ? (
+      {!user ? (
+        <EmptyState
+          icon="lock-closed-outline"
+          title="Yêu cầu đăng nhập"
+          description="Vui lòng đăng nhập để xem danh sách đơn hàng và hợp đồng đặt cọc của bạn."
+          actionTitle="Đăng Nhập Ngay"
+          onAction={() => router.push('/(auth)/login' as any)}
+        />
+      ) : isLoading && !refreshing ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="small" color={colors.primary} />
           <Text style={styles.loadingText}>Đang tải danh sách...</Text>

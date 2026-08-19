@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -53,6 +54,24 @@ export default function CartScreen() {
       </View>
     );
   }
+
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      Alert.alert(
+        'Yêu Cầu Đăng Nhập',
+        'Vui lòng đăng nhập tài khoản để tiến hành đặt cọc và tạo hợp đồng điện tử.',
+        [
+          { text: 'Để sau', style: 'cancel' },
+          {
+            text: 'Đăng nhập',
+            onPress: () => router.push('/(auth)/login' as any),
+          },
+        ]
+      );
+      return;
+    }
+    router.push('/checkout' as any);
+  };
 
   return (
     <View style={styles.screen}>
@@ -162,7 +181,7 @@ export default function CartScreen() {
           title="Tiến Hành Cọc"
           variant="primary"
           size="sm"
-          onPress={() => router.push('/checkout' as any)}
+          onPress={handleProceedToCheckout}
           style={styles.checkoutBtn}
           icon={<Ionicons name="arrow-forward" size={13} color="#FFFFFF" />}
         />

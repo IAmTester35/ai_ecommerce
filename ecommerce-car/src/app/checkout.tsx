@@ -45,6 +45,21 @@ export default function CheckoutScreen() {
   const depositAmount = Math.round(rawTotal * 0.10);
 
   const handleProcessPayment = async () => {
+    if (!user) {
+      Alert.alert(
+        'Yêu Cầu Đăng Nhập',
+        'Vui lòng đăng nhập tài khoản để tiến hành đặt cọc và xác lập hợp đồng điện tử.',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          {
+            text: 'Đăng nhập',
+            onPress: () => router.push('/(auth)/login' as any),
+          },
+        ]
+      );
+      return;
+    }
+
     if (!name.trim() || !phone.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ Họ tên và Số điện thoại nhận xe.');
       return;
@@ -67,7 +82,7 @@ export default function CheckoutScreen() {
 
     try {
       // Step 1: Create Supabase Order
-      const orderId = await checkout(user?.id, selectedPaymentMethod);
+      const orderId = await checkout(user.id, selectedPaymentMethod);
 
       if (selectedPaymentMethod === 'zalopay') {
         // Step 2: Build ZaloPay payload
