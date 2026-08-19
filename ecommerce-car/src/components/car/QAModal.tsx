@@ -78,14 +78,15 @@ export const QAModal: React.FC<QAModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   textArea: {
-    height: 80,
+    height: 90,
     textAlignVertical: 'top',
+    lineHeight: 20,
   },
   submitBtn: {
-    marginTop: spacing.xs,
+    marginTop: spacing.md,
   },
 });
 

@@ -83,34 +83,34 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.sm + 2,
+    marginBottom: spacing.lg,
   },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.medium,
+    lineHeight: 18,
   },
   requiredStar: {
     color: colors.danger,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.semibold,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.sm + 2,
-    height: 42,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.lg,
+    height: 48,
   },
   inputError: {
+    borderWidth: 1,
     borderColor: colors.danger,
   },
   inputDisabled: {
@@ -120,28 +120,30 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: colors.text,
-    fontSize: typography.sizes.sm,
+    fontSize: typography.sizes.sm + 1,
     height: '100%',
     padding: 0,
   },
   leftIcon: {
-    marginRight: 6,
+    marginRight: 10,
   },
   rightIcon: {
-    marginLeft: 6,
-    padding: 2,
+    marginLeft: 10,
+    padding: 4,
   },
   errorText: {
     color: colors.danger,
-    fontSize: typography.sizes['2xs'],
-    marginTop: 3,
-    marginLeft: 2,
+    fontSize: typography.sizes.xs,
+    lineHeight: 18,
+    marginTop: 4,
+    marginLeft: 4,
   },
   helperText: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'],
-    marginTop: 3,
-    marginLeft: 2,
+    fontSize: typography.sizes.xs,
+    lineHeight: 18,
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

@@ -59,8 +59,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginTop: spacing.lg,
-    marginBottom: spacing.xs + 2,
+    marginTop: spacing['2xl'],
+    marginBottom: spacing.md,
   },
   titleGroup: {
     flex: 1,
@@ -70,30 +70,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBox: {
-    marginRight: 6,
+    marginRight: 8,
   },
   title: {
     color: colors.text,
-    fontSize: typography.sizes.base + 1,
+    fontSize: typography.sizes.lg,
     fontWeight: typography.weights.semibold,
+    lineHeight: 22,
     letterSpacing: -0.1,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: typography.sizes['2xs'] + 1,
-    marginTop: 2,
+    fontSize: typography.sizes.xs,
+    lineHeight: 18,
+    marginTop: 3,
   },
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.xs,
-    paddingLeft: spacing.sm,
+    paddingLeft: spacing.md,
   },
   actionText: {
-    color: colors.primary,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
-    marginRight: 2,
+    color: colors.primaryHover,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.medium,
+    marginRight: 3,
   },
 });
 

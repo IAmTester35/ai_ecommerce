@@ -179,83 +179,78 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 440,
+    maxHeight: 460,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: spacing.xs,
+    gap: 8,
+    marginBottom: 8,
   },
   sectionTitle: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
+    lineHeight: 20,
   },
   dateRow: {
     flexDirection: 'row',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   dateBox: {
     flex: 1,
-    paddingVertical: 7,
-    borderRadius: radii.xs,
-    borderWidth: 1,
+    paddingVertical: 10,
+    borderRadius: radii.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   dateBoxInactive: {
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
   },
   dateBoxActive: {
     backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
   dateText: {
-    fontSize: typography.sizes['2xs'] + 1,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
   },
   dateTextInactive: {
     color: colors.textSecondary,
   },
   dateTextActive: {
     color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   timeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.xs,
+    gap: spacing.sm,
   },
   timeSlot: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radii.xs,
-    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radii.full,
   },
   timeSlotInactive: {
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
   },
   timeSlotActive: {
     backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
   timeSlotText: {
-    fontSize: typography.sizes['2xs'] + 1,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.xs,
+    fontWeight: typography.weights.medium,
   },
   timeSlotTextInactive: {
     color: colors.textSecondary,
   },
   timeSlotTextActive: {
     color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   footer: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginTop: spacing.xl,
+    paddingTop: spacing.xs,
   },
 });
 

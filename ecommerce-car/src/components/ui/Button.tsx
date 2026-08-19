@@ -47,42 +47,49 @@ export const Button: React.FC<ButtonProps> = ({
           bg: colors.primary,
           text: '#FFFFFF',
           border: 'transparent',
+          borderWidth: 0,
         };
       case 'secondary':
         return {
           bg: colors.surfaceElevated,
           text: colors.text,
-          border: colors.border,
+          border: 'transparent',
+          borderWidth: 0,
         };
       case 'outline':
         return {
-          bg: 'transparent',
+          bg: 'rgba(59, 130, 246, 0.08)',
           text: colors.primaryHover,
-          border: 'rgba(59, 130, 246, 0.45)',
+          border: 'transparent',
+          borderWidth: 0,
         };
       case 'ghost':
         return {
           bg: 'transparent',
           text: colors.textSecondary,
           border: 'transparent',
+          borderWidth: 0,
         };
       case 'danger':
         return {
           bg: colors.dangerMuted,
           text: colors.danger,
-          border: 'rgba(239, 68, 68, 0.3)',
+          border: 'transparent',
+          borderWidth: 0,
         };
       case 'conflict':
         return {
           bg: colors.conflictMuted,
           text: colors.conflict,
-          border: 'rgba(245, 158, 11, 0.3)',
+          border: 'transparent',
+          borderWidth: 0,
         };
       default:
         return {
           bg: colors.surfaceElevated,
           text: colors.text,
-          border: colors.border,
+          border: 'transparent',
+          borderWidth: 0,
         };
     }
   };
@@ -91,25 +98,25 @@ export const Button: React.FC<ButtonProps> = ({
     switch (size) {
       case 'sm':
         return {
-          height: 32,
-          paddingHorizontal: spacing.sm + 2,
-          fontSize: typography.sizes.xs,
+          height: 36,
+          paddingHorizontal: spacing.md,
+          fontSize: typography.sizes.xs + 1,
           borderRadius: radii.sm,
         };
       case 'lg':
         return {
-          height: 46,
-          paddingHorizontal: spacing.xl,
+          height: 52,
+          paddingHorizontal: spacing['2xl'],
           fontSize: typography.sizes.base,
-          borderRadius: radii.md,
+          borderRadius: radii.lg,
         };
       case 'md':
       default:
         return {
-          height: 38,
-          paddingHorizontal: spacing.md,
-          fontSize: typography.sizes.sm,
-          borderRadius: radii.sm + 2,
+          height: 44,
+          paddingHorizontal: spacing.xl,
+          fontSize: typography.sizes.sm + 1,
+          borderRadius: radii.md,
         };
     }
   };
@@ -127,6 +134,7 @@ export const Button: React.FC<ButtonProps> = ({
         {
           backgroundColor: currentVariant.bg,
           borderColor: currentVariant.border,
+          borderWidth: currentVariant.borderWidth,
           height: currentSize.height,
           paddingHorizontal: currentSize.paddingHorizontal,
           borderRadius: currentSize.borderRadius,
@@ -165,7 +173,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
   },
   fullWidth: {
     width: '100%',
@@ -181,10 +188,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.1,
   },
   iconLeft: {
-    marginRight: 6,
+    marginRight: 8,
   },
   iconRight: {
-    marginLeft: 6,
+    marginLeft: 8,
   },
   disabled: {
     opacity: 0.45,

@@ -40,14 +40,14 @@ export const Badge: React.FC<BadgeProps> = ({
         return {
           bg: colors.primaryMuted,
           text: colors.primaryHover,
-          border: 'rgba(59, 130, 246, 0.25)',
+          border: 'transparent',
           dotColor: colors.primary,
         };
       case 'secondary':
         return {
           bg: colors.secondaryMuted,
           text: colors.secondaryHover,
-          border: 'rgba(99, 102, 241, 0.25)',
+          border: 'transparent',
           dotColor: colors.secondary,
         };
       case 'conflict':
@@ -55,35 +55,35 @@ export const Badge: React.FC<BadgeProps> = ({
         return {
           bg: colors.conflictMuted,
           text: colors.conflict,
-          border: 'rgba(245, 158, 11, 0.25)',
+          border: 'transparent',
           dotColor: colors.conflict,
         };
       case 'success':
         return {
           bg: colors.successMuted,
           text: colors.success,
-          border: 'rgba(16, 185, 129, 0.25)',
+          border: 'transparent',
           dotColor: colors.success,
         };
       case 'danger':
         return {
           bg: colors.dangerMuted,
           text: colors.danger,
-          border: 'rgba(239, 68, 68, 0.25)',
+          border: 'transparent',
           dotColor: colors.danger,
         };
       case 'gold':
         return {
           bg: 'rgba(245, 158, 11, 0.12)',
           text: '#FBBF24',
-          border: 'rgba(245, 158, 11, 0.30)',
+          border: 'transparent',
           dotColor: '#FBBF24',
         };
       case 'outline':
         return {
-          bg: 'transparent',
+          bg: 'rgba(255, 255, 255, 0.05)',
           text: colors.textSecondary,
-          border: colors.border,
+          border: 'transparent',
           dotColor: colors.textSecondary,
         };
       case 'neutral':
@@ -91,7 +91,7 @@ export const Badge: React.FC<BadgeProps> = ({
         return {
           bg: colors.surfaceElevated,
           text: colors.textSecondary,
-          border: colors.border,
+          border: 'transparent',
           dotColor: colors.textSecondary,
         };
     }
@@ -101,28 +101,28 @@ export const Badge: React.FC<BadgeProps> = ({
     switch (size) {
       case 'xs':
         return {
-          paddingHorizontal: 5,
-          paddingVertical: 2,
-          fontSize: 10,
-          borderRadius: radii.xs,
-          dotSize: 4,
+          paddingHorizontal: 8,
+          paddingVertical: 3,
+          fontSize: 11,
+          borderRadius: radii.full,
+          dotSize: 5,
         };
       case 'md':
         return {
-          paddingHorizontal: spacing.sm + 2,
-          paddingVertical: 4,
+          paddingHorizontal: 14,
+          paddingVertical: 6,
           fontSize: typography.sizes.sm,
-          borderRadius: radii.sm,
-          dotSize: 5,
+          borderRadius: radii.full,
+          dotSize: 6,
         };
       case 'sm':
       default:
         return {
-          paddingHorizontal: 7,
-          paddingVertical: 3,
+          paddingHorizontal: 10,
+          paddingVertical: 4,
           fontSize: typography.sizes.xs,
-          borderRadius: radii.xs + 1,
-          dotSize: 4,
+          borderRadius: radii.full,
+          dotSize: 5,
         };
     }
   };
@@ -136,7 +136,6 @@ export const Badge: React.FC<BadgeProps> = ({
         styles.badge,
         {
           backgroundColor: styleConfig.bg,
-          borderColor: styleConfig.border,
           paddingHorizontal: sizeConfig.paddingHorizontal,
           paddingVertical: sizeConfig.paddingVertical,
           borderRadius: sizeConfig.borderRadius,
@@ -176,20 +175,19 @@ export const Badge: React.FC<BadgeProps> = ({
 
 const styles = StyleSheet.create({
   badge: {
-    borderWidth: 1,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
   },
   dot: {
-    marginRight: 4,
+    marginRight: 5,
   },
   iconBox: {
-    marginRight: 3,
+    marginRight: 4,
   },
   text: {
-    fontWeight: typography.weights.semibold,
-    letterSpacing: 0.1,
+    fontWeight: typography.weights.medium,
+    letterSpacing: 0.2,
   },
 });
 

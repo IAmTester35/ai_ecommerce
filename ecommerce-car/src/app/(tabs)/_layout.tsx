@@ -9,9 +9,8 @@ export default function TabLayout() {
       screenOptions={{
         headerStyle: {
           backgroundColor: colors.background,
-          borderBottomColor: colors.border,
-          borderBottomWidth: 1,
         },
+        headerShadowVisible: false,
         headerTintColor: colors.text,
         headerTitleStyle: {
           fontSize: typography.sizes.base + 1,
@@ -20,16 +19,16 @@ export default function TabLayout() {
         },
         tabBarStyle: {
           backgroundColor: colors.tabBarBg,
-          borderTopColor: colors.tabBarBorder,
-          borderTopWidth: 1,
-          height: 54,
-          paddingBottom: 6,
-          paddingTop: 4,
+          borderTopWidth: 0,
+          height: 62,
+          paddingBottom: 8,
+          paddingTop: 6,
+          elevation: 0,
         },
         tabBarActiveTintColor: colors.tabBarActive,
         tabBarInactiveTintColor: colors.tabBarInactive,
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 11,
           fontWeight: typography.weights.medium,
         },
       }}

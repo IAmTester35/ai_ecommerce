@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: spacing.xs + 2,
+    gap: spacing.sm,
   },
   price: {
     color: colors.primaryHover,
@@ -99,23 +99,21 @@ const styles = StyleSheet.create({
   },
   originalPrice: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'],
+    fontSize: typography.sizes.xs,
     textDecorationLine: 'line-through',
   },
   installmentPill: {
-    marginTop: 3,
+    marginTop: 6,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.primaryMuted,
-    borderColor: 'rgba(59, 130, 246, 0.25)',
-    borderWidth: 1,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: radii.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radii.full,
   },
   installmentText: {
     color: colors.primaryHover,
-    fontSize: typography.sizes['2xs'],
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
   },
 });

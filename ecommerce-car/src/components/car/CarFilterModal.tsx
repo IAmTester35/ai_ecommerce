@@ -238,37 +238,35 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 440,
+    maxHeight: 460,
   },
   sectionHeader: {
     color: colors.text,
-    fontSize: typography.sizes.xs + 1,
+    fontSize: typography.sizes.sm,
     fontWeight: typography.weights.semibold,
-    marginTop: spacing.sm + 2,
-    marginBottom: 6,
+    lineHeight: 20,
+    marginTop: spacing.lg,
+    marginBottom: 8,
   },
   chipsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: 4,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   chip: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 5,
-    borderRadius: radii.xs,
-    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: radii.full,
   },
   chipInactive: {
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
   },
   chipActive: {
     backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
   chipText: {
-    fontSize: typography.sizes['2xs'] + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
   },
   chipTextInactive: {
@@ -276,14 +274,13 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   footer: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    gap: spacing.md,
+    marginTop: spacing.xl,
+    paddingTop: spacing.xs,
   },
   resetBtn: {
     flex: 1,

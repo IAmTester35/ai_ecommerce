@@ -96,30 +96,32 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
 const styles = StyleSheet.create({
   content: {
-    gap: spacing.xs + 2,
+    gap: spacing.md,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.medium,
+    lineHeight: 18,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.lg,
     marginBottom: spacing.xs,
   },
   ratingScore: {
     color: colors.conflict,
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
+    fontSize: typography.sizes.sm + 1,
+    fontWeight: typography.weights.semibold,
   },
   textArea: {
-    height: 70,
+    height: 84,
     textAlignVertical: 'top',
+    lineHeight: 20,
   },
   submitBtn: {
-    marginTop: spacing.xs,
+    marginTop: spacing.md,
   },
 });
 

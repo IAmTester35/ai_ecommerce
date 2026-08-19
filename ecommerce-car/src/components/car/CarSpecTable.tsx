@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { Car } from '../../types';
 
 interface CarSpecTableProps {
@@ -45,38 +45,35 @@ export const CarSpecTable: React.FC<CarSpecTableProps> = ({ car }) => {
 
 const styles = StyleSheet.create({
   table: {
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.sm,
+    backgroundColor: colors.cardBg,
+    borderRadius: radii.lg,
     overflow: 'hidden',
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    ...shadows.sm,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.xs + 3,
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.lg,
   },
   rowDefault: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'transparent',
   },
   rowAlt: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: 'rgba(255, 255, 255, 0.025)',
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.sizes['2xs'] + 1,
-    fontWeight: typography.weights.medium,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.regular,
     flex: 1,
   },
   value: {
     color: colors.text,
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.sm,
+    fontWeight: typography.weights.medium,
     textAlign: 'right',
     flex: 1.2,
   },

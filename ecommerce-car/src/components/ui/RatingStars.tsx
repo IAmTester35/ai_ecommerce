@@ -77,11 +77,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   star: {
-    marginRight: 2,
+    marginRight: 3,
   },
   scoreText: {
     color: colors.conflict,
-    fontWeight: typography.weights.bold,
-    marginLeft: spacing.xs,
+    fontWeight: typography.weights.semibold,
+    marginLeft: spacing.sm,
   },
 });

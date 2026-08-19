@@ -71,8 +71,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 const styles = StyleSheet.create({
   wrapper: {
     flexDirection: 'row',
-    marginVertical: 4,
-    paddingHorizontal: spacing.md,
+    marginVertical: 6,
+    paddingHorizontal: spacing['2xl'],
     alignItems: 'flex-start',
   },
   wrapperUser: {
@@ -82,20 +82,20 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   avatar: {
-    width: 28,
-    height: 28,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
+    marginRight: 8,
     marginTop: 2,
   },
   bubble: {
     maxWidth: '85%',
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: radii.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     ...shadows.sm,
   },
   bubbleUser: {
@@ -104,13 +104,11 @@ const styles = StyleSheet.create({
   },
   bubbleAssistant: {
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
-    borderWidth: 1,
     borderBottomLeftRadius: radii.xs,
   },
   text: {
-    fontSize: typography.sizes.sm,
-    lineHeight: 18,
+    fontSize: typography.sizes.sm + 1,
+    lineHeight: 22,
   },
   textUser: {
     color: '#FFFFFF',
@@ -120,20 +118,18 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   generativeUiContainer: {
-    marginTop: spacing.sm,
-    paddingTop: spacing.xs + 2,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginTop: spacing.md,
+    paddingTop: spacing.xs,
   },
   suggestedHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
+    gap: 6,
+    marginBottom: 8,
   },
   suggestedTitle: {
     color: colors.primaryHover,
-    fontSize: typography.sizes['2xs'] + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
   },
   carCarousel: {

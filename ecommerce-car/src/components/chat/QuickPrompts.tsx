@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { historyService } from '../../services/historyService';
 import { useAuthStore } from '../../store/useAuthStore';
 
@@ -100,51 +100,51 @@ export const QuickPrompts: React.FC<QuickPromptsProps> = ({ onSelectPrompt }) =>
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 6,
+    marginVertical: spacing.sm,
   },
   header: {
     color: colors.textSecondary,
-    fontSize: typography.sizes['2xs'] + 1,
+    fontSize: typography.sizes.xs,
     fontWeight: typography.weights.medium,
-    marginBottom: 6,
-    paddingHorizontal: spacing.md,
+    marginBottom: 8,
+    paddingHorizontal: spacing['2xl'],
   },
   scroll: {
-    paddingHorizontal: spacing.md,
-    gap: spacing.xs + 2,
+    paddingHorizontal: spacing['2xl'],
+    gap: spacing.sm,
   },
   chip: {
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
-    borderWidth: 1,
-    borderRadius: radii.sm,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 6,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    maxWidth: 220,
+    maxWidth: 250,
+    ...shadows.sm,
   },
   iconCircle: {
-    width: 26,
-    height: 26,
+    width: 32,
+    height: 32,
     borderRadius: radii.full,
     backgroundColor: colors.primaryMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 10,
   },
   textContainer: {
     flex: 1,
   },
   title: {
     color: colors.primaryHover,
-    fontSize: typography.sizes.xs,
+    fontSize: typography.sizes.xs + 1,
     fontWeight: typography.weights.semibold,
   },
   subtitle: {
     color: colors.textMuted,
-    fontSize: typography.sizes['2xs'],
-    marginTop: 1,
+    fontSize: typography.sizes.xs,
+    lineHeight: 16,
+    marginTop: 2,
   },
 });
 

@@ -90,55 +90,53 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingVertical: spacing.xs,
-    gap: spacing.xs + 2,
+    gap: spacing.sm,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 8,
     borderRadius: radii.full,
-    borderWidth: 1,
   },
   pillDefault: {
     backgroundColor: colors.surfaceElevated,
-    borderColor: colors.border,
   },
   pillSelected: {
     backgroundColor: colors.primaryMuted,
-    borderColor: colors.primary,
   },
   iconBox: {
-    marginRight: 5,
+    marginRight: 6,
   },
   label: {
-    fontSize: typography.sizes.xs,
-    fontWeight: typography.weights.semibold,
+    fontSize: typography.sizes.xs + 1,
+    fontWeight: typography.weights.medium,
   },
   labelDefault: {
     color: colors.textSecondary,
   },
   labelSelected: {
     color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   countBadge: {
-    marginLeft: 5,
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    marginLeft: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: radii.full,
   },
   countBadgeDefault: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
   },
   countBadgeSelected: {
     backgroundColor: colors.primary,
   },
   countText: {
     fontSize: typography.sizes['2xs'],
-    fontWeight: typography.weights.bold,
+    fontWeight: typography.weights.semibold,
   },
   countTextDefault: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
   },
   countTextSelected: {
     color: '#FFFFFF',
