@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   FlatList,
-  Alert,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +14,9 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useTestDriveStore } from '../../store/useTestDriveStore';
 import { useCarStore } from '../../store/useCarStore';
 import { useOrderStore } from '../../store/useOrderStore';
+import { globalAlert } from '../../store/useDialogStore';
+import { useResponsive } from '../../hooks/useResponsive';
+import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Badge } from '../../components/ui/Badge';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -27,10 +28,11 @@ export default function ProfileScreen() {
   const { testDrives, fetchTestDrives, cancelTestDrive } = useTestDriveStore();
   const { savedCars, fetchSavedCars, toggleSaveCar } = useCarStore();
   const { orders, fetchOrders } = useOrderStore();
+  const { isLargeScreen } = useResponsive();
 
   useEffect(() => {
-    if (user) {
-      fetchTestDrives();
+    if (user?.id) {
+      fetchTestDrives(user.id);
       fetchSavedCars(user.id);
       fetchOrders(user.id);
     }
@@ -40,15 +42,15 @@ export default function ProfileScreen() {
 
   const userInitials = profile?.full_name
     ? profile.full_name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase()
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
     : (user?.email?.slice(0, 2).toUpperCase() || 'U');
 
   const handleCancelTestDrive = async (tdId: string) => {
-    Alert.alert(
+    globalAlert(
       'Hủy Lịch Lái Thử',
       'Bạn có chắc chắn muốn hủy lịch hẹn lái thử này?',
       [
@@ -59,9 +61,9 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await cancelTestDrive(tdId);
-              Alert.alert('Đã hủy', 'Lịch lái thử đã được hủy thành công.');
+              globalAlert('Đã hủy', 'Lịch lái thử đã được hủy thành công.');
             } catch (err: any) {
-              Alert.alert('Lỗi', err.message || 'Không thể hủy lúc này.');
+              globalAlert('Lỗi', err.message || 'Không thể hủy lúc này.');
             }
           },
         },
@@ -70,7 +72,7 @@ export default function ProfileScreen() {
   };
 
   const handleSignOut = () => {
-    Alert.alert(
+    globalAlert(
       'Đăng xuất',
       'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản này?',
       [
@@ -86,11 +88,10 @@ export default function ProfileScreen() {
     );
   };
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+  const renderLeftSection = () => (
+    <>
       {/* 1. Header: Authenticated vs Guest */}
       {user ? (
-        /* Authenticated User Header Card */
         <View style={styles.profileHeader}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{userInitials}</Text>
@@ -129,7 +130,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        /* Guest Welcome Card */
         <View style={styles.guestCard}>
           <View style={styles.guestHeaderRow}>
             <View style={styles.guestIconBox}>
@@ -350,7 +350,10 @@ export default function ProfileScreen() {
                       {sc.car ? `${sc.car.make} ${sc.car.model}` : 'Xe AutoMatch'}
                     </Text>
                     <Text style={styles.savedCarPrice}>
-                      {formatVndPrice(sc.car?.price)}
+                      {formatVndPrice(sc.car?.price, 'usd', {
+                        engineHp: sc.car?.engine_hp,
+                        fuelType: sc.car?.metadata?.engine_fuel_type || sc.car?.metadata?.fuel_type,
+                      })}
                     </Text>
                     <TouchableOpacity
                       style={styles.unsaveBtn}
@@ -366,8 +369,12 @@ export default function ProfileScreen() {
           )}
         </>
       )}
+    </>
+  );
 
-      {/* 5. Member Privileges Highlight (For Guests) */}
+  const renderRightSection = () => (
+    <>
+      {/* Member Privileges Highlight (For Guests) */}
       {!user && (
         <Card style={styles.perksCard} padding={spacing.md}>
           <Text style={styles.perksCardTitle}>Đặc Quyền Thành Viên</Text>
@@ -393,7 +400,7 @@ export default function ProfileScreen() {
         </Card>
       )}
 
-      {/* 6. Settings & Support Services */}
+      {/* Settings & Support Services */}
       <View style={styles.sectionHeaderRow}>
         <View style={styles.sectionTitleGroup}>
           <Ionicons name="settings-outline" size={14} color={colors.primaryHover} style={{ marginRight: 6 }} />
@@ -513,22 +520,50 @@ export default function ProfileScreen() {
           </>
         )}
       </View>
+    </>
+  );
 
-      <View style={{ height: 24 }} />
-    </ScrollView>
+  return (
+    <View style={styles.screen}>
+      <ResponsiveContainer scrollable maxWidth="xl" showsVerticalScrollIndicator={false}>
+        <View style={[styles.profileLayout, isLargeScreen && styles.profileLayoutSplit]}>
+          <View style={[styles.profileColumn, isLargeScreen && styles.profileColumnSplit]}>
+            {renderLeftSection()}
+          </View>
+          <View style={[styles.profileColumn, isLargeScreen && styles.profileColumnSplit]}>
+            {renderRightSection()}
+          </View>
+        </View>
+
+        <View style={{ height: 32 }} />
+      </ResponsiveContainer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
+  },
+  profileLayout: {
+    width: '100%',
+    paddingTop: 48,
+  },
+  profileLayoutSplit: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+    alignItems: 'flex-start',
+  },
+  profileColumn: {
+    width: '100%',
+  },
+  profileColumnSplit: {
+    flex: 1,
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 48,
     marginBottom: spacing.md,
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.md,
@@ -590,7 +625,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   guestCard: {
-    marginTop: 48,
     marginBottom: spacing.md,
     backgroundColor: colors.surfaceElevated,
     borderRadius: radii.md,
@@ -712,7 +746,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     marginBottom: spacing.xs,
   },
   sectionTitleGroup: {

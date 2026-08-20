@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
@@ -16,6 +14,9 @@ import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useOrderStore } from '../../store/useOrderStore';
 import { usePaymentStore } from '../../store/usePaymentStore';
+import { globalAlert } from '../../store/useDialogStore';
+import { useResponsive } from '../../hooks/useResponsive';
+import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
@@ -29,6 +30,7 @@ export default function OrderDetailScreen() {
   const { user } = useAuthStore();
   const { selectedOrder, fetchOrderDetails, isLoading } = useOrderStore();
   const { checkPaymentStatus, isProcessing, statusResult } = usePaymentStore();
+  const { isLargeScreen } = useResponsive();
 
   const [checkingPayment, setCheckingPayment] = useState(false);
 
@@ -41,7 +43,7 @@ export default function OrderDetailScreen() {
   const handleCheckPaymentStatus = async () => {
     const transId = app_trans_id;
     if (!transId) {
-      Alert.alert('Thông báo', 'Không tìm thấy mã giao dịch ZaloPay.');
+      globalAlert('Thông báo', 'Không tìm thấy mã giao dịch ZaloPay.');
       return;
     }
 
@@ -51,12 +53,12 @@ export default function OrderDetailScreen() {
       if (id) {
         await fetchOrderDetails(id);
       }
-      Alert.alert(
+      globalAlert(
         res.return_code === 1 ? 'Thành công' : 'Trạng thái ZaloPay',
         `Phản hồi: ${res.return_message}`
       );
     } catch (err: any) {
-      Alert.alert('Lỗi kiểm tra', err.message || 'Không thể lấy trạng thái từ ZaloPay.');
+      globalAlert('Lỗi kiểm tra', err.message || 'Không thể lấy trạng thái từ ZaloPay.');
     } finally {
       setCheckingPayment(false);
     }
@@ -94,10 +96,12 @@ export default function OrderDetailScreen() {
     return (
       <View style={styles.screen}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={16} color={colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chi Tiết Đơn Hàng</Text>
+          <View style={styles.headerInner}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={16} color={colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Chi Tiết Đơn Hàng</Text>
+          </View>
         </View>
         <EmptyState
           icon="lock-closed-outline"
@@ -135,163 +139,188 @@ export default function OrderDetailScreen() {
     year: 'numeric',
   });
 
+  const renderLeftInfo = () => (
+    <>
+      {/* Order Overview Summary Card */}
+      <Card style={styles.overviewCard} padding={spacing.md}>
+        <Text style={styles.cardHeaderTitle}>Thông tin đơn hàng</Text>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Mã đơn hàng:</Text>
+          <Text style={styles.infoValueCode} numberOfLines={1}>{selectedOrder.id}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Trạng thái đơn:</Text>
+          {getOrderStatusBadge(selectedOrder.status)}
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Thanh toán:</Text>
+          {getPaymentStatusBadge(selectedOrder.payment_status)}
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Hình thức:</Text>
+          <Text style={styles.infoValue}>
+            {selectedOrder.payment_method === 'zalopay'
+              ? 'ZaloPay Gateway'
+              : selectedOrder.payment_method || 'Tại showroom'}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Cập nhật lần cuối:</Text>
+          <Text style={styles.infoValue}>{updatedDate}</Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Tiền cọc (10%):</Text>
+          <Text style={styles.totalAmount}>{formatVndPrice(Math.round(selectedOrder.total_amount * 0.10))}</Text>
+        </View>
+      </Card>
+
+      {/* ZaloPay Payment Status Card (if trans id available) */}
+      {app_trans_id && (
+        <Card style={styles.paymentCard} padding={spacing.md}>
+          <View style={styles.paymentHeaderRow}>
+            <View style={styles.paymentIconBox}>
+              <Ionicons name="wallet-outline" size={16} color="#0088FF" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.paymentTitle}>Cổng Thanh Toán ZaloPay</Text>
+              <Text style={styles.paymentSubtitle}>Mã GD: {app_trans_id}</Text>
+            </View>
+            {getPaymentStatusBadge(selectedOrder.payment_status)}
+          </View>
+
+          {statusResult && (
+            <View style={styles.statusResultBox}>
+              <Text style={styles.statusResultTitle}>Kết quả giao dịch:</Text>
+              <Text style={styles.statusResultText}>• {statusResult.return_message}</Text>
+              {statusResult.zp_trans_id && (
+                <Text style={styles.statusResultText}>• Mã ZaloPay: {statusResult.zp_trans_id}</Text>
+              )}
+            </View>
+          )}
+
+          <Button
+            title={checkingPayment ? 'Đang kiểm tra...' : 'Cập nhật trạng thái ZaloPay'}
+            variant="outline"
+            size="sm"
+            onPress={handleCheckPaymentStatus}
+            loading={checkingPayment || isProcessing}
+            icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
+            style={{ marginTop: spacing.xs + 2 }}
+          />
+        </Card>
+      )}
+    </>
+  );
+
+  const renderRightItems = () => (
+    <>
+      {/* Ordered Car Items */}
+      <Text style={styles.sectionTitle}>
+        Danh sách xe ({selectedOrder.order_items?.length || 0})
+      </Text>
+      {selectedOrder.order_items?.map((item) => (
+        <Card key={item.id} style={styles.itemCard} padding={spacing.sm}>
+          <Image
+            source={{ uri: item.car?.image_url || fallbackImage }}
+            style={styles.itemThumb}
+            contentFit="cover"
+          />
+          <View style={styles.itemInfo}>
+            <Text style={styles.itemCarName}>
+              {item.car ? `${item.car.make} ${item.car.model} (${item.car.year})` : 'Xe AutoMatch'}
+            </Text>
+            <Text style={styles.itemQuantity}>Số lượng: x{item.quantity} xe</Text>
+            <Text style={styles.itemDepositPrice}>
+              Giá niêm yết: {formatVndPrice(item.price, 'usd', {
+                engineHp: item.car?.engine_hp,
+                fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+              })}
+            </Text>
+          </View>
+        </Card>
+      ))}
+
+      {/* Electronic Contract PDF Download */}
+      {selectedOrder.contract_url && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.contractBox}
+          onPress={() => Linking.openURL(selectedOrder.contract_url!)}
+        >
+          <View style={styles.contractIconCircle}>
+            <Ionicons name="document-text-outline" size={16} color={colors.primaryHover} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.contractTitle}>Hợp Đồng Điện Tử</Text>
+            <Text style={styles.contractSub}>
+              Tải file hợp đồng điện tử đính kèm
+            </Text>
+          </View>
+          <Ionicons name="download-outline" size={16} color={colors.primaryHover} />
+        </TouchableOpacity>
+      )}
+
+      {/* Action Buttons */}
+      <View style={styles.bottomActions}>
+        <Button
+          title="Danh sách đơn"
+          variant="outline"
+          size="sm"
+          onPress={() => router.push('/orders' as any)}
+          style={{ flex: 1 }}
+        />
+        <Button
+          title="Khám phá xe"
+          variant="primary"
+          size="sm"
+          onPress={() => router.push('/(tabs)/catalog' as any)}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </>
+  );
+
   return (
     <View style={styles.screen}>
       {/* Top Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={16} color={colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>
-            Đơn #{selectedOrder.id.slice(0, 8).toUpperCase()}
-          </Text>
-          <Text style={styles.headerSubtitle}>Ngày tạo: {createdDate}</Text>
+        <View style={styles.headerInner}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>
+              Đơn #{selectedOrder.id.slice(0, 8).toUpperCase()}
+            </Text>
+            <Text style={styles.headerSubtitle}>Ngày tạo: {createdDate}</Text>
+          </View>
+          {getOrderStatusBadge(selectedOrder.status)}
         </View>
-        {getOrderStatusBadge(selectedOrder.status)}
       </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        {/* Order Overview Summary Card */}
-        <Card style={styles.overviewCard} padding={spacing.md}>
-          <Text style={styles.cardHeaderTitle}>Thông tin đơn hàng</Text>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mã đơn hàng:</Text>
-            <Text style={styles.infoValueCode} numberOfLines={1}>{selectedOrder.id}</Text>
+      <ResponsiveContainer scrollable maxWidth="xl" showsVerticalScrollIndicator={false}>
+        <View style={[styles.orderLayout, isLargeScreen && styles.orderLayoutSplit]}>
+          {/* Left Column on Desktop / Top on Mobile */}
+          <View style={[styles.orderCol, isLargeScreen && styles.orderColSplit]}>
+            {renderLeftInfo()}
           </View>
 
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Trạng thái đơn:</Text>
-            {getOrderStatusBadge(selectedOrder.status)}
+          {/* Right Column on Desktop / Bottom on Mobile */}
+          <View style={[styles.orderCol, isLargeScreen && styles.orderColSplit]}>
+            {renderRightItems()}
           </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Thanh toán:</Text>
-            {getPaymentStatusBadge(selectedOrder.payment_status)}
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Hình thức:</Text>
-            <Text style={styles.infoValue}>
-              {selectedOrder.payment_method === 'zalopay'
-                ? 'ZaloPay Gateway'
-                : selectedOrder.payment_method || 'Tại showroom'}
-            </Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Cập nhật lần cuối:</Text>
-            <Text style={styles.infoValue}>{updatedDate}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Tiền cọc (10%):</Text>
-            <Text style={styles.totalAmount}>{formatVndPrice(Math.round(selectedOrder.total_amount * 0.10))}</Text>
-          </View>
-        </Card>
-
-        {/* ZaloPay Payment Status Card (if trans id available) */}
-        {app_trans_id && (
-          <Card style={styles.paymentCard} padding={spacing.md}>
-            <View style={styles.paymentHeaderRow}>
-              <View style={styles.paymentIconBox}>
-                <Ionicons name="wallet-outline" size={16} color="#0088FF" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.paymentTitle}>Cổng Thanh Toán ZaloPay</Text>
-                <Text style={styles.paymentSubtitle}>Mã GD: {app_trans_id}</Text>
-              </View>
-              {getPaymentStatusBadge(selectedOrder.payment_status)}
-            </View>
-
-            {statusResult && (
-              <View style={styles.statusResultBox}>
-                <Text style={styles.statusResultTitle}>Kết quả giao dịch:</Text>
-                <Text style={styles.statusResultText}>• {statusResult.return_message}</Text>
-                {statusResult.zp_trans_id && (
-                  <Text style={styles.statusResultText}>• Mã ZaloPay: {statusResult.zp_trans_id}</Text>
-                )}
-              </View>
-            )}
-
-            <Button
-              title={checkingPayment ? 'Đang kiểm tra...' : 'Cập nhật trạng thái ZaloPay'}
-              variant="outline"
-              size="sm"
-              onPress={handleCheckPaymentStatus}
-              loading={checkingPayment || isProcessing}
-              icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
-              style={{ marginTop: spacing.xs + 2 }}
-            />
-          </Card>
-        )}
-
-        {/* Ordered Car Items */}
-        <Text style={styles.sectionTitle}>
-          Danh sách xe ({selectedOrder.order_items?.length || 0})
-        </Text>
-        {selectedOrder.order_items?.map((item) => (
-          <Card key={item.id} style={styles.itemCard} padding={spacing.sm}>
-            <Image
-              source={{ uri: item.car?.image_url || fallbackImage }}
-              style={styles.itemThumb}
-              contentFit="cover"
-            />
-            <View style={styles.itemInfo}>
-              <Text style={styles.itemCarName}>
-                {item.car ? `${item.car.make} ${item.car.model} (${item.car.year})` : 'Xe AutoMatch'}
-              </Text>
-              <Text style={styles.itemQuantity}>Số lượng: x{item.quantity} xe</Text>
-              <Text style={styles.itemDepositPrice}>
-                Giá niêm yết: {formatVndPrice(item.price)}
-              </Text>
-            </View>
-          </Card>
-        ))}
-
-        {/* Electronic Contract PDF Download */}
-        {selectedOrder.contract_url && (
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.contractBox}
-            onPress={() => Linking.openURL(selectedOrder.contract_url!)}
-          >
-            <View style={styles.contractIconCircle}>
-              <Ionicons name="document-text-outline" size={16} color={colors.primaryHover} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.contractTitle}>Hợp Đồng Điện Tử</Text>
-              <Text style={styles.contractSub}>
-                Tải file hợp đồng điện tử đính kèm
-              </Text>
-            </View>
-            <Ionicons name="download-outline" size={16} color={colors.primaryHover} />
-          </TouchableOpacity>
-        )}
-
-        {/* Bottom Actions */}
-        <View style={styles.bottomActions}>
-          <Button
-            title="Danh sách đơn"
-            variant="outline"
-            size="sm"
-            onPress={() => router.push('/orders' as any)}
-            style={{ flex: 1 }}
-          />
-          <Button
-            title="Khám phá xe"
-            variant="primary"
-            size="sm"
-            onPress={() => router.push('/(tabs)/catalog' as any)}
-            style={{ flex: 1 }}
-          />
         </View>
 
-        <View style={{ height: 24 }} />
-      </ScrollView>
+        <View style={{ height: 32 }} />
+      </ResponsiveContainer>
     </View>
   );
 }
@@ -311,15 +340,20 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingTop: 48,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  headerInner: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   backBtn: {
     width: 32,
@@ -342,9 +376,21 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 1,
   },
-  container: {
+  orderLayout: {
+    width: '100%',
+    paddingTop: spacing.xs,
+  },
+  orderLayoutSplit: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+    alignItems: 'flex-start',
+    marginTop: spacing.sm,
+  },
+  orderCol: {
+    width: '100%',
+  },
+  orderColSplit: {
     flex: 1,
-    paddingHorizontal: spacing.lg,
   },
   sectionTitle: {
     color: colors.text,
@@ -530,4 +576,3 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
 });
-

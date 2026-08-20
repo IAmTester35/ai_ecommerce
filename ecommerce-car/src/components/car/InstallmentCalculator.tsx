@@ -2,30 +2,33 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
-import { formatVnd, usdToVnd } from '../../utils/currency';
+import {
+  formatVnd,
+  usdToVnd,
+  calculateInstallmentPlan,
+  CarSpecInput,
+} from '../../utils/currency';
 import { Card } from '../ui/Card';
 
 interface InstallmentCalculatorProps {
   price: number;
+  spec?: CarSpecInput;
 }
 
 const DOWN_PAYMENT_PERCENTAGES = [20, 30, 50, 70];
 const LOAN_TERMS_YEARS = [1, 2, 3, 5, 7];
 
-export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ price }) => {
+export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ price, spec }) => {
   const [downPercent, setDownPercent] = useState<number>(30);
   const [termYears, setTermYears] = useState<number>(5);
   const interestRateYear = 0.085; // 8.5% / year fixed average
 
-  const priceVnd = usdToVnd(price);
-  const downPaymentAmount = Math.round((priceVnd * downPercent) / 100);
-  const loanAmount = priceVnd - downPaymentAmount;
-  const totalMonths = termYears * 12;
-
-  // Monthly principal + monthly interest (simple amortization estimation)
-  const monthlyPrincipal = loanAmount / totalMonths;
-  const monthlyInterest = (loanAmount * interestRateYear) / 12;
-  const estimatedMonthlyPayment = Math.round(monthlyPrincipal + monthlyInterest);
+  const priceVnd = usdToVnd(price, spec);
+  const plan = calculateInstallmentPlan(priceVnd, downPercent, termYears, interestRateYear);
+  const totalMonths = plan.termMonths;
+  const downPaymentAmount = plan.downPaymentAmount;
+  const loanAmount = plan.loanAmount;
+  const estimatedMonthlyPayment = plan.totalMonthlyPayment;
 
   return (
     <Card style={styles.container} padding={spacing.md}>

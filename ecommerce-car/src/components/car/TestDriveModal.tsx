@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
@@ -13,18 +12,19 @@ import { Car } from '../../types';
 import { ModalSheet } from '../ui/ModalSheet';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { globalAlert } from '../../store/useDialogStore';
 
 interface TestDriveModalProps {
   visible: boolean;
   onClose: () => void;
   car: Car | null;
   onSubmitBooking: (
-    scheduledDate: string,
-    notes?: string
+    scheduledAt: string,
+    notes: string
   ) => Promise<void>;
 }
 
-const TIME_SLOTS = ['09:00 - 10:30', '10:30 - 12:00', '14:00 - 15:30', '16:00 - 17:30', '18:00 - 19:30'];
+const TIME_SLOTS = ['09:00', '10:30', '14:00', '16:00', '18:00'];
 
 export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   visible,
@@ -34,9 +34,12 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 }) => {
   const [selectedDayOffset, setSelectedDayOffset] = useState<number>(1); // 1 = tomorrow, 2 = day after
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(TIME_SLOTS[0]);
+  const [phone, setPhone] = useState('');
   const [locationNote, setLocationNote] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!car) return null;
 
   const getTargetDateStr = (dayOffset: number): string => {
     const d = new Date();
@@ -49,14 +52,17 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   };
 
   const handleConfirm = async () => {
-    if (!car) return;
-
     setIsSubmitting(true);
     try {
       const scheduledDate = new Date();
       scheduledDate.setDate(scheduledDate.getDate() + selectedDayOffset);
+      const [hours, minutes] = selectedTimeSlot.split(':').map(Number);
+      scheduledDate.setHours(hours, minutes, 0, 0);
 
-      const notesParts: string[] = [`Khung giờ: ${selectedTimeSlot}`];
+      const notesParts: string[] = [];
+      if (phone.trim()) {
+        notesParts.push(`SĐT: ${phone.trim()}`);
+      }
       if (locationNote.trim()) {
         notesParts.push(`Địa điểm: ${locationNote.trim()}`);
       }
@@ -68,13 +74,13 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         scheduledDate.toISOString(),
         notesParts.join(' | ')
       );
-      Alert.alert(
+      globalAlert(
         'Đặt Lịch Thành Công',
         `Lịch trải nghiệm xe ${car.make} ${car.model} vào ${getTargetDateStr(selectedDayOffset)} (${selectedTimeSlot}) đã được ghi nhận.`
       );
       onClose();
     } catch (err: any) {
-      Alert.alert('Lỗi đặt lịch', err?.message || 'Không thể đăng ký lúc này.');
+      globalAlert('Lỗi đặt lịch', err?.message || 'Không thể đăng ký lúc này.');
     } finally {
       setIsSubmitting(false);
     }

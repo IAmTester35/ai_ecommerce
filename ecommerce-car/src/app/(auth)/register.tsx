@@ -3,16 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
+import { globalAlert } from '../../store/useDialogStore';
+import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
@@ -27,7 +27,7 @@ export default function RegisterScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [agreeTerms, setAgreeTerms] = useState(true);
+  const [agreeTerms, setAgreeTerms] = useState(false);
 
   const [fullNameError, setFullNameError] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -49,17 +49,16 @@ export default function RegisterScreen() {
       isValid = false;
     }
 
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
+    if (!email.trim()) {
       setEmailError('Vui lòng nhập email.');
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setEmailError('Email không hợp lệ.');
       isValid = false;
     }
 
     if (phone.trim() && !/^[0-9+ ]{9,15}$/.test(phone.trim())) {
-      setPhoneError('Số điện thoại không hợp lệ.');
+      setPhoneError('Số điện thoại không đúng định dạng.');
       isValid = false;
     }
 
@@ -80,7 +79,7 @@ export default function RegisterScreen() {
     }
 
     if (!agreeTerms) {
-      Alert.alert('Điều khoản', 'Vui lòng đồng ý với Điều khoản dịch vụ.');
+      globalAlert('Điều khoản', 'Vui lòng đồng ý với Điều khoản dịch vụ.');
       isValid = false;
     }
 
@@ -99,7 +98,7 @@ export default function RegisterScreen() {
       );
 
       if (needEmailConfirmation) {
-        Alert.alert(
+        globalAlert(
           'Đăng ký thành công',
           'Vui lòng kiểm tra email kích hoạt tài khoản.',
           [
@@ -110,7 +109,7 @@ export default function RegisterScreen() {
           ]
         );
       } else {
-        Alert.alert(
+        globalAlert(
           'Chào mừng bạn!',
           'Tài khoản của bạn đã được khởi tạo thành công.',
           [
@@ -137,7 +136,9 @@ export default function RegisterScreen() {
       style={styles.keyboardContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
+      <ResponsiveContainer
+        scrollable
+        maxWidth="sm"
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -339,7 +340,7 @@ export default function RegisterScreen() {
         </View>
 
         <View style={{ height: spacing.lg }} />
-      </ScrollView>
+      </ResponsiveContainer>
     </KeyboardAvoidingView>
   );
 }

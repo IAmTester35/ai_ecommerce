@@ -14,6 +14,7 @@ import { router } from 'expo-router';
 import { colors, radii, spacing, typography } from '../theme';
 import { useAuthStore } from '../store/useAuthStore';
 import { useOrderStore } from '../store/useOrderStore';
+import { useResponsive } from '../hooks/useResponsive';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -31,8 +32,12 @@ const STATUS_TABS: { id: string; label: string }[] = [
 export default function OrdersScreen() {
   const { user } = useAuthStore();
   const { orders, fetchOrders, isLoading } = useOrderStore();
+  const { select } = useResponsive();
+
   const [selectedStatusTab, setSelectedStatusTab] = useState('all');
   const [refreshing, setRefreshing] = useState(false);
+
+  const numColumns = select({ mobile: 1, tablet: 2, desktop: 2, wide: 3 });
 
   useEffect(() => {
     if (user?.id) {
@@ -83,6 +88,7 @@ export default function OrdersScreen() {
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => router.push(`/order/${item.id}` as any)}
+        style={numColumns > 1 ? styles.gridCardItem : undefined}
       >
         <Card style={styles.orderCard} padding={spacing.sm}>
           {/* Header Row */}
@@ -144,30 +150,34 @@ export default function OrdersScreen() {
     <View style={styles.screen}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={16} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Đơn Hàng & Hợp Đồng</Text>
+        <View style={styles.headerInner}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Đơn Hàng & Hợp Đồng</Text>
+        </View>
       </View>
 
       {/* Filter Status Tabs (Show only when authenticated) */}
       {user ? (
         <View style={styles.tabBar}>
-          {STATUS_TABS.map((tab) => {
-            const isSelected = selectedStatusTab === tab.id;
-            return (
-              <TouchableOpacity
-                key={tab.id}
-                activeOpacity={0.7}
-                onPress={() => setSelectedStatusTab(tab.id)}
-                style={[styles.tabBtn, isSelected && styles.tabBtnActive]}
-              >
-                <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          <View style={styles.tabBarInner}>
+            {STATUS_TABS.map((tab) => {
+              const isSelected = selectedStatusTab === tab.id;
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  activeOpacity={0.7}
+                  onPress={() => setSelectedStatusTab(tab.id)}
+                  style={[styles.tabBtn, isSelected && styles.tabBtnActive]}
+                >
+                  <Text style={[styles.tabText, isSelected && styles.tabTextActive]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       ) : null}
 
@@ -194,8 +204,11 @@ export default function OrdersScreen() {
         />
       ) : (
         <FlatList
+          key={`orders-grid-${numColumns}`}
           data={filteredOrders}
           keyExtractor={(item) => item.id}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
           renderItem={renderOrderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
@@ -218,15 +231,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingTop: 48,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  headerInner: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   backBtn: {
     width: 32,
@@ -245,13 +263,18 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   tabBar: {
-    flexDirection: 'row',
     backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  tabBarInner: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
+    flexDirection: 'row',
     paddingHorizontal: spacing.lg,
     paddingVertical: 6,
     gap: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   tabBtn: {
     flex: 1,
@@ -272,15 +295,25 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   listContent: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     paddingBottom: 32,
     gap: spacing.xs + 2,
   },
+  columnWrapper: {
+    gap: spacing.md,
+  },
+  gridCardItem: {
+    flex: 1,
+  },
   orderCard: {
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
+    marginBottom: spacing.xs,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -374,4 +407,3 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
   },
 });
-

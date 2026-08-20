@@ -168,5 +168,20 @@ export const layout = {
   cardPadding: spacing.xl,       // 20px
   bottomBarHeight: 64,
   headerHeight: 56,
+  containerMaxWidth: {
+    sm: 640,
+    md: 768,
+    lg: 1024,
+    xl: 1200,
+    wide: 1400,
+  },
 } as const;
+
+export const breakpoints = {
+  phone: 0,
+  tablet: 768,
+  desktop: 1024,
+  wide: 1280,
+} as const;
+
 

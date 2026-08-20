@@ -3,9 +3,13 @@ import { CartItem } from '../types';
 
 export const cartService = {
   getCartItems: async (): Promise<CartItem[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
     const { data, error } = await supabase
       .from('cart_items')
       .select('*, car:cars(*)')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -16,14 +20,22 @@ export const cartService = {
   },
 
   addToCart: async (userId: string | undefined, carId: string, quantity = 1): Promise<CartItem> => {
-    const record: Record<string, any> = { car_id: carId, quantity };
-    if (userId) {
-      record['user_id'] = userId;
+    let uid = userId;
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser();
+      uid = user?.id;
+    }
+
+    if (!uid) {
+      throw new Error('Vui lòng đăng nhập để thêm xe vào danh sách đặt cọc.');
     }
 
     const { data, error } = await supabase
       .from('cart_items')
-      .upsert(record)
+      .upsert(
+        { user_id: uid, car_id: carId, quantity },
+        { onConflict: 'user_id,car_id' }
+      )
       .select('*, car:cars(*)')
       .single();
 
@@ -58,7 +70,10 @@ export const cartService = {
   },
 
   clearCart: async (): Promise<void> => {
-    const { error } = await supabase.from('cart_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.from('cart_items').delete().eq('user_id', user.id);
     if (error) {
       console.error('[cartService] Error clearing cart:', error.message);
     }
@@ -66,8 +81,12 @@ export const cartService = {
 
   checkoutCart: async (paymentMethod: string): Promise<string> => {
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      throw new Error('Vui lòng đăng nhập để thực hiện đặt cọc.');
+    }
+
     const { data, error } = await supabase.rpc('checkout_cart', {
-      p_user_id: user?.id,
+      p_user_id: user.id,
       p_payment_method: paymentMethod,
     });
 

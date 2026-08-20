@@ -2,7 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
-import { formatVndPrice, usdToVnd, formatCarPrice } from '../../utils/currency';
+import {
+  formatVndPrice,
+  usdToVnd,
+  formatCarPrice,
+  CarSpecInput,
+  calculateInstallmentPlan,
+} from '../../utils/currency';
 
 export { formatVndPrice, usdToVnd, formatCarPrice };
 
@@ -11,6 +17,7 @@ interface PriceTagProps {
   originalPrice?: number | null;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showInstallment?: boolean;
+  spec?: CarSpecInput;
   style?: ViewStyle;
 }
 
@@ -19,6 +26,7 @@ export const PriceTag: React.FC<PriceTagProps> = ({
   originalPrice,
   size = 'md',
   showInstallment = false,
+  spec,
   style,
 }) => {
   const getPriceFontSize = () => {
@@ -35,14 +43,13 @@ export const PriceTag: React.FC<PriceTagProps> = ({
     }
   };
 
-  const formattedPrice = formatVndPrice(price);
-  const priceVnd = usdToVnd(price);
+  const formattedPrice = formatVndPrice(price, 'usd', spec);
+  const priceVnd = usdToVnd(price, spec);
 
-  // Estimate monthly installment: ~80% loan, 7 years, ~8.5% interest on VND price
+  // Estimate monthly installment: 30% down payment, 7 years, 8.5% interest
+  const installment = calculateInstallmentPlan(priceVnd, 30, 7, 0.085);
   const monthlyEstMillion =
-    priceVnd > 0
-      ? (((priceVnd * 0.8) / (7 * 12)) * 1.085 / 1_000_000).toFixed(1)
-      : '0';
+    priceVnd > 0 ? (installment.totalMonthlyPayment / 1_000_000).toFixed(1) : '0';
 
   return (
     <View style={[styles.container, style]}>
@@ -60,7 +67,7 @@ export const PriceTag: React.FC<PriceTagProps> = ({
 
         {originalPrice && originalPrice > (price || 0) && (
           <Text style={styles.originalPrice}>
-            {formatVndPrice(originalPrice)}
+            {formatVndPrice(originalPrice, 'usd', spec)}
           </Text>
         )}
       </View>

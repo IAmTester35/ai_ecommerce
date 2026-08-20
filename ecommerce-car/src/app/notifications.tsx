@@ -113,58 +113,62 @@ export default function NotificationsScreen() {
     <View style={styles.screen}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={16} color={colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>Thông Báo & Tin Nhắn</Text>
+        <View style={styles.headerInner}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={16} color={colors.text} />
+          </TouchableOpacity>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>Thông Báo & Tin Nhắn</Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => markAllAsRead()}
+            style={styles.markAllBtn}
+          >
+            <Text style={styles.markAllText}>Đọc tất cả</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => markAllAsRead()}
-          style={styles.markAllBtn}
-        >
-          <Text style={styles.markAllText}>Đọc tất cả</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Filter Strip */}
       <View style={styles.filterStrip}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => setFilterUnreadOnly(false)}
-          style={[
-            styles.filterPill,
-            !filterUnreadOnly && styles.filterPillActive,
-          ]}
-        >
-          <Text
+        <View style={styles.filterStripInner}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setFilterUnreadOnly(false)}
             style={[
-              styles.filterPillText,
-              !filterUnreadOnly && styles.filterPillTextActive,
+              styles.filterPill,
+              !filterUnreadOnly && styles.filterPillActive,
             ]}
           >
-            Tất cả ({notifications.length})
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.filterPillText,
+                !filterUnreadOnly && styles.filterPillTextActive,
+              ]}
+            >
+              Tất cả ({notifications.length})
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => setFilterUnreadOnly(true)}
-          style={[
-            styles.filterPill,
-            filterUnreadOnly && styles.filterPillActive,
-          ]}
-        >
-          <Text
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => setFilterUnreadOnly(true)}
             style={[
-              styles.filterPillText,
-              filterUnreadOnly && styles.filterPillTextActive,
+              styles.filterPill,
+              filterUnreadOnly && styles.filterPillActive,
             ]}
           >
-            Chưa đọc ({notifications.filter((n) => !n.is_read).length})
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={[
+                styles.filterPillText,
+                filterUnreadOnly && styles.filterPillTextActive,
+              ]}
+            >
+              Chưa đọc ({notifications.filter((n) => !n.is_read).length})
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {isLoading ? (
@@ -197,15 +201,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingTop: 48,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
-    gap: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  headerInner: {
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm,
   },
   backBtn: {
     width: 32,
@@ -233,13 +242,18 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
   },
   filterStrip: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  filterStripInner: {
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,
     paddingVertical: 6,
-    backgroundColor: colors.surface,
     gap: spacing.xs,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   filterPill: {
     paddingHorizontal: spacing.sm + 2,
@@ -263,6 +277,9 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
   listContent: {
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
     gap: spacing.xs + 2,
@@ -334,4 +351,3 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
   },
 });
-

@@ -32,6 +32,20 @@ export const carService = {
     return data as Car;
   },
 
+  getCarsByIds: async (carIds: string[]): Promise<Car[]> => {
+    if (!carIds || carIds.length === 0) return [];
+    const { data, error } = await supabase
+      .from('cars')
+      .select('*')
+      .in('id', carIds);
+
+    if (error) {
+      console.error('[carService] Error fetching cars by IDs:', error.message);
+      return [];
+    }
+    return (data || []) as Car[];
+  },
+
   getCarsWithFilter: async (params: CarFilterParams): Promise<Car[]> => {
     let query = supabase.from('cars').select('*').eq('is_active', true);
 
@@ -41,12 +55,17 @@ export const carService = {
     if (params.make && params.make !== 'all') {
       query = query.ilike('make', `%${params.make}%`);
     }
+    const filterSpec = {
+      engineHp: params.minHp,
+      fuelType: params.fuelType !== 'all' ? params.fuelType : undefined,
+    };
+
     if (params.minPrice !== undefined && params.minPrice !== null) {
-      const minPriceUsd = vndToUsd(params.minPrice);
+      const minPriceUsd = vndToUsd(params.minPrice, filterSpec);
       query = query.gte('price', minPriceUsd);
     }
     if (params.maxPrice !== undefined && params.maxPrice !== null) {
-      const maxPriceUsd = vndToUsd(params.maxPrice);
+      const maxPriceUsd = vndToUsd(params.maxPrice, filterSpec);
       query = query.lte('price', maxPriceUsd);
     }
     if (params.targetYear) {

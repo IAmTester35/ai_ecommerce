@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +13,8 @@ import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { globalAlert } from '../../store/useDialogStore';
+import { useResponsive } from '../../hooks/useResponsive';
 import { CarCard, CarCardLayout } from '../../components/car/CarCard';
 import { CarFilterModal } from '../../components/car/CarFilterModal';
 import { SearchBar } from '../../components/ui/SearchBar';
@@ -25,10 +26,13 @@ export default function CatalogScreen() {
     useCarStore();
   const { addToCart } = useCartStore();
   const { user } = useAuthStore();
+  const { isMobile, select } = useResponsive();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<CarCardLayout>('grid');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+
+  const numColumns = layoutMode === 'grid' ? select({ mobile: 1, tablet: 2, desktop: 3, wide: 4 }) : 1;
 
   useEffect(() => {
     applyFilters();
@@ -50,18 +54,28 @@ export default function CatalogScreen() {
   };
 
   const handleCarCompare = (car: CarResponse) => {
-    router.push('/(tabs)/compare' as any);
+    router.push({
+      pathname: '/(tabs)/compare',
+      params: { ids: car.id },
+    } as any);
   };
 
   const handleAddToCart = async (carId: string) => {
+    if (!user) {
+      globalAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để thêm xe vào danh sách đặt cọc.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => router.push('/(auth)/login' as any) },
+      ]);
+      return;
+    }
     try {
-      await addToCart(user?.id, carId, 1);
-      Alert.alert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
+      await addToCart(user.id, carId, 1);
+      globalAlert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
         { text: 'Tiếp tục xem', style: 'cancel' },
         { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
       ]);
-    } catch {
-      Alert.alert('Lỗi', 'Không thể thêm vào giỏ hàng.');
+    } catch (err: any) {
+      globalAlert('Lỗi', err.message || 'Không thể thêm vào giỏ hàng.');
     }
   };
 
@@ -149,59 +163,61 @@ export default function CatalogScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Top Header */}
+      {/* Top Header constrained */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Kho Xe Showroom</Text>
+        <View style={styles.headerInner}>
+          <Text style={styles.headerTitle}>Kho Xe Showroom</Text>
 
-        {/* Search Bar & Filter trigger */}
-        <SearchBar
-          value={searchQuery}
-          onChangeText={handleSearchChange}
-          placeholder="Tìm dòng xe, hãng, phân khúc..."
-          onFilterPress={() => setIsFilterModalVisible(true)}
-          activeFilterCount={activeFilterCount}
-          onAiPress={() => router.push('/(tabs)/ai-chat' as any)}
-          style={{ marginTop: spacing.xs + 2 }}
-        />
+          {/* Search Bar & Filter trigger */}
+          <SearchBar
+            value={searchQuery}
+            onChangeText={handleSearchChange}
+            placeholder="Tìm dòng xe, hãng, phân khúc..."
+            onFilterPress={() => setIsFilterModalVisible(true)}
+            activeFilterCount={activeFilterCount}
+            onAiPress={() => router.push('/(tabs)/ai-chat' as any)}
+            style={{ marginTop: spacing.xs + 2 }}
+          />
 
-        {/* Active Filter Tags */}
-        {renderActiveFilterTags()}
+          {/* Active Filter Tags */}
+          {renderActiveFilterTags()}
 
-        {/* Subheader with View Switcher & Result Count */}
-        <View style={styles.toolBar}>
-          <Text style={styles.resultCount}>
-            <Text style={styles.countBold}>{filteredCars.length}</Text> mẫu xe
-          </Text>
+          {/* Subheader with View Switcher & Result Count */}
+          <View style={styles.toolBar}>
+            <Text style={styles.resultCount}>
+              <Text style={styles.countBold}>{filteredCars.length}</Text> mẫu xe
+            </Text>
 
-          <View style={styles.viewToggleGroup}>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setLayoutMode('grid')}
-              style={[
-                styles.viewToggleBtn,
-                layoutMode === 'grid' && styles.viewToggleActive,
-              ]}
-            >
-              <Ionicons
-                name="grid"
-                size={13}
-                color={layoutMode === 'grid' ? '#FFFFFF' : colors.textMuted}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => setLayoutMode('list')}
-              style={[
-                styles.viewToggleBtn,
-                layoutMode === 'list' && styles.viewToggleActive,
-              ]}
-            >
-              <Ionicons
-                name="list"
-                size={13}
-                color={layoutMode === 'list' ? '#FFFFFF' : colors.textMuted}
-              />
-            </TouchableOpacity>
+            <View style={styles.viewToggleGroup}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setLayoutMode('grid')}
+                style={[
+                  styles.viewToggleBtn,
+                  layoutMode === 'grid' && styles.viewToggleActive,
+                ]}
+              >
+                <Ionicons
+                  name="grid"
+                  size={13}
+                  color={layoutMode === 'grid' ? '#FFFFFF' : colors.textMuted}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => setLayoutMode('list')}
+                style={[
+                  styles.viewToggleBtn,
+                  layoutMode === 'list' && styles.viewToggleActive,
+                ]}
+              >
+                <Ionicons
+                  name="list"
+                  size={13}
+                  color={layoutMode === 'list' ? '#FFFFFF' : colors.textMuted}
+                />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -226,8 +242,11 @@ export default function CatalogScreen() {
         />
       ) : (
         <FlatList
+          key={`catalog-${numColumns}-${layoutMode}`}
           data={filteredCars}
           keyExtractor={(item) => item.id}
+          numColumns={numColumns}
+          columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
           renderItem={({ item: car }) => {
@@ -241,6 +260,7 @@ export default function CatalogScreen() {
                 onPressCompare={handleCarCompare}
                 onPressAddToCart={handleAddToCart}
                 onPressToggleSave={handleToggleSave}
+                style={numColumns > 1 ? styles.gridCardItem : undefined}
               />
             );
           }}
@@ -266,11 +286,16 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingTop: 48,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  headerInner: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   headerTitle: {
     color: colors.text,
@@ -344,9 +369,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   listContainer: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm + 2,
     paddingBottom: 32,
+  },
+  columnWrapper: {
+    gap: spacing.md,
+  },
+  gridCardItem: {
+    flex: 1,
   },
   centerBox: {
     flex: 1,
@@ -359,4 +393,3 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
   },
 });
-

@@ -16,6 +16,8 @@ import { colors, radii, spacing, typography } from '../../theme';
 import { UIChatMessage } from '../../types/ui';
 import { historyService } from '../../services/historyService';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useCartStore } from '../../store/useCartStore';
+import { globalAlert } from '../../store/useDialogStore';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { QuickPrompts } from '../../components/chat/QuickPrompts';
 import { CarResponse } from '../../types';
@@ -36,6 +38,7 @@ const generateUUID = (): string => {
 export default function AIChatScreen() {
   const params = useLocalSearchParams<{ initialPrompt?: string }>();
   const { user } = useAuthStore();
+  const { addToCart } = useCartStore();
   const [input, setInput] = useState('');
   const [sessionId] = useState(() => generateUUID());
   const [messages, setMessages] = useState<UIChatMessage[]>(() => [
@@ -163,8 +166,38 @@ export default function AIChatScreen() {
     router.push(`/car/${carId}` as any);
   };
 
-  const handleCarCompare = () => {
-    router.push('/(tabs)/compare' as any);
+  const handleCarCompare = (car: CarResponse) => {
+    router.push({
+      pathname: '/(tabs)/compare',
+      params: { ids: car.id },
+    } as any);
+  };
+
+  const handleCompareAll = (cars: CarResponse[]) => {
+    const ids = cars.map((c) => c.id).join(',');
+    router.push({
+      pathname: '/(tabs)/compare',
+      params: { ids },
+    } as any);
+  };
+
+  const handleAddToCart = async (carId: string) => {
+    if (!user) {
+      globalAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để thêm xe vào danh sách đặt cọc.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => router.push('/(auth)/login' as any) },
+      ]);
+      return;
+    }
+    try {
+      await addToCart(user.id, carId, 1);
+      globalAlert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
+        { text: 'Xem tiếp', style: 'cancel' },
+        { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
+      ]);
+    } catch (err: any) {
+      globalAlert('Lỗi', err.message || 'Không thể thêm vào giỏ hàng.');
+    }
   };
 
   return (
@@ -174,55 +207,65 @@ export default function AIChatScreen() {
       keyboardVerticalOffset={85}
     >
       <View style={styles.headerInfo}>
-        <View style={styles.liveDot} />
-        <Text style={styles.headerText}>AutoMatch RAG AI • Trực Tuyến</Text>
+        <View style={styles.headerInner}>
+          <View style={styles.liveDot} />
+          <Text style={styles.headerText}>AutoMatch RAG AI • Trực Tuyến</Text>
+        </View>
       </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ChatBubble
-            message={item}
-            onPressCarDetails={handleCarDetails}
-            onPressCarCompare={handleCarCompare}
+      <View style={styles.chatArea}>
+        <View style={styles.chatAreaInner}>
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <ChatBubble
+                message={item}
+                onPressCarDetails={handleCarDetails}
+                onPressCarCompare={handleCarCompare}
+                onPressCompareAll={handleCompareAll}
+                onPressAddToCart={handleAddToCart}
+              />
+            )}
+            contentContainerStyle={styles.chatList}
+            ListFooterComponent={
+              isTyping ? (
+                <View style={styles.typingIndicator}>
+                  <ActivityIndicator size="small" color={colors.primaryHover} style={{ marginRight: 6 }} />
+                  <Text style={styles.typingText}>AI đang phân tích & đối chiếu...</Text>
+                </View>
+              ) : null
+            }
           />
-        )}
-        contentContainerStyle={styles.chatList}
-        ListFooterComponent={
-          isTyping ? (
-            <View style={styles.typingIndicator}>
-              <ActivityIndicator size="small" color={colors.primaryHover} style={{ marginRight: 6 }} />
-              <Text style={styles.typingText}>AI đang phân tích & đối chiếu...</Text>
-            </View>
-          ) : null
-        }
-      />
 
-      {messages.length <= 2 && (
-        <QuickPrompts onSelectPrompt={(p) => handleSendMessage(p)} />
-      )}
+          {messages.length <= 2 && (
+            <QuickPrompts onSelectPrompt={(p) => handleSendMessage(p)} />
+          )}
+        </View>
+      </View>
 
       {/* Input Field Bar */}
       <View style={styles.inputBar}>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Nhập yêu cầu tìm xe..."
-          placeholderTextColor={colors.textMuted}
-          value={input}
-          onChangeText={setInput}
-          onSubmitEditing={() => handleSendMessage()}
-          returnKeyType="send"
-        />
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]}
-          disabled={!input.trim()}
-          onPress={() => handleSendMessage()}
-        >
-          <Ionicons name="arrow-up" size={16} color={input.trim() ? '#FFFFFF' : colors.textMuted} />
-        </TouchableOpacity>
+        <View style={styles.inputBarInner}>
+          <TextInput
+            style={styles.textInput}
+            placeholder="Nhập yêu cầu tìm xe..."
+            placeholderTextColor={colors.textMuted}
+            value={input}
+            onChangeText={setInput}
+            onSubmitEditing={() => handleSendMessage()}
+            returnKeyType="send"
+          />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]}
+            disabled={!input.trim()}
+            onPress={() => handleSendMessage()}
+          >
+            <Ionicons name="arrow-up" size={16} color={input.trim() ? '#FFFFFF' : colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
@@ -234,14 +277,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   headerInfo: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+    paddingVertical: 6,
+  },
+  headerInner: {
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 6,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   liveDot: {
     width: 6,
@@ -255,8 +303,19 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.medium,
     letterSpacing: 0.2,
   },
+  chatArea: {
+    flex: 1,
+    width: '100%',
+  },
+  chatAreaInner: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
   chatList: {
     paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
   typingIndicator: {
     flexDirection: 'row',
@@ -270,13 +329,18 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.04)',
+    paddingVertical: spacing.sm,
+  },
+  inputBarInner: {
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
     gap: spacing.xs + 2,
   },
   textInput: {
@@ -303,4 +367,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
   },
 });
-

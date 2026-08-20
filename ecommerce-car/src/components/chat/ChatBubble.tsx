@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
 import { UIChatMessage } from '../../types/ui';
@@ -11,6 +11,7 @@ interface ChatBubbleProps {
   message: UIChatMessage;
   onPressCarDetails?: (carId: string) => void;
   onPressCarCompare?: (car: CarResponse) => void;
+  onPressCompareAll?: (cars: CarResponse[]) => void;
   onPressAddToCart?: (carId: string) => void;
 }
 
@@ -18,6 +19,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   message,
   onPressCarDetails,
   onPressCarCompare,
+  onPressCompareAll,
   onPressAddToCart,
 }) => {
   const isUser = message.role === 'user';
@@ -62,6 +64,19 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
                 />
               )}
             />
+
+            {message.suggestedCars.length >= 2 && (
+              <TouchableOpacity
+                style={styles.compareAllBtn}
+                activeOpacity={0.8}
+                onPress={() => onPressCompareAll?.(message.suggestedCars!)}
+              >
+                <Ionicons name="git-compare-outline" size={13} color="#FFFFFF" />
+                <Text style={styles.compareAllBtnText}>
+                  So sánh {message.suggestedCars.length} mẫu xe này
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </View>
@@ -137,6 +152,23 @@ const styles = StyleSheet.create({
   },
   carCarousel: {
     marginTop: 2,
+  },
+  compareAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: radii.sm,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  compareAllBtnText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: typography.weights.semibold,
   },
 });
 

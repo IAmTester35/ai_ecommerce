@@ -3,16 +3,16 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
+import { globalAlert } from '../../store/useDialogStore';
+import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 
@@ -57,7 +57,7 @@ export default function ChangePasswordScreen() {
 
     try {
       await updatePassword(password);
-      Alert.alert(
+      globalAlert(
         'Thành công',
         'Mật khẩu của bạn đã được cập nhật.',
         [
@@ -77,7 +77,9 @@ export default function ChangePasswordScreen() {
       style={styles.keyboardContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
+      <ResponsiveContainer
+        scrollable
+        maxWidth="sm"
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -180,7 +182,7 @@ export default function ChangePasswordScreen() {
         </View>
 
         <View style={{ height: spacing.lg }} />
-      </ScrollView>
+      </ResponsiveContainer>
     </KeyboardAvoidingView>
   );
 }

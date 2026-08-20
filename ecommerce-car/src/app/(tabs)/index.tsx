@@ -3,20 +3,22 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
-  Alert,
+  ViewStyle,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
 import { useNotificationStore } from '../../store/useNotificationStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { globalAlert } from '../../store/useDialogStore';
+import { useResponsive } from '../../hooks/useResponsive';
+import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { CarCard } from '../../components/car/CarCard';
 import { PillFilter, PillOption } from '../../components/ui/PillFilter';
 import { SectionHeader } from '../../components/ui/SectionHeader';
@@ -40,6 +42,7 @@ export default function HomeScreen() {
   const { addToCart, getItemCount } = useCartStore();
   const { getUnreadCount, fetchNotifications } = useNotificationStore();
   const { user } = useAuthStore();
+  const { isMobile, isTablet, isDesktop, select } = useResponsive();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
@@ -56,18 +59,28 @@ export default function HomeScreen() {
   };
 
   const handleCarCompare = (car: CarResponse) => {
-    router.push('/(tabs)/compare' as any);
+    router.push({
+      pathname: '/(tabs)/compare',
+      params: { ids: car.id },
+    } as any);
   };
 
   const handleAddToCart = async (carId: string) => {
+    if (!user) {
+      globalAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để thêm xe vào danh sách đặt cọc.', [
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => router.push('/(auth)/login' as any) },
+      ]);
+      return;
+    }
     try {
-      await addToCart(user?.id, carId, 1);
-      Alert.alert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
+      await addToCart(user.id, carId, 1);
+      globalAlert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
         { text: 'Tiếp tục xem', style: 'cancel' },
         { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
       ]);
-    } catch {
-      Alert.alert('Lỗi', 'Không thể thêm vào giỏ hàng.');
+    } catch (err: any) {
+      globalAlert('Lỗi', err.message || 'Không thể thêm vào giỏ hàng.');
     }
   };
 
@@ -94,43 +107,49 @@ export default function HomeScreen() {
     )
     .slice(0, 4);
 
+  const cardWidthStyle = select<ViewStyle>({
+    mobile: { width: '100%' },
+    tablet: { width: '48.5%' },
+    desktop: { width: '23.8%' },
+  });
+
   return (
     <View style={styles.screen}>
-      {/* Top App Bar */}
+      {/* Top App Bar with constraint */}
       <View style={styles.topBar}>
-        <View style={styles.brandRow}>
-          <Text style={styles.brandText}>AUTOMATCH</Text>
-          <Badge label="AI" variant="primary" size="xs" />
-        </View>
+        <View style={styles.topBarInner}>
+          <View style={styles.brandRow}>
+            <Text style={styles.brandText}>AUTOMATCH</Text>
+            <Badge label="AI" variant="primary" size="xs" />
+          </View>
 
-        <View style={styles.topActions}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.actionIconBtn}
-            onPress={() => router.push('/notifications' as any)}
-          >
-            <Ionicons name="notifications-outline" size={17} color={colors.text} />
-            {unreadNotifs > 0 && (
-              <View style={styles.unreadDot} />
-            )}
-          </TouchableOpacity>
+          <View style={styles.topActions}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.actionIconBtn}
+              onPress={() => router.push('/notifications' as any)}
+            >
+              <Ionicons name="notifications-outline" size={17} color={colors.text} />
+              {unreadNotifs > 0 && <View style={styles.unreadDot} />}
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.actionIconBtn}
-            onPress={() => router.push('/cart' as any)}
-          >
-            <Ionicons name="bag-handle-outline" size={17} color={colors.text} />
-            {cartCount > 0 && (
-              <View style={styles.cartBadge}>
-                <Text style={styles.cartBadgeText}>{cartCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.actionIconBtn}
+              onPress={() => router.push('/cart' as any)}
+            >
+              <Ionicons name="bag-handle-outline" size={17} color={colors.text} />
+              {cartCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+      <ResponsiveContainer scrollable maxWidth="xl" showsVerticalScrollIndicator={false}>
         {/* Search Trigger Bar */}
         <TouchableOpacity
           activeOpacity={0.85}
@@ -149,7 +168,7 @@ export default function HomeScreen() {
         {trendingCars.length > 0 && (
           <FlatList
             horizontal
-            pagingEnabled
+            pagingEnabled={isMobile}
             showsHorizontalScrollIndicator={false}
             data={trendingCars}
             keyExtractor={(item) => item.id}
@@ -167,7 +186,10 @@ export default function HomeScreen() {
               return (
                 <TouchableOpacity
                   activeOpacity={0.92}
-                  style={styles.promoCard}
+                  style={[
+                    styles.promoCard,
+                    isDesktop && styles.promoCardDesktop,
+                  ]}
                   onPress={() => handleCarDetails(item.id)}
                 >
                   <Image
@@ -190,7 +212,12 @@ export default function HomeScreen() {
                       <Text style={styles.promoSubtitle}>
                         Năm {item.year} {item.engine_hp ? `• ${item.engine_hp} HP` : ''}
                       </Text>
-                      <Text style={styles.promoPrice}>{formatVndPrice(item.price)}</Text>
+                      <Text style={styles.promoPrice}>
+                        {formatVndPrice(item.price, 'usd', {
+                          engineHp: item.engine_hp,
+                          fuelType: item.metadata?.engine_fuel_type || item.metadata?.fuel_type,
+                        })}
+                      </Text>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -308,7 +335,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Trending Supercars & Top Sellers */}
+        {/* Trending Supercars & Top Sellers (Adaptive Grid) */}
         <SectionHeader
           title="Mẫu xe nổi bật"
           iconName="flame-outline"
@@ -316,24 +343,25 @@ export default function HomeScreen() {
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
 
-        <View style={styles.verticalCarList}>
+        <View style={[styles.carGrid, !isMobile && styles.carGridDesktop]}>
           {trendingCars.map((car) => {
             const isSaved = savedCars.some((sc) => sc.car_id === car.id);
             return (
-              <CarCard
-                key={car.id}
-                car={car}
-                isSaved={isSaved}
-                onPressDetails={handleCarDetails}
-                onPressCompare={handleCarCompare}
-                onPressAddToCart={handleAddToCart}
-                onPressToggleSave={handleToggleSave}
-              />
+              <View key={car.id} style={cardWidthStyle}>
+                <CarCard
+                  car={car}
+                  isSaved={isSaved}
+                  onPressDetails={handleCarDetails}
+                  onPressCompare={handleCarCompare}
+                  onPressAddToCart={handleAddToCart}
+                  onPressToggleSave={handleToggleSave}
+                />
+              </View>
             );
           })}
         </View>
 
-        {/* New EV & Luxury Highlights */}
+        {/* New EV & Luxury Highlights (Adaptive Grid) */}
         <SectionHeader
           title="Xe điện & Công nghệ mới"
           iconName="flash-outline"
@@ -341,25 +369,26 @@ export default function HomeScreen() {
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
 
-        <View style={styles.verticalCarList}>
+        <View style={[styles.carGrid, !isMobile && styles.carGridDesktop]}>
           {electricAndLuxuryCars.map((car) => {
             const isSaved = savedCars.some((sc) => sc.car_id === car.id);
             return (
-              <CarCard
-                key={car.id}
-                car={car}
-                isSaved={isSaved}
-                onPressDetails={handleCarDetails}
-                onPressCompare={handleCarCompare}
-                onPressAddToCart={handleAddToCart}
-                onPressToggleSave={handleToggleSave}
-              />
+              <View key={car.id} style={cardWidthStyle}>
+                <CarCard
+                  car={car}
+                  isSaved={isSaved}
+                  onPressDetails={handleCarDetails}
+                  onPressCompare={handleCarCompare}
+                  onPressAddToCart={handleAddToCart}
+                  onPressToggleSave={handleToggleSave}
+                />
+              </View>
             );
           })}
         </View>
 
         <View style={{ height: 24 }} />
-      </ScrollView>
+      </ResponsiveContainer>
     </View>
   );
 }
@@ -370,15 +399,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   topBar: {
+    paddingTop: 48,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  topBarInner: {
+    width: '100%',
+    maxWidth: 1200,
+    alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: 48,
     paddingBottom: spacing.sm,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
   brandRow: {
     flexDirection: 'row',
@@ -433,10 +467,6 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: typography.weights.bold,
   },
-  container: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-  },
   searchTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -482,12 +512,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
+  promoCardDesktop: {
+    width: 360,
+    height: 180,
+  },
   promoImage: {
     width: '100%',
     height: '100%',
   },
   promoOverlay: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(11, 13, 17, 0.65)',
     padding: spacing.md,
     justifyContent: 'flex-end',
@@ -568,8 +606,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
   },
-  verticalCarList: {
+  carGrid: {
     gap: spacing.xs,
   },
+  carGridDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
 });
-

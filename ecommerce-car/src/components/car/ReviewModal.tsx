@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { colors, spacing, typography } from '../../theme';
 import { ModalSheet } from '../ui/ModalSheet';
 import { RatingStars } from '../ui/RatingStars';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { globalAlert } from '../../store/useDialogStore';
 
 interface ReviewModalProps {
   visible: boolean;
@@ -26,18 +27,18 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
   const handleSubmit = async () => {
     if (!comment.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập cảm nhận đánh giá của bạn.');
+      globalAlert('Thiếu thông tin', 'Vui lòng nhập cảm nhận đánh giá của bạn.');
       return;
     }
 
     setIsSubmitting(true);
     try {
       await onSubmitReview(rating, comment.trim(), authorName.trim() || 'Khách Hàng AutoMatch');
-      Alert.alert('Gửi Thành Công', 'Cảm ơn bạn đã gửi đánh giá quý báu cho cộng đồng AutoMatch.');
+      globalAlert('Gửi Thành Công', 'Cảm ơn bạn đã gửi đánh giá quý báu cho cộng đồng AutoMatch.');
       setComment('');
       onClose();
     } catch (err: any) {
-      Alert.alert('Lỗi', err.message || 'Không thể gửi đánh giá lúc này.');
+      globalAlert('Lỗi', err.message || 'Không thể gửi đánh giá lúc này.');
     } finally {
       setIsSubmitting(false);
     }

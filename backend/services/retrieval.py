@@ -7,6 +7,7 @@ from google import genai
 
 from core.config import settings
 from core.dependencies import supabase
+from services.pricing import calculate_car_price_vnd, format_vnd_str
 
 logger = logging.getLogger(__name__)
 
@@ -139,15 +140,19 @@ async def hybrid_search(
         t_rerank_start = time.time()
         documents = []
         for c in results:
-            metadata_str = str(c.get('metadata') or '')
+            metadata = c.get('metadata') or {}
+            metadata_str = str(metadata)
             review_str = c.get('review') or ''
             p_usd = c.get('price') or 0
-            p_vnd = p_usd * 25400
-            vnd_str = f"{(p_vnd / 1e9):.2f} tỷ VNĐ" if p_vnd >= 1e9 else f"{(p_vnd / 1e6):.0f} triệu VNĐ"
-            price_info = f"${p_usd:,} USD ({vnd_str})" if p_usd > 0 else "Contact for price"
+            engine_hp = c.get('engine_hp')
+            fuel_type = metadata.get('engine_fuel_type') or metadata.get('fuel_type')
+            
+            p_vnd = calculate_car_price_vnd(p_usd, engine_hp, fuel_type)
+            vnd_str = format_vnd_str(p_vnd)
+            price_info = f"${p_usd:,} USD (~{vnd_str})" if p_usd > 0 else "Liên hệ giá"
             doc_text = (
                 f"Car: {c.get('year')} {c.get('make')} {c.get('model')} - "
-                f"Price: {price_info} - Engine: {c.get('engine_hp')}HP. "
+                f"Price: {price_info} - Engine: {engine_hp}HP. "
                 f"Specs: {metadata_str}. Review: {review_str}"
             )
             documents.append(doc_text)

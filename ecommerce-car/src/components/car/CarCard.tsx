@@ -12,6 +12,7 @@ import { colors, radii, spacing, typography, shadows } from '../../theme';
 import { Car, CarResponse } from '../../types';
 import { Badge } from '../ui/Badge';
 import { formatVndPrice } from '../ui/PriceTag';
+import { DepositButton } from './DepositButton';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export type CarCardLayout = 'grid' | 'list' | 'compact';
@@ -44,6 +45,10 @@ export const CarCard: React.FC<CarCardProps> = ({
     : null;
 
   const fallbackImage = FALLBACK_CAR_URL;
+  const carSpec = {
+    engineHp: car.engine_hp,
+    fuelType: car.metadata?.engine_fuel_type || car.metadata?.fuel_type,
+  };
 
   // Build a clean specs string
   const specItems: string[] = [];
@@ -101,7 +106,7 @@ export const CarCard: React.FC<CarCardProps> = ({
             Năm {car.year || 2024} • {car.metadata?.body_type || 'Showroom'}
           </Text>
 
-          <Text style={styles.price}>{formatVndPrice(car.price)}</Text>
+          <Text style={styles.price}>{formatVndPrice(car.price, 'usd', carSpec)}</Text>
 
           {specItems.length > 0 && (
             <Text style={styles.specInline} numberOfLines={1}>
@@ -110,24 +115,14 @@ export const CarCard: React.FC<CarCardProps> = ({
           )}
 
           <View style={styles.listActions}>
-            {onPressAddToCart && (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.miniActionBtn}
-                onPress={() => onPressAddToCart(car.id)}
-              >
-                <Ionicons name="flash-outline" size={11} color={colors.primaryHover} />
-                <Text style={styles.miniActionText}>Đặt cọc</Text>
-              </TouchableOpacity>
-            )}
+            <DepositButton carId={car.id} variant="mini" size="sm" />
             {onPressCompare && (
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.miniOutlineBtn}
                 onPress={() => onPressCompare(car)}
               >
-                <Ionicons name="git-compare-outline" size={11} color={colors.textSecondary} />
-                <Text style={styles.miniOutlineText}>So sánh</Text>
+                <Ionicons name="git-compare-outline" size={13} color={colors.textSecondary} />
               </TouchableOpacity>
             )}
           </View>
@@ -136,12 +131,12 @@ export const CarCard: React.FC<CarCardProps> = ({
     );
   }
 
-  // Grid & Compact layouts
+  // Compact or Full Grid layout
   const isCompact = layout === 'compact';
 
   return (
     <TouchableOpacity
-      activeOpacity={0.88}
+      activeOpacity={0.9}
       onPress={() => onPressDetails?.(car.id)}
       style={[
         styles.card,
@@ -154,7 +149,7 @@ export const CarCard: React.FC<CarCardProps> = ({
           source={{ uri: car.image_url || fallbackImage }}
           style={styles.image}
           contentFit="cover"
-          transition={250}
+          transition={200}
         />
 
         {hasMatchScore && matchScore !== null && (
@@ -175,7 +170,7 @@ export const CarCard: React.FC<CarCardProps> = ({
           >
             <Ionicons
               name={isSaved ? 'bookmark' : 'bookmark-outline'}
-              size={13}
+              size={14}
               color={isSaved ? colors.primaryHover : colors.text}
             />
           </TouchableOpacity>
@@ -194,7 +189,7 @@ export const CarCard: React.FC<CarCardProps> = ({
         </Text>
 
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatVndPrice(car.price)}</Text>
+          <Text style={styles.price}>{formatVndPrice(car.price, 'usd', carSpec)}</Text>
           {car.stock_quantity !== undefined && car.stock_quantity > 0 && (
             <Badge label={`Sẵn ${car.stock_quantity}`} variant="neutral" size="xs" />
           )}
@@ -213,16 +208,7 @@ export const CarCard: React.FC<CarCardProps> = ({
         {/* Action bar only in regular full-width grid if actions provided */}
         {(onPressAddToCart || onPressCompare) && !isCompact && (
           <View style={styles.quickActionRow}>
-            {onPressAddToCart && (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                style={styles.actionPillPrimary}
-                onPress={() => onPressAddToCart(car.id)}
-              >
-                <Ionicons name="flash-outline" size={11} color="#FFFFFF" />
-                <Text style={styles.actionPillPrimaryText}>Đặt cọc</Text>
-              </TouchableOpacity>
-            )}
+            <DepositButton carId={car.id} variant="pill" size="sm" />
             {onPressCompare && (
               <TouchableOpacity
                 activeOpacity={0.8}

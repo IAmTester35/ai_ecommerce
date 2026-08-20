@@ -9,3 +9,5 @@ export * from './PriceTag';
 export * from './SectionHeader';
 export * from './EmptyState';
 export * from './ModalSheet';
+export * from './ResponsiveContainer';
+

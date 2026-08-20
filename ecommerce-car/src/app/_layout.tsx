@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { colors, typography } from '../theme';
 import { useAuthStore } from '../store/useAuthStore';
+import { GlobalDialog } from '../components/common/GlobalDialog';
 
 export default function RootLayout() {
   const { initAuth } = useAuthStore();
@@ -14,6 +15,7 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="light" />
+      <GlobalDialog />
       <Stack
         screenOptions={{
           headerStyle: {

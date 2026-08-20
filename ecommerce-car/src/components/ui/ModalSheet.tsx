@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
+import { useResponsive } from '../../hooks/useResponsive';
 
 interface ModalSheetProps {
   visible: boolean;
@@ -30,21 +31,26 @@ export const ModalSheet: React.FC<ModalSheetProps> = ({
   children,
   contentStyle,
 }) => {
+  const { isLargeScreen } = useResponsive();
+
   return (
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
+      animationType={isLargeScreen ? 'fade' : 'slide'}
       onRequestClose={onClose}
     >
       <TouchableWithoutFeedback onPress={onClose}>
-        <View style={styles.backdrop}>
+        <View style={[styles.backdrop, isLargeScreen && styles.backdropCenter]}>
           <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
             <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-              style={styles.sheetContainer}
+              style={[
+                styles.sheetContainer,
+                isLargeScreen && styles.dialogContainer,
+              ]}
             >
-              <View style={styles.handleBar} />
+              {!isLargeScreen && <View style={styles.handleBar} />}
 
               <View style={styles.header}>
                 <View style={styles.titleGroup}>
@@ -76,13 +82,27 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.78)',
     justifyContent: 'flex-end',
   },
+  backdropCenter: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
   sheetContainer: {
+    width: '100%',
     backgroundColor: colors.surfaceElevated,
     borderTopLeftRadius: radii['2xl'],
     borderTopRightRadius: radii['2xl'],
     paddingTop: spacing.sm,
     paddingBottom: Platform.OS === 'ios' ? 40 : spacing['2xl'],
     maxHeight: '90%',
+  },
+  dialogContainer: {
+    maxWidth: 620,
+    borderRadius: radii.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   handleBar: {
     width: 36,
@@ -127,4 +147,3 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
 });
-

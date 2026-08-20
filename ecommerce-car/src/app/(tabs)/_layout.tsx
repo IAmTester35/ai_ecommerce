@@ -67,11 +67,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="compare"
         options={{
+          href: null,
           title: 'So sánh',
           headerTitle: 'So Sánh Xe',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="git-compare-outline" size={size - 4} color={color} />
-          ),
         }}
       />
       <Tabs.Screen

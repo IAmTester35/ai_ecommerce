@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
+import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -65,7 +65,9 @@ export default function ForgotPasswordScreen() {
       style={styles.keyboardContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView
+      <ResponsiveContainer
+        scrollable
+        maxWidth="sm"
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -196,7 +198,7 @@ export default function ForgotPasswordScreen() {
         )}
 
         <View style={{ height: spacing.lg }} />
-      </ScrollView>
+      </ResponsiveContainer>
     </KeyboardAvoidingView>
   );
 }
