@@ -1,4 +1,4 @@
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../api/supabaseClient';
 import { Profile } from '../types';
 
@@ -17,21 +17,18 @@ export const authService = {
 
     if (error) throw error;
 
-    if (data.user) {
-      // Upsert profile record
+    if (data.user && data.session) {
+      // Upsert profile record when session is active
       try {
-        const { error: profileError } = await supabase
+        await supabase
           .from('profiles')
           .upsert({
             id: data.user.id,
             email,
             full_name: fullName || null,
             phone: phone || null,
+            role: 'user',
           });
-
-        if (profileError) {
-          console.warn('[AuthService] Profile upsert warning:', profileError);
-        }
       } catch (upsertErr) {
         console.warn('[AuthService] Profile upsert catch:', upsertErr);
       }
@@ -47,7 +44,46 @@ export const authService = {
     });
 
     if (error) throw error;
+    if (data.user) {
+      await authService.ensureProfile(data.user);
+    }
     return data;
+  },
+
+  ensureProfile: async (user: User): Promise<Profile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (data) return data as Profile;
+
+      // Provision profile row if not present
+      const profileData = {
+        id: user.id,
+        email: user.email || '',
+        full_name: user.user_metadata?.full_name || null,
+        phone: user.user_metadata?.phone || null,
+        role: 'user',
+      };
+
+      const { data: created, error: createError } = await supabase
+        .from('profiles')
+        .upsert(profileData)
+        .select('*')
+        .single();
+
+      if (createError) {
+        console.warn('[AuthService] ensureProfile upsert warning:', createError);
+        return null;
+      }
+      return created as Profile;
+    } catch (err) {
+      console.warn('[AuthService] ensureProfile catch:', err);
+      return null;
+    }
   },
 
   signOut: async () => {

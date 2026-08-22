@@ -89,7 +89,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
       visible={visible}
       onClose={onClose}
       title="Bộ Lọc Tìm Kiếm"
-      subtitle="Tùy chỉnh tiêu chí Showroom"
+      subtitle="Tùy chỉnh tiêu chí tìm xe"
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
         {/* Sort Options */}

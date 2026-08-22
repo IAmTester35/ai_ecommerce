@@ -166,7 +166,7 @@ export default function CatalogScreen() {
       {/* Top Header constrained */}
       <View style={styles.header}>
         <View style={styles.headerInner}>
-          <Text style={styles.headerTitle}>Kho Xe Showroom</Text>
+          <Text style={styles.headerTitle}>Kho Xe Trực Tuyến</Text>
 
           {/* Search Bar & Filter trigger */}
           <SearchBar

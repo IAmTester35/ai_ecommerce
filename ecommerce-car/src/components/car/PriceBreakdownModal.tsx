@@ -102,7 +102,7 @@ export const PriceBreakdownModal: React.FC<PriceBreakdownModalProps> = ({
             </View>
             <View style={styles.divider} />
             <View style={styles.row}>
-              <Text style={styles.boldLabel}>Giá Niêm Yết Showroom:</Text>
+              <Text style={styles.boldLabel}>Giá Niêm Yết:</Text>
               <Text style={styles.totalListedValue}>{formatVnd(breakdown.listedPriceVnd)}</Text>
             </View>
           </View>

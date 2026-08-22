@@ -208,7 +208,7 @@ export default function LoginScreen() {
           <Text style={styles.footerPrompt}>Chưa có tài khoản?</Text>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push('/(auth)/register' as any)}
+            onPress={() => router.replace('/(auth)/register' as any)}
           >
             <Text style={styles.footerLink}>Đăng ký ngay</Text>
           </TouchableOpacity>

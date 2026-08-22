@@ -1,5 +1,28 @@
 import { supabase } from '../api/supabaseClient';
+import { authService } from './authService';
 import { CartItem } from '../types';
+
+export const formatCartError = (err: any): string => {
+  if (!err) return 'Đã xảy ra lỗi không xác định.';
+  const msg = typeof err === 'string' ? err : err.message || '';
+
+  if (msg.includes('out of stock') || msg.includes('not enough stock')) {
+    return 'Xe bạn chọn hiện đã hết hàng hoặc không đủ số lượng để đặt cọc.';
+  }
+  if (msg.includes('violates foreign key constraint') && msg.includes('cart_items_user_id_fkey')) {
+    return 'Thông tin tài khoản chưa hoàn tất. Vui lòng đăng nhập lại.';
+  }
+  if (msg.includes('violates foreign key constraint')) {
+    return 'Dữ liệu xe hoặc tài khoản không hợp lệ.';
+  }
+  if (msg.includes('Vui lòng đăng nhập')) {
+    return msg;
+  }
+  if (msg.includes('Network request failed') || msg.includes('fetch failed') || msg.includes('Failed to fetch')) {
+    return 'Lỗi kết nối mạng. Vui lòng kiểm tra lại Internet.';
+  }
+  return msg || 'Có lỗi xảy ra trong quá trình xử lý đơn đặt cọc.';
+};
 
 export const cartService = {
   getCartItems: async (): Promise<CartItem[]> => {
@@ -21,9 +44,10 @@ export const cartService = {
 
   addToCart: async (userId: string | undefined, carId: string, quantity = 1): Promise<CartItem> => {
     let uid = userId;
-    if (!uid) {
-      const { data: { user } } = await supabase.auth.getUser();
-      uid = user?.id;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      uid = user.id;
+      await authService.ensureProfile(user);
     }
 
     if (!uid) {
@@ -41,7 +65,7 @@ export const cartService = {
 
     if (error) {
       console.error('[cartService] Error adding to cart:', error.message);
-      throw error;
+      throw new Error(formatCartError(error));
     }
     return data as CartItem;
   },
@@ -56,7 +80,7 @@ export const cartService = {
 
     if (error) {
       console.error('[cartService] Error updating cart quantity:', error.message);
-      throw error;
+      throw new Error(formatCartError(error));
     }
     return data as CartItem;
   },
@@ -65,7 +89,7 @@ export const cartService = {
     const { error } = await supabase.from('cart_items').delete().eq('id', cartItemId);
     if (error) {
       console.error('[cartService] Error removing from cart:', error.message);
-      throw error;
+      throw new Error(formatCartError(error));
     }
   },
 
@@ -92,7 +116,7 @@ export const cartService = {
 
     if (error) {
       console.error('[cartService] Error during checkout RPC:', error.message);
-      throw error;
+      throw new Error(formatCartError(error));
     }
     return data as string;
   },

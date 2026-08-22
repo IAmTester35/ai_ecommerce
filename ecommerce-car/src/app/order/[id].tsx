@@ -165,7 +165,9 @@ export default function OrderDetailScreen() {
           <Text style={styles.infoValue}>
             {selectedOrder.payment_method === 'zalopay'
               ? 'ZaloPay Gateway'
-              : selectedOrder.payment_method || 'Tại showroom'}
+              : selectedOrder.payment_method === 'cash'
+              ? 'Chuyển khoản trực tiếp'
+              : selectedOrder.payment_method || 'Chuyển khoản trực tiếp'}
           </Text>
         </View>
 

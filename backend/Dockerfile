@@ -35,5 +35,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Chạy 1 worker (tiêu thụ ~70-90MB RAM)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Chạy uvicorn với access-log và log-level info
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--access-log", "--log-level", "info"]

@@ -209,7 +209,7 @@ export default function CarDetailScreen() {
             {selectedCar.make} {selectedCar.model}
           </Text>
           <Text style={styles.yearSubtitle}>
-            Năm {selectedCar.year} • {selectedCar.metadata?.body_type || selectedCar.metadata?.engine_fuel_type || 'Showroom'}
+            Năm {selectedCar.year} • {selectedCar.metadata?.body_type || selectedCar.metadata?.engine_fuel_type || 'Xe mới'}
           </Text>
         </View>
         <TouchableOpacity
@@ -380,7 +380,7 @@ export default function CarDetailScreen() {
                       {selectedCar.make} {selectedCar.model}
                     </Text>
                     <Text style={styles.yearSubtitle}>
-                      Năm {selectedCar.year} • {selectedCar.metadata?.body_type || selectedCar.metadata?.engine_fuel_type || 'Showroom'}
+                      Năm {selectedCar.year} • {selectedCar.metadata?.body_type || selectedCar.metadata?.engine_fuel_type || 'Xe mới'}
                     </Text>
                   </View>
                 </View>
@@ -1020,14 +1020,14 @@ const styles = StyleSheet.create({
   },
   testDriveBtn: {
     flex: 1,
-    height: 38,
+    height: 40,
   },
   addToCartBtn: {
-    flex: 1,
-    height: 38,
+    flex: 1.1,
+    height: 40,
   },
   depositBtn: {
-    flex: 1.1,
-    height: 38,
+    flex: 1.45,
+    height: 40,
   },
 });

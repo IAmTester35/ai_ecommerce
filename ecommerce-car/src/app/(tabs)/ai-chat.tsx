@@ -21,12 +21,13 @@ import { globalAlert } from '../../store/useDialogStore';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { QuickPrompts } from '../../components/chat/QuickPrompts';
 import { CarResponse } from '../../types';
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+import { getApiBaseUrl } from '../../config/api';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+    try {
+      return crypto.randomUUID();
+    } catch {}
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
@@ -81,9 +82,12 @@ export default function AIChatScreen() {
         historyService.saveSearchQuery(user.id, query).catch(() => {});
       }
 
+      const baseUrl = getApiBaseUrl();
+      console.log(`[AI Chat] Requesting ${baseUrl}/api/search for query: "${query}"`);
+
       try {
         // Call FastAPI Backend RAG Search
-        const response = await fetch(`${BASE_URL}/api/search`, {
+        const response = await fetch(`${baseUrl}/api/search`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -133,15 +137,18 @@ export default function AIChatScreen() {
 
           setMessages((prev) => [...prev, aiReply]);
         } else {
-          throw new Error('Backend AI response error');
+          const errBody = await response.text().catch(() => '');
+          console.error('[AI Chat] Backend error response:', response.status, errBody);
+          throw new Error(`Backend AI response status: ${response.status}`);
         }
-      } catch {
+      } catch (err: any) {
+        console.error('[AI Chat] Failed to connect to backend:', err);
         setMessages((prev) => [
           ...prev,
           {
             id: `err-${Math.random().toString(36).substring(2, 9)}`,
             role: 'assistant',
-            content: `Hệ thống đang kết nối dữ liệu. Bạn có thể khám phá trực tiếp tại mục Kho xe.`,
+            content: `Hệ thống AI đang kết nối lại (${baseUrl}). Bạn có thể khám phá trực tiếp tại mục Kho xe hoặc thử lại sau giây lát.`,
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           },
         ]);

@@ -153,7 +153,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
         {/* Location & Preferred Address */}
         <Input
           label="Địa điểm mong muốn (Tùy chọn)"
-          placeholder="Showroom Quận 1 hoặc tại nhà..."
+          placeholder="Khu vực hẹn lái thử thuận tiện..."
           value={locationNote}
           onChangeText={setLocationNote}
           containerStyle={{ marginTop: spacing.sm }}

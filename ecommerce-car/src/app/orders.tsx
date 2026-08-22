@@ -199,7 +199,7 @@ export default function OrdersScreen() {
           icon="receipt-outline"
           title="Chưa có đơn hàng"
           description="Bạn chưa thực hiện giao dịch nào trong mục này."
-          actionTitle="Khám phá Showroom"
+          actionTitle="Khám phá kho xe"
           onAction={() => router.push('/(tabs)/catalog' as any)}
         />
       ) : (

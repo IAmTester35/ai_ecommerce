@@ -103,7 +103,7 @@ export const CarCard: React.FC<CarCardProps> = ({
           </View>
 
           <Text style={styles.yearSub}>
-            Năm {car.year || 2024} • {car.metadata?.body_type || 'Showroom'}
+            Năm {car.year || 2024} • {car.metadata?.body_type || 'Xe mới'}
           </Text>
 
           <Text style={styles.price}>{formatVndPrice(car.price, 'usd', carSpec)}</Text>
@@ -185,7 +185,7 @@ export const CarCard: React.FC<CarCardProps> = ({
         </View>
 
         <Text style={styles.yearSub}>
-          Năm {car.year || 2024} • {car.metadata?.body_type || 'Showroom'}
+          Năm {car.year || 2024} • {car.metadata?.body_type || 'Xe mới'}
         </Text>
 
         <View style={styles.priceRow}>

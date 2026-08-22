@@ -32,7 +32,39 @@ export default function RootLayout() {
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
-          name="(auth)"
+          name="(auth)/login"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/register"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/forgot-password"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/change-password"
+          options={{
+            headerShown: false,
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="(auth)/edit-profile"
           options={{
             headerShown: false,
             animation: 'slide_from_bottom',

@@ -124,7 +124,7 @@ export const CarPickerModal: React.FC<CarPickerModalProps> = ({
       visible={visible}
       onClose={onClose}
       title="Thêm Xe So Sánh"
-      subtitle="Tìm kiếm & chọn xe từ kho Showroom"
+      subtitle="Tìm kiếm & chọn mẫu xe"
     >
       <View style={styles.container}>
         {/* Search & Filter Bar */}

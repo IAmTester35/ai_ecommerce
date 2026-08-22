@@ -161,7 +161,7 @@ export default function RegisterScreen() {
 
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push('/(auth)/login' as any)}
+            onPress={() => router.replace('/(auth)/login' as any)}
           >
             <Text style={styles.loginLinkText}>Đăng nhập</Text>
           </TouchableOpacity>
@@ -333,7 +333,7 @@ export default function RegisterScreen() {
           <Text style={styles.footerPrompt}>Đã có tài khoản?</Text>
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={() => router.push('/(auth)/login' as any)}
+            onPress={() => router.replace('/(auth)/login' as any)}
           >
             <Text style={styles.footerLink}>Đăng nhập</Text>
           </TouchableOpacity>

@@ -31,7 +31,6 @@ export default function CheckoutScreen() {
   const [name, setName] = useState(profile?.full_name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'zalopay' | 'cash'>('zalopay');
   const [agreedTerms, setAgreedTerms] = useState(false);
@@ -69,11 +68,6 @@ export default function CheckoutScreen() {
       return;
     }
 
-    if (!address.trim()) {
-      globalAlert('Thiếu thông tin', 'Vui lòng nhập địa chỉ nhận xe / bàn giao hợp đồng.');
-      return;
-    }
-
     if (!agreedTerms) {
       globalAlert('Điều khoản', 'Vui lòng đồng ý với điều khoản đặt cọc và hợp đồng điện tử.');
       return;
@@ -108,7 +102,7 @@ export default function CheckoutScreen() {
           amount: depositAmountVnd,
           items: paymentItems,
           email,
-          address,
+          address: '',
           name,
           phone,
           note,
@@ -116,31 +110,45 @@ export default function CheckoutScreen() {
         };
 
         // Step 3: Call FastAPI ZaloPay payment create API
-        const response = await createZaloPayOrder(payload);
+        try {
+          const response = await createZaloPayOrder(payload);
 
-        if (response.return_code === 1 && response.order_url) {
-          await openZaloPayUrl(response.order_url);
-        } else {
+          if (response.return_code === 1 && response.order_url) {
+            await openZaloPayUrl(response.order_url);
+          } else {
+            globalAlert(
+              'Thông báo ZaloPay',
+              response.return_message || 'Đã khởi tạo giao dịch ZaloPay Sandbox.'
+            );
+          }
+
+          router.replace({
+            pathname: `/order/${orderId}`,
+            params: { app_trans_id: response.app_trans_id || '' },
+          } as any);
+        } catch (zaloErr: any) {
+          console.warn('[checkout] ZaloPay payment gateway error:', zaloErr);
           globalAlert(
-            'Thông báo ZaloPay',
-            response.return_message || 'Đã khởi tạo giao dịch ZaloPay Sandbox.'
+            'Đã tạo đơn đặt cọc',
+            `Đơn hàng #${orderId.slice(0, 8).toUpperCase()} đã được tạo thành công trên hệ thống. Cổng thanh toán ZaloPay trực tuyến tạm thời gián đoạn. Bạn có thể chuyển khoản trực tiếp hoặc theo dõi tiến độ đơn hàng.`,
+            [
+              {
+                text: 'Xem đơn hàng',
+                onPress: () => router.replace(`/order/${orderId}` as any),
+              },
+            ]
           );
         }
-
-        router.replace({
-          pathname: `/order/${orderId}`,
-          params: { app_trans_id: response.app_trans_id || '' },
-        } as any);
       } else {
         // Direct / Transfer deposit
         globalAlert(
           'Đã tiếp nhận đơn hàng',
-          `Đơn hàng #${orderId} đã được ghi nhận. Đội ngũ AutoMatch sẽ liên hệ theo số ${phone} để hoàn tất thủ tục bàn giao.`
+          `Đơn hàng #${orderId.slice(0, 8).toUpperCase()} đã được ghi nhận. Đội ngũ AutoMatch sẽ liên hệ theo số ${phone} để hoàn tất thủ tục bàn giao.`
         );
         router.replace(`/order/${orderId}` as any);
       }
     } catch (err: any) {
-      globalAlert('Lỗi thanh toán', err.message || 'Có lỗi xảy ra trong quá trình xử lý.');
+      globalAlert('Lỗi đặt cọc', err.message || 'Có lỗi xảy ra trong quá trình xử lý.');
     }
   };
 
@@ -265,24 +273,6 @@ export default function CheckoutScreen() {
               </>
             )}
 
-            {/* Delivery / Pickup Address */}
-            <View style={styles.sectionHeaderRow}>
-              <Ionicons name="location-outline" size={14} color={colors.primaryHover} style={{ marginRight: 5 }} />
-              <Text style={styles.sectionTitle}>Địa chỉ giao nhận xe</Text>
-            </View>
-            <View style={styles.formCard}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Địa chỉ giao xe / nhận hợp đồng *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={address}
-                  onChangeText={setAddress}
-                  placeholder="Số nhà, Tên đường, Quận/Huyện, Tỉnh/TP"
-                  placeholderTextColor={colors.textMuted}
-                />
-              </View>
-            </View>
-
             {/* Guest Banner */}
             {!user && (
               <View style={styles.guestBanner}>
@@ -348,7 +338,7 @@ export default function CheckoutScreen() {
                   onChangeText={setNote}
                   multiline
                   numberOfLines={3}
-                  placeholder="Yêu cầu thêm về thời gian, bàn giao..."
+                  placeholder="Yêu cầu thêm về thời gian, nhận xe..."
                   placeholderTextColor={colors.textMuted}
                 />
               </View>
@@ -397,12 +387,12 @@ export default function CheckoutScreen() {
             >
               <View style={styles.paymentOptionHeader}>
                 <View style={styles.paymentIconCircle}>
-                  <Ionicons name="business-outline" size={16} color={colors.textSecondary} />
+                  <Ionicons name="wallet-outline" size={16} color={colors.textSecondary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.paymentOptionTitle}>Thanh toán tại Showroom</Text>
+                  <Text style={styles.paymentOptionTitle}>Chuyển khoản trực tiếp</Text>
                   <Text style={styles.paymentOptionSub}>
-                    Chuyển khoản hoặc tiền mặt tại quầy giao dịch AutoMatch
+                    Chuyển khoản đặt cọc qua số tài khoản chính thức của AutoMatch
                   </Text>
                 </View>
               </View>

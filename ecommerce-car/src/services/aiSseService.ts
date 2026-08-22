@@ -4,8 +4,8 @@ import {
   type SseListener,
 } from 'react-native-nitro-sse';
 import { supabase } from '../api/supabaseClient';
+import { getApiBaseUrl } from '../config/api';
 
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
 const ENDPOINT = '/api/search';
 
 export const SseEventTypes = {
@@ -31,9 +31,10 @@ export class AISseService {
   public connect(query: string, sessionId: string): void {
     this.shouldBeConnected = true;
     const nitro = this.getOrCreateNitroSse();
+    const baseUrl = getApiBaseUrl();
 
     nitro.setup({
-      url: `${BASE_URL}${ENDPOINT}`,
+      url: `${baseUrl}${ENDPOINT}`,
       method: 'post',
       body: JSON.stringify({ query, session_id: sessionId }),
       onBeforeRequest: async () => {

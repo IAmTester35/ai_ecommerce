@@ -182,7 +182,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get();
     if (!user) return;
     try {
-      const profile = await authService.getProfile(user.id);
+      const profile = await authService.ensureProfile(user);
       if (profile) {
         set({ profile });
       } else {

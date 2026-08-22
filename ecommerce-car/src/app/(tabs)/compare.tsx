@@ -165,7 +165,7 @@ export default function CompareScreen() {
             </View>
             <Text style={styles.emptyTitle}>Bảng so sánh đang trống</Text>
             <Text style={styles.emptySubtitle}>
-              Chọn tối thiểu 2 mẫu xe từ showroom để so sánh chi tiết các thông số kỹ thuật, hoặc nhận tư vấn đối chiếu thông minh từ AI Match.
+              Chọn tối thiểu 2 mẫu xe từ kho xe để so sánh chi tiết các thông số kỹ thuật, hoặc nhận tư vấn đối chiếu thông minh từ AI Match.
             </Text>
             <View style={styles.emptyActionRow}>
               <TouchableOpacity

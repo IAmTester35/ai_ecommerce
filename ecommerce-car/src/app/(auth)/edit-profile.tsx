@@ -114,7 +114,7 @@ export default function EditProfileScreen() {
             <Badge
               label={
                 profile?.role === 'owner'
-                  ? 'Chủ Showroom'
+                  ? 'Quản trị viên'
                   : profile?.role === 'manager'
                     ? 'Quản Lý'
                     : 'Thành Viên'

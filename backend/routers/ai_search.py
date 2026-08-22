@@ -28,25 +28,32 @@ async def search_cars(
     Endpoint AI Search kết hợp Hybrid Vector Search, Reranking, và Native Async SSE Streaming.
     """
     try:
-        # Lấy lịch sử chat của session bất đồng bộ
-        history_response = await asyncio.to_thread(
-            supabase.table("chat_sessions")
-            .select("role, content")
-            .eq("session_id", request.session_id)
-            .order("created_at")
-            .execute
-        )
-        chat_history = history_response.data or []
+        # Lấy lịch sử chat của session bất đồng bộ (nếu có)
+        try:
+            history_response = await asyncio.to_thread(
+                supabase.table("chat_sessions")
+                .select("role, content")
+                .eq("session_id", request.session_id)
+                .order("created_at")
+                .execute
+            )
+            chat_history = history_response.data or []
+        except Exception as e:
+            logger.warning(f"Could not load chat history for session {request.session_id}: {e}")
+            chat_history = []
 
         # Lưu tin nhắn mới của user bất đồng bộ
-        await asyncio.to_thread(
-            supabase.table("chat_sessions").insert({
-                "session_id": request.session_id,
-                "user_id": user_id,
-                "role": "user",
-                "content": request.query
-            }).execute
-        )
+        try:
+            await asyncio.to_thread(
+                supabase.table("chat_sessions").insert({
+                    "session_id": request.session_id,
+                    "user_id": user_id,
+                    "role": "user",
+                    "content": request.query
+                }).execute
+            )
+        except Exception as e:
+            logger.warning(f"Could not save user message to chat_sessions: {e}")
 
         async def event_generator():
             try:
@@ -105,14 +112,17 @@ async def search_cars(
 
                 # 5. Lưu phản hồi của AI assistant vào Database
                 if full_ai_message:
-                    await asyncio.to_thread(
-                        supabase.table("chat_sessions").insert({
-                            "session_id": request.session_id,
-                            "user_id": user_id,
-                            "role": "assistant",
-                            "content": full_ai_message
-                        }).execute
-                    )
+                    try:
+                        await asyncio.to_thread(
+                            supabase.table("chat_sessions").insert({
+                                "session_id": request.session_id,
+                                "user_id": user_id,
+                                "role": "assistant",
+                                "content": full_ai_message
+                            }).execute
+                        )
+                    except Exception as db_err:
+                        logger.warning(f"Could not save assistant response to chat_sessions: {db_err}")
 
             except Exception as stream_err:
                 logger.error(f"Error during SSE streaming: {stream_err}")

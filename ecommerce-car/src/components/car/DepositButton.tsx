@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCartStore } from '../../store/useCartStore';
+import { globalAlert } from '../../store/useDialogStore';
 import { ModalSheet } from '../ui/ModalSheet';
 import { Button } from '../ui/Button';
 
@@ -106,6 +107,7 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
     } catch (err: any) {
       console.warn('[DepositButton] Error adding car to cart:', err);
       setStatus('idle');
+      globalAlert('Thông báo', err.message || 'Không thể thêm xe vào danh sách đặt cọc.');
     }
   };
 
@@ -119,9 +121,9 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
 
   // Sizing styles
   const sizeStyles = {
-    sm: { paddingVertical: 6, paddingHorizontal: 10, fontSize: 11, iconSize: 12 },
-    md: { paddingVertical: 10, paddingHorizontal: 16, fontSize: 12, iconSize: 14 },
-    lg: { paddingVertical: 14, paddingHorizontal: 20, fontSize: 14, iconSize: 16 },
+    sm: { minHeight: 36, paddingHorizontal: 12, fontSize: 12, iconSize: 13, borderRadius: radii.sm },
+    md: { minHeight: 42, paddingHorizontal: 16, fontSize: 13, iconSize: 15, borderRadius: radii.md },
+    lg: { minHeight: 48, paddingHorizontal: 20, fontSize: 14, iconSize: 16, borderRadius: radii.md },
   }[size];
 
   return (
@@ -141,8 +143,10 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
             variant === 'mini' && styles.miniButton,
             isSuccess && styles.successButton,
             {
-              paddingVertical: variant === 'mini' ? 4 : sizeStyles.paddingVertical,
+              height: '100%',
+              minHeight: variant === 'mini' ? 26 : sizeStyles.minHeight,
               paddingHorizontal: variant === 'mini' ? 8 : sizeStyles.paddingHorizontal,
+              borderRadius: variant === 'pill' ? radii.full : variant === 'mini' ? radii.xs : sizeStyles.borderRadius,
             },
             disabled && styles.disabledButton,
           ]}
@@ -232,6 +236,7 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
 
 const styles = StyleSheet.create({
   baseButton: {
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

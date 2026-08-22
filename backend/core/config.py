@@ -30,10 +30,9 @@ class Settings:
     # CORS
     @property
     def cors_origins(self) -> List[str]:
-        raw_origins = os.getenv(
-            "CORS_ORIGINS",
-            "http://localhost:5173,http://localhost:3000,http://localhost:8081,http://127.0.0.1:5173,http://127.0.0.1:3000,http://127.0.0.1:8081"
-        )
+        raw_origins = os.getenv("CORS_ORIGINS", "*")
+        if raw_origins.strip() == "*":
+            return ["*"]
         return [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 
 settings = Settings()

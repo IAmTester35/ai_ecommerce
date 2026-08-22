@@ -4,12 +4,12 @@ import {
   PaymentStatusRequest,
   PaymentStatusResponse,
 } from '../types';
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+import { getApiBaseUrl } from '../config/api';
 
 export const paymentService = {
   createPayment: async (payload: PaymentCreateRequest): Promise<PaymentCreateResponse> => {
-    const response = await fetch(`${BASE_URL}/api/payment/create`, {
+    const baseUrl = getApiBaseUrl();
+    const response = await fetch(`${baseUrl}/api/payment/create`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -27,8 +27,9 @@ export const paymentService = {
   },
 
   checkStatus: async (appTransId: string): Promise<PaymentStatusResponse> => {
+    const baseUrl = getApiBaseUrl();
     const payload: PaymentStatusRequest = { app_trans_id: appTransId };
-    const response = await fetch(`${BASE_URL}/api/payment/status`, {
+    const response = await fetch(`${baseUrl}/api/payment/status`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
