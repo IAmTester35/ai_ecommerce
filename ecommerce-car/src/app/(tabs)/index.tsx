@@ -42,7 +42,7 @@ export default function HomeScreen() {
   const { addToCart, getItemCount } = useCartStore();
   const { getUnreadCount, fetchNotifications } = useNotificationStore();
   const { user } = useAuthStore();
-  const { isMobile, isTablet, isDesktop, select } = useResponsive();
+  const { isMobile, isDesktop, select } = useResponsive();
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 

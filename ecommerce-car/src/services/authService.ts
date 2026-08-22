@@ -52,7 +52,7 @@ export const authService = {
 
   ensureProfile: async (user: User): Promise<Profile | null> => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)

@@ -18,10 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
-import useDialogStore, {
-  DialogActionType,
-  DialogAction,
-} from '../../store/useDialogStore';
+import { useDialogStore, DialogAction, DialogActionType } from '../../store/useDialogStore';
 
 interface DialogButtonProps {
   action: DialogAction;
@@ -126,13 +123,16 @@ export const GlobalDialog: React.FC = () => {
   const [isInternalVisible, setIsInternalVisible] = useState(false);
   const progress = useSharedValue(0);
 
+  if (visible && !isInternalVisible) {
+    setIsInternalVisible(true);
+  }
+
   const onHideComplete = () => {
     setIsInternalVisible(false);
   };
 
   useEffect(() => {
     if (visible) {
-      setIsInternalVisible(true);
       progress.value = withTiming(1, {
         duration: 220,
         easing: Easing.out(Easing.cubic),

@@ -26,6 +26,9 @@ export const usePaymentStore = create<PaymentState>((set) => ({
   error: null,
 
   createZaloPayOrder: async (payload) => {
+    if (usePaymentStore.getState().isProcessing) {
+      throw new Error('Đang khởi tạo giao dịch, vui lòng không nhấn nhiều lần.');
+    }
     set({ isProcessing: true, error: null });
     try {
       const res = await paymentService.createPayment(payload);

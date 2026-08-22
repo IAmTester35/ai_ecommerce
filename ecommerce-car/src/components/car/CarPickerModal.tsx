@@ -6,7 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -103,7 +102,10 @@ export const CarPickerModal: React.FC<CarPickerModalProps> = ({
 
   useEffect(() => {
     if (visible) {
-      loadCars();
+      const timer = setTimeout(() => {
+        loadCars();
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [visible, loadCars]);
 

@@ -12,14 +12,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
-import { useCartStore } from '../../store/useCartStore';
-import { useAuthStore } from '../../store/useAuthStore';
 import { globalAlert } from '../../store/useDialogStore';
 import { carService } from '../../services/carService';
 import { useResponsive } from '../../hooks/useResponsive';
 import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
 import { DepositButton } from '../../components/car/DepositButton';
 import { CarPickerModal } from '../../components/car/CarPickerModal';
 import { formatVndPrice } from '../../components/ui/PriceTag';
@@ -49,7 +46,10 @@ export default function CompareScreen() {
         .map((s) => s.trim())
         .filter(Boolean);
       if (idsFromParams.length > 0) {
-        setSelectedIds(idsFromParams);
+        const timer = setTimeout(() => {
+          setSelectedIds(idsFromParams);
+        }, 0);
+        return () => clearTimeout(timer);
       }
     }
   }, [params.ids]);
@@ -78,7 +78,10 @@ export default function CompareScreen() {
     const knownIds = new Set([...topCars.map((c) => c.id), ...extraCars.map((c) => c.id)]);
     const missing = selectedIds.filter((id) => !knownIds.has(id));
     if (missing.length > 0) {
-      fetchMissingCars(missing);
+      const timer = setTimeout(() => {
+        fetchMissingCars(missing);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [selectedIds, topCars, extraCars, fetchMissingCars]);
 

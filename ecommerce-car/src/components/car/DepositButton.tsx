@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Text,
   StyleSheet,
@@ -58,8 +58,7 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
 
   // Animation values
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const successOpacity = useRef(new Animated.Value(1)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {

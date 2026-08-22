@@ -67,15 +67,23 @@ export const vndToUsd = (
  * @param amountInVnd Amount in Vietnamese Dong
  */
 export const formatVnd = (amountInVnd?: number | null): string => {
-  if (!amountInVnd || amountInVnd <= 0) return 'Liên hệ giá';
+  if (
+    amountInVnd === null ||
+    amountInVnd === undefined ||
+    amountInVnd <= 0 ||
+    isNaN(amountInVnd) ||
+    !Number.isFinite(amountInVnd)
+  ) {
+    return 'Liên hệ giá';
+  }
 
   if (amountInVnd >= 1_000_000_000) {
-    const billions = (amountInVnd / 1_000_000_000).toFixed(2).replace(/\.00$/, '');
+    const billions = parseFloat((amountInVnd / 1_000_000_000).toFixed(2));
     return `${billions} tỷ VNĐ`;
   }
 
   if (amountInVnd >= 1_000_000) {
-    const millions = (amountInVnd / 1_000_000).toFixed(0);
+    const millions = parseFloat((amountInVnd / 1_000_000).toFixed(1));
     return `${millions} triệu VNĐ`;
   }
 
@@ -87,7 +95,15 @@ export const formatVnd = (amountInVnd?: number | null): string => {
  * @param amountInUsd Amount in USD
  */
 export const formatUsd = (amountInUsd?: number | null): string => {
-  if (!amountInUsd || amountInUsd <= 0) return 'Contact for price';
+  if (
+    amountInUsd === null ||
+    amountInUsd === undefined ||
+    amountInUsd <= 0 ||
+    isNaN(amountInUsd) ||
+    !Number.isFinite(amountInUsd)
+  ) {
+    return 'Contact for price';
+  }
   return `$${amountInUsd.toLocaleString('en-US')}`;
 };
 
@@ -102,7 +118,7 @@ export const formatVndPrice = (
   unit: 'usd' | 'vnd' = 'usd',
   spec?: CarSpecInput
 ): string => {
-  if (!price || price <= 0) return 'Liên hệ giá';
+  if (!price || price <= 0 || isNaN(price)) return 'Liên hệ giá';
   const vndAmount = unit === 'usd' ? usdToVnd(price, spec) : price;
   return formatVnd(vndAmount);
 };
@@ -115,7 +131,7 @@ export const formatCarPrice = (
   priceInUsd?: number | null,
   options?: { showUsd?: boolean; spec?: CarSpecInput }
 ): string => {
-  if (!priceInUsd || priceInUsd <= 0) return 'Liên hệ giá';
+  if (!priceInUsd || priceInUsd <= 0 || isNaN(priceInUsd)) return 'Liên hệ giá';
   const vndStr = formatVnd(usdToVnd(priceInUsd, options?.spec));
   if (options?.showUsd) {
     return `${vndStr} (~${formatUsd(priceInUsd)})`;

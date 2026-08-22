@@ -118,11 +118,11 @@ export const showConfirmDialog = ({
 export const globalAlert = (
   title?: string,
   message?: string,
-  buttons?: Array<{
+  buttons?: {
     text?: string;
     onPress?: () => void;
     style?: 'default' | 'cancel' | 'destructive';
-  }>
+  }[]
 ) => {
   if (!buttons || buttons.length === 0) {
     showAlertDialog(title || '', message || '');

@@ -150,13 +150,23 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
           ))}
         </View>
 
+        {/* Phone Contact */}
+        <Input
+          label="Số điện thoại liên hệ (Tùy chọn)"
+          placeholder="0912 345 678"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+          containerStyle={{ marginTop: spacing.sm }}
+        />
+
         {/* Location & Preferred Address */}
         <Input
           label="Địa điểm mong muốn (Tùy chọn)"
           placeholder="Khu vực hẹn lái thử thuận tiện..."
           value={locationNote}
           onChangeText={setLocationNote}
-          containerStyle={{ marginTop: spacing.sm }}
+          containerStyle={{ marginTop: spacing.xs }}
         />
 
         {/* Special Notes */}

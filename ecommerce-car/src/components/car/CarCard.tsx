@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 import { Car, CarResponse } from '../../types';
 import { Badge } from '../ui/Badge';
 import { formatVndPrice } from '../ui/PriceTag';

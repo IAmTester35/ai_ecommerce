@@ -74,8 +74,8 @@ export interface InstallmentPlan {
 export const getCarTaxRates = (spec?: CarSpecInput): TaxRates => {
   const fuel = (spec?.fuelType || '').toLowerCase();
   const hp = spec?.engineHp || 0;
-  const isEV = fuel.includes('electric') || fuel.includes('điện') || fuel.includes('ev');
-  const isHybrid = fuel.includes('hybrid');
+  const isHybrid = fuel.includes('hybrid') || fuel.includes('phev') || fuel.includes('hev');
+  const isEV = !isHybrid && (fuel.includes('electric') || fuel.includes('thuần điện') || fuel === 'điện' || fuel.includes('xe điện') || fuel.includes('ev'));
 
   // 1. Import Duty Rate (Thuế nhập khẩu)
   // EV gets preferential import duty (~25%), standard CBU import (~50%)
@@ -202,9 +202,10 @@ export const vndToUsd = (
   spec?: CarSpecInput,
   rate = DEFAULT_USD_TO_VND_RATE
 ): number => {
-  if (vnd === null || vnd === undefined || isNaN(vnd) || vnd <= 0) return 0;
+  if (vnd === null || vnd === undefined || isNaN(vnd) || vnd <= 0 || rate <= 0) return 0;
   const { importDutyRate, exciseTaxRate, vatRate, dealerMarginRate } = getCarTaxRates(spec);
   const multiplier = (1 + importDutyRate) * (1 + exciseTaxRate) * (1 + vatRate) * (1 + dealerMarginRate);
+  if (multiplier <= 0) return 0;
   const rawUsd = vnd / (rate * multiplier);
   return Math.round(rawUsd);
 };
@@ -220,7 +221,7 @@ export const calculateOnTheRoadPrice = (
     seatingCapacity?: number;
   }
 ): OnTheRoadFees => {
-  if (!listedPriceVnd || listedPriceVnd <= 0) {
+  if (!listedPriceVnd || listedPriceVnd <= 0 || isNaN(listedPriceVnd)) {
     return {
       listedPriceVnd: 0,
       registrationFeeRate: 0,
@@ -282,37 +283,41 @@ export const calculateInstallmentPlan = (
   termYears = 5,
   annualInterestRate = 0.085
 ): InstallmentPlan => {
-  if (!totalPriceVnd || totalPriceVnd <= 0) {
+  const safeDownPercent = Math.max(0, Math.min(100, isNaN(downPaymentPercent) ? 30 : downPaymentPercent));
+  const safeTermYears = Math.max(0, isNaN(termYears) ? 5 : termYears);
+  const safeInterestRate = Math.max(0, isNaN(annualInterestRate) ? 0.085 : annualInterestRate);
+
+  if (!totalPriceVnd || totalPriceVnd <= 0 || isNaN(totalPriceVnd)) {
     return {
       totalPriceVnd: 0,
-      downPaymentPercent,
+      downPaymentPercent: safeDownPercent,
       downPaymentAmount: 0,
       loanAmount: 0,
-      termYears,
-      termMonths: termYears * 12,
-      annualInterestRate,
+      termYears: safeTermYears,
+      termMonths: safeTermYears * 12,
+      annualInterestRate: safeInterestRate,
       monthlyPrincipal: 0,
       monthlyInterest: 0,
       totalMonthlyPayment: 0,
     };
   }
 
-  const downPaymentAmount = Math.round((totalPriceVnd * downPaymentPercent) / 100);
+  const downPaymentAmount = Math.round((totalPriceVnd * safeDownPercent) / 100);
   const loanAmount = Math.max(0, totalPriceVnd - downPaymentAmount);
-  const termMonths = termYears * 12;
+  const termMonths = safeTermYears * 12;
 
   const monthlyPrincipal = termMonths > 0 ? loanAmount / termMonths : 0;
-  const monthlyInterest = (loanAmount * annualInterestRate) / 12;
+  const monthlyInterest = termMonths > 0 && loanAmount > 0 ? (loanAmount * safeInterestRate) / 12 : 0;
   const totalMonthlyPayment = Math.round(monthlyPrincipal + monthlyInterest);
 
   return {
     totalPriceVnd,
-    downPaymentPercent,
+    downPaymentPercent: safeDownPercent,
     downPaymentAmount,
     loanAmount,
-    termYears,
+    termYears: safeTermYears,
     termMonths,
-    annualInterestRate,
+    annualInterestRate: safeInterestRate,
     monthlyPrincipal: Math.round(monthlyPrincipal),
     monthlyInterest: Math.round(monthlyInterest),
     totalMonthlyPayment,

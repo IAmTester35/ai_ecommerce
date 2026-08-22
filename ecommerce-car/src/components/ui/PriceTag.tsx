@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography } from '../../theme';
+import { colors, radii, typography } from '../../theme';
 import {
   formatVndPrice,
   usdToVnd,

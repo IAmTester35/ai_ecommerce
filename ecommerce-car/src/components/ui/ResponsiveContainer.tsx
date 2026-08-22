@@ -43,7 +43,7 @@ export const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
   fullHeight = true,
   keyboardShouldPersistTaps,
 }) => {
-  const { isMobile, isTablet, isDesktop } = useResponsive();
+  const { isTablet, isDesktop } = useResponsive();
 
   const resolvedMaxWidth: number =
     typeof maxWidth === 'number'

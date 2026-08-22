@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import { createMMKV, MMKV } from 'react-native-mmkv';
 
 export interface IStorage {
@@ -9,10 +8,14 @@ export interface IStorage {
 }
 
 let mmkvInstance: MMKV | null = null;
+const memoryFallback = new Map<string, string>();
+
+const isServerSide = (): boolean => {
+  return typeof window === 'undefined' || typeof document === 'undefined';
+};
 
 const getMMKVInstance = (): MMKV | null => {
-  // Prevent accessing storage on Node.js / Server-Side Rendering (SSR)
-  if (typeof window === 'undefined' && Platform.OS === 'web') {
+  if (isServerSide()) {
     return null;
   }
   if (!mmkvInstance) {
@@ -20,8 +23,7 @@ const getMMKVInstance = (): MMKV | null => {
       mmkvInstance = createMMKV({
         id: 'automatch-app-storage',
       });
-    } catch (err) {
-      console.warn('[baseStorage] Failed to initialize MMKV:', err);
+    } catch {
       return null;
     }
   }
@@ -32,15 +34,18 @@ export const baseStorage: IStorage = {
   getItem: (key: string): string | null => {
     try {
       const storage = getMMKVInstance();
-      if (!storage) return null;
+      if (!storage) {
+        return memoryFallback.get(key) ?? null;
+      }
       return storage.getString(key) ?? null;
     } catch {
-      return null;
+      return memoryFallback.get(key) ?? null;
     }
   },
 
   setItem: (key: string, value: string): void => {
     try {
+      memoryFallback.set(key, value);
       const storage = getMMKVInstance();
       if (!storage) return;
       storage.set(key, value);
@@ -49,14 +54,20 @@ export const baseStorage: IStorage = {
 
   removeItem: (key: string): void => {
     try {
+      memoryFallback.delete(key);
       const storage = getMMKVInstance();
       if (!storage) return;
-      storage.remove(key);
+      if (typeof (storage as any).delete === 'function') {
+        (storage as any).delete(key);
+      } else if (typeof (storage as any).remove === 'function') {
+        (storage as any).remove(key);
+      }
     } catch {}
   },
 
   clear: (): void => {
     try {
+      memoryFallback.clear();
       const storage = getMMKVInstance();
       if (!storage) return;
       storage.clearAll();

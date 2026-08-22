@@ -26,7 +26,7 @@ export default function CatalogScreen() {
     useCarStore();
   const { addToCart } = useCartStore();
   const { user } = useAuthStore();
-  const { isMobile, select } = useResponsive();
+  const { select } = useResponsive();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<CarCardLayout>('grid');

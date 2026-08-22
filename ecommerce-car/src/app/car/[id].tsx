@@ -115,30 +115,6 @@ export default function CarDetailScreen() {
     }
   };
 
-  const handleDirectDeposit = async () => {
-    if (!id) return;
-    if (!user) {
-      globalAlert(
-        'Yêu Cầu Đăng Nhập',
-        'Vui lòng đăng nhập tài khoản để tiến hành đặt cọc và tạo hợp đồng điện tử.',
-        [
-          { text: 'Để sau', style: 'cancel' },
-          {
-            text: 'Đăng nhập',
-            onPress: () => router.push('/(auth)/login' as any),
-          },
-        ]
-      );
-      return;
-    }
-    try {
-      await addToCart(user.id, id, 1);
-      router.push('/checkout' as any);
-    } catch {
-      globalAlert('Lỗi', 'Không thể chuyển đến thanh toán.');
-    }
-  };
-
   const handleOpenTestDriveModal = () => {
     if (!user) {
       globalAlert(

@@ -5,7 +5,7 @@ import { colors, radii, spacing, shadows } from '../../theme';
 export type CardVariant = 'default' | 'elevated' | 'glass' | 'highlight' | 'conflict';
 
 interface CardProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   variant?: CardVariant;
   highlightBorder?: boolean;

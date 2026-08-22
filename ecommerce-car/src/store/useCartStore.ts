@@ -85,6 +85,9 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   checkout: async (_userId, paymentMethod) => {
+    if (get().isCheckingOut) {
+      throw new Error('Đang xử lý thanh toán, vui lòng không gửi lại yêu cầu.');
+    }
     set({ isCheckingOut: true, error: null });
     try {
       const orderId = await cartService.checkoutCart(paymentMethod);

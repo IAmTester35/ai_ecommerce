@@ -7,7 +7,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radii, spacing, typography, shadows } from '../../theme';
+import { colors, radii, spacing, typography } from '../../theme';
 
 interface SearchBarProps {
   value: string;
