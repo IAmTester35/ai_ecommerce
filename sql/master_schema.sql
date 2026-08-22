@@ -49,7 +49,7 @@ CREATE TABLE cars (
     price BIGINT,                  -- MSRP 
     metadata JSONB,             -- Chứa các thông số phụ (kiểu dáng, hộp số, nhiên liệu,...)
     image_url TEXT,             -- Cache link ảnh xe
-    stock_quantity INT DEFAULT 1,
+    stock_quantity INT DEFAULT 10,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(make, model, year)
@@ -238,13 +238,14 @@ BEGIN
         FOR UPDATE OF c
     LOOP
         -- Kiểm tra tồn kho
-        IF cart_item.stock_quantity < cart_item.order_qty THEN
+        IF COALESCE(cart_item.stock_quantity, 0) < cart_item.order_qty THEN
             RAISE EXCEPTION 'Car ID % out of stock or not enough stock', cart_item.car_id;
         END IF;
 
-        -- Trừ tồn kho
+        -- Trừ tồn kho và cập nhật is_active nếu hết hàng
         UPDATE cars 
-        SET stock_quantity = stock_quantity - cart_item.order_qty
+        SET stock_quantity = GREATEST(0, stock_quantity - cart_item.order_qty),
+            is_active = CASE WHEN (stock_quantity - cart_item.order_qty) <= 0 THEN FALSE ELSE is_active END
         WHERE id = cart_item.car_id;
 
         -- Lưu vào order_items

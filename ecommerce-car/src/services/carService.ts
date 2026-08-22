@@ -19,17 +19,18 @@ export const carService = {
   },
 
   getCarById: async (carId: string): Promise<Car | null> => {
+    if (!carId) return null;
     const { data, error } = await supabase
       .from('cars')
       .select('*')
       .eq('id', carId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[carService] Error fetching car details:', error.message);
       return null;
     }
-    return data as Car;
+    return data as Car | null;
   },
 
   getCarsByIds: async (carIds: string[]): Promise<Car[]> => {

@@ -256,6 +256,14 @@ export interface CarResponse {
   is_active?: boolean;
 }
 
+export interface SearchProgressEvent {
+  stage: 'analyzing' | 'searching' | 'enriching' | 'generating' | 'completed' | 'error';
+  step: number;
+  total_steps: number;
+  label: string;
+  detail?: string;
+}
+
 export interface SearchDataEvent {
   original_query: string;
   constraints: ExtractedConstraints;

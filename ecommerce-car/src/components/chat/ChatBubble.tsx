@@ -6,6 +6,8 @@ import { UIChatMessage } from '../../types/ui';
 import { CarResponse } from '../../types';
 import { ConflictBanner } from './ConflictBanner';
 import { CarCard } from '../car/CarCard';
+import { MarkdownRenderer } from './MarkdownRenderer';
+import { SearchProgressIndicator } from './SearchProgressIndicator';
 
 interface ChatBubbleProps {
   message: UIChatMessage;
@@ -23,6 +25,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   onPressAddToCart,
 }) => {
   const isUser = message.role === 'user';
+  const hasContent = Boolean(message.content && message.content.trim().length > 0);
+  const showProgress = Boolean(message.progress || (message.isStreaming && !hasContent));
 
   return (
     <View style={[styles.wrapper, isUser ? styles.wrapperUser : styles.wrapperAssistant]}>
@@ -33,14 +37,32 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
       )}
 
       <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
+        {/* Search Stage Progress Indicator */}
+        {!isUser && showProgress && (
+          <SearchProgressIndicator
+            progress={message.progress}
+            isStreaming={message.isStreaming}
+          />
+        )}
+
         {message.conflictDetected && (
           <ConflictBanner relaxedTerms={message.relaxedTerms} />
         )}
 
-        <Text style={[styles.text, isUser ? styles.textUser : styles.textAssistant]}>
-          {message.content}
-        </Text>
+        {/* Markdown Content */}
+        {hasContent && (
+          <View style={styles.contentContainer}>
+            <MarkdownRenderer
+              content={message.content}
+              isUser={isUser}
+            />
+            {message.isStreaming && (
+              <Text style={styles.streamingCursor}>▋</Text>
+            )}
+          </View>
+        )}
 
+        {/* Suggested Cars Carousel */}
         {message.suggestedCars && message.suggestedCars.length > 0 && (
           <View style={styles.generativeUiContainer}>
             <View style={styles.suggestedHeaderRow}>
@@ -124,16 +146,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.05)',
     borderBottomLeftRadius: radii.xs,
   },
-  text: {
-    fontSize: typography.sizes.xs + 1,
-    lineHeight: 19,
+  contentContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-end',
   },
-  textUser: {
-    color: '#FFFFFF',
-    fontWeight: typography.weights.medium,
-  },
-  textAssistant: {
-    color: colors.text,
+  streamingCursor: {
+    color: colors.primaryHover,
+    fontSize: 12,
+    marginLeft: 2,
+    opacity: 0.8,
   },
   generativeUiContainer: {
     marginTop: spacing.sm,
@@ -171,4 +193,3 @@ const styles = StyleSheet.create({
     fontWeight: typography.weights.semibold,
   },
 });
-

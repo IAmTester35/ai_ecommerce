@@ -59,12 +59,14 @@ async def search_cars(
             try:
                 t0 = time.time()
 
-                # 1. Bóc tách yêu cầu và Semantic Expansion
+                # Giai đoạn 1: Bóc tách yêu cầu và Semantic Expansion
+                yield f"event: progress\ndata: {json.dumps({'stage': 'analyzing', 'step': 1, 'total_steps': 4, 'label': 'Phân tích yêu cầu', 'detail': 'Bóc tách ngân sách, thương hiệu & tiêu chí kỹ thuật...'})}\n\n"
                 constraints = await extract_constraints(request.query)
                 t1 = time.time()
                 logger.info(f"[Timer] extract_constraints took {t1 - t0:.2f}s")
 
-                # 2. Truy xuất dữ liệu Hybrid Search
+                # Giai đoạn 2: Truy xuất dữ liệu Hybrid Search
+                yield f"event: progress\ndata: {json.dumps({'stage': 'searching', 'step': 2, 'total_steps': 4, 'label': 'Truy vấn kho xe', 'detail': 'Tìm kiếm xe phù hợp trong kho dữ liệu AutoMatch...'})}\n\n"
                 if constraints.is_out_of_scope:
                     cars_data, conflict, relaxed_terms = [], False, []
                 else:
@@ -80,11 +82,12 @@ async def search_cars(
                 t2 = time.time()
                 logger.info(f"[Timer] hybrid_search took {t2 - t1:.2f}s")
 
-                # 3. Tải ảnh song song
+                # Giai đoạn 3: Tải ảnh và thông số chi tiết song song
+                yield f"event: progress\ndata: {json.dumps({'stage': 'enriching', 'step': 3, 'total_steps': 4, 'label': 'Tải thông số & hình ảnh', 'detail': 'Đối chiếu thông số kỹ thuật và hình ảnh thực tế...'})}\n\n"
                 cars_with_images = await fetch_images_for_cars(cars_data)
                 results = [CarResponse(**car).model_dump() for car in cars_with_images]
 
-                # Gửi event search_data trước để FE render thẻ sản phẩm ngay lập tức
+                # Gửi event search_data để FE render thẻ sản phẩm ngay lập tức
                 search_data = {
                     "original_query": request.query,
                     "constraints": constraints.model_dump(),
@@ -94,7 +97,8 @@ async def search_cars(
                 }
                 yield f"event: search_data\ndata: {json.dumps(search_data)}\n\n"
 
-                # 4. Tư vấn AI bằng Native Async Streaming
+                # Giai đoạn 4: Tư vấn AI bằng Native Async Streaming
+                yield f"event: progress\ndata: {json.dumps({'stage': 'generating', 'step': 4, 'total_steps': 4, 'label': 'AI đang tư vấn', 'detail': 'Tổng hợp đánh giá chuyên sâu & phân tích đề xuất...'})}\n\n"
                 full_ai_message = ""
                 async for chunk in generate_ai_response(
                     query=request.query,
@@ -109,6 +113,9 @@ async def search_cars(
 
                 t3 = time.time()
                 logger.info(f"[Timer] TOTAL SEARCH & STREAMING TOOK {t3 - t0:.2f}s")
+
+                # Hoàn tất tiến trình SSE
+                yield f"event: done\ndata: {json.dumps({'stage': 'completed', 'step': 4, 'total_steps': 4, 'label': 'Hoàn tất'})}\n\n"
 
                 # 5. Lưu phản hồi của AI assistant vào Database
                 if full_ai_message:

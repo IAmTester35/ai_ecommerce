@@ -1,4 +1,4 @@
-import { CarResponse, ExtractedConstraints } from './index';
+import { CarResponse, ExtractedConstraints, SearchProgressEvent } from './index';
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
@@ -12,6 +12,7 @@ export interface UIChatMessage {
   suggestedCars?: CarResponse[];
   extractedConstraints?: ExtractedConstraints;
   isStreaming?: boolean;
+  progress?: SearchProgressEvent;
 }
 
 export interface QuickPrompt {

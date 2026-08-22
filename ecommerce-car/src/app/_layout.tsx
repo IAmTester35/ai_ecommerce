@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { colors, typography } from '../theme';
@@ -10,6 +11,39 @@ export default function RootLayout() {
 
   useEffect(() => {
     initAuth();
+
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const styleId = 'custom-scrollbar-styles';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+          }
+          ::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.16);
+            border-radius: 9999px;
+            transition: background-color 0.2s ease;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgba(239, 68, 68, 0.6);
+          }
+          ::-webkit-scrollbar-corner {
+            background: transparent;
+          }
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
   }, [initAuth]);
 
   return (

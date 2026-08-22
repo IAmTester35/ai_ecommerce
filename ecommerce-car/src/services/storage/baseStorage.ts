@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { createMMKV, MMKV } from 'react-native-mmkv';
 
 export interface IStorage {
@@ -7,44 +8,59 @@ export interface IStorage {
   clear: () => void;
 }
 
-// react-native-mmkv v4+ has built-in cross-platform web support
-// (Native uses C++ Nitro JSI, Web automatically maps to localStorage via createMMKV.web)
-const mmkvInstance: MMKV = createMMKV({
-  id: 'automatch-app-storage',
-});
+let mmkvInstance: MMKV | null = null;
+
+const getMMKVInstance = (): MMKV | null => {
+  // Prevent accessing storage on Node.js / Server-Side Rendering (SSR)
+  if (typeof window === 'undefined' && Platform.OS === 'web') {
+    return null;
+  }
+  if (!mmkvInstance) {
+    try {
+      mmkvInstance = createMMKV({
+        id: 'automatch-app-storage',
+      });
+    } catch (err) {
+      console.warn('[baseStorage] Failed to initialize MMKV:', err);
+      return null;
+    }
+  }
+  return mmkvInstance;
+};
 
 export const baseStorage: IStorage = {
   getItem: (key: string): string | null => {
     try {
-      return mmkvInstance.getString(key) ?? null;
-    } catch (err) {
-      console.warn('[baseStorage] getItem error:', err);
+      const storage = getMMKVInstance();
+      if (!storage) return null;
+      return storage.getString(key) ?? null;
+    } catch {
       return null;
     }
   },
 
   setItem: (key: string, value: string): void => {
     try {
-      mmkvInstance.set(key, value);
-    } catch (err) {
-      console.warn('[baseStorage] setItem error:', err);
-    }
+      const storage = getMMKVInstance();
+      if (!storage) return;
+      storage.set(key, value);
+    } catch {}
   },
 
   removeItem: (key: string): void => {
     try {
-      mmkvInstance.remove(key);
-    } catch (err) {
-      console.warn('[baseStorage] removeItem error:', err);
-    }
+      const storage = getMMKVInstance();
+      if (!storage) return;
+      storage.remove(key);
+    } catch {}
   },
 
   clear: (): void => {
     try {
-      mmkvInstance.clearAll();
-    } catch (err) {
-      console.warn('[baseStorage] clear error:', err);
-    }
+      const storage = getMMKVInstance();
+      if (!storage) return;
+      storage.clearAll();
+    } catch {}
   },
 };
 

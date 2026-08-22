@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,8 +19,8 @@ import { useCartStore } from '../../store/useCartStore';
 import { globalAlert } from '../../store/useDialogStore';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { QuickPrompts } from '../../components/chat/QuickPrompts';
-import { CarResponse } from '../../types';
-import { getApiBaseUrl } from '../../config/api';
+import { CarResponse, SearchDataEvent, SearchProgressEvent } from '../../types';
+import { aiSseService, SseEventTypes } from '../../services/aiSseService';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -55,12 +54,20 @@ export default function AIChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const initialPromptHandled = useRef(false);
 
+  // Auto scroll to bottom when messages update
   useEffect(() => {
     const timer = setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    }, 60);
     return () => clearTimeout(timer);
   }, [messages, isTyping]);
+
+  // Clean up SSE listeners on unmount
+  useEffect(() => {
+    return () => {
+      aiSseService.cleanup();
+    };
+  }, []);
 
   const handleSendMessage = useCallback(
     async (textToSend?: string) => {
@@ -68,13 +75,29 @@ export default function AIChatScreen() {
       if (!query) return;
 
       const userMsg: UIChatMessage = {
-        id: `user-${Math.random().toString(36).substring(2, 9)}`,
+        id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         role: 'user',
         content: query,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
-      setMessages((prev) => [...prev, userMsg]);
+      const assistantMsgId = `ai-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const aiPlaceholder: UIChatMessage = {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isStreaming: true,
+        progress: {
+          stage: 'analyzing',
+          step: 1,
+          total_steps: 4,
+          label: 'Phân tích yêu cầu',
+          detail: 'Đang bóc tách ngân sách, thương hiệu & tiêu chí...',
+        },
+      };
+
+      setMessages((prev) => [...prev, userMsg, aiPlaceholder]);
       setInput('');
       setIsTyping(true);
 
@@ -82,79 +105,112 @@ export default function AIChatScreen() {
         historyService.saveSearchQuery(user.id, query).catch(() => {});
       }
 
-      const baseUrl = getApiBaseUrl();
-      console.log(`[AI Chat] Requesting ${baseUrl}/api/search for query: "${query}"`);
+      // Cleanup prior SSE listeners
+      aiSseService.off(SseEventTypes.PROGRESS);
+      aiSseService.off(SseEventTypes.SEARCH_DATA);
+      aiSseService.off(SseEventTypes.MESSAGE);
+      aiSseService.off(SseEventTypes.DONE);
+      aiSseService.off(SseEventTypes.ERROR);
+      aiSseService.off(SseEventTypes.CLOSE);
 
-      try {
-        // Call FastAPI Backend RAG Search
-        const response = await fetch(`${baseUrl}/api/search`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query,
-            session_id: sessionId,
-          }),
-        });
-
-        if (response.ok) {
-          const rawText = await response.text();
-          let searchData: any = null;
-          let assistantText = '';
-
-          const lines = rawText.split('\n');
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const parsed = JSON.parse(line.slice(6));
-                if (parsed.results) {
-                  searchData = parsed;
+      // Listen for progress updates
+      aiSseService.on<SearchProgressEvent>(SseEventTypes.PROGRESS, (data) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  progress: data,
                 }
-                if (parsed.text) {
-                  assistantText += parsed.text;
+              : msg
+          )
+        );
+      });
+
+      // Listen for search data (cars, constraints, conflict)
+      aiSseService.on<SearchDataEvent>(SseEventTypes.SEARCH_DATA, (data) => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  suggestedCars: data.results || [],
+                  conflictDetected: data.conflict_detected || false,
+                  relaxedTerms: data.relaxed_terms || undefined,
+                  extractedConstraints: data.constraints || undefined,
                 }
-              } catch {
-                // Ignore non-json lines
-              }
-            }
-          }
+              : msg
+          )
+        );
+      });
 
-          const suggestedCars: CarResponse[] = searchData?.results || [];
+      // Listen for streaming message chunks
+      aiSseService.on<{ text: string }>(SseEventTypes.MESSAGE, (data) => {
+        if (!data || !data.text) return;
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content: msg.content + data.text,
+                }
+              : msg
+          )
+        );
+      });
 
-          const aiReply: UIChatMessage = {
-            id: `ai-${Math.random().toString(36).substring(2, 9)}`,
-            role: 'assistant',
-            content:
-              assistantText.trim() ||
-              searchData?.ai_message ||
-              `Dựa trên yêu cầu "${query}", AutoMatch đã đối chiếu cơ sở dữ liệu và đề xuất các mẫu xe phù hợp:`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            conflictDetected: searchData?.conflict_detected || false,
-            relaxedTerms: searchData?.relaxed_terms || undefined,
-            suggestedCars,
-          };
-
-          setMessages((prev) => [...prev, aiReply]);
-        } else {
-          const errBody = await response.text().catch(() => '');
-          console.error('[AI Chat] Backend error response:', response.status, errBody);
-          throw new Error(`Backend AI response status: ${response.status}`);
-        }
-      } catch (err: any) {
-        console.error('[AI Chat] Failed to connect to backend:', err);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `err-${Math.random().toString(36).substring(2, 9)}`,
-            role: 'assistant',
-            content: `Hệ thống AI đang kết nối lại (${baseUrl}). Bạn có thể khám phá trực tiếp tại mục Kho xe hoặc thử lại sau giây lát.`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        ]);
-      } finally {
+      // Listen for completion
+      aiSseService.on(SseEventTypes.DONE, () => {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  isStreaming: false,
+                  progress: msg.progress
+                    ? { ...msg.progress, stage: 'completed', step: 4 }
+                    : undefined,
+                }
+              : msg
+          )
+        );
         setIsTyping(false);
-      }
+      });
+
+      // Listen for error
+      aiSseService.on<{ message: string }>(SseEventTypes.ERROR, (err) => {
+        console.error('[AI Chat] SSE error:', err);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  isStreaming: false,
+                  content:
+                    msg.content ||
+                    'Hệ thống AI đang bảo trì hoặc mất kết nối máy chủ. Quý khách vui lòng thử lại sau giây lát.',
+                  progress: undefined,
+                }
+              : msg
+          )
+        );
+        setIsTyping(false);
+      });
+
+      // Listen for close
+      aiSseService.on(SseEventTypes.CLOSE, () => {
+        setIsTyping(false);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId && msg.isStreaming
+              ? { ...msg, isStreaming: false }
+              : msg
+          )
+        );
+      });
+
+      // Initiate connection
+      aiSseService.connect(query, sessionId);
     },
     [input, user, sessionId]
   );
@@ -216,7 +272,7 @@ export default function AIChatScreen() {
       <View style={styles.headerInfo}>
         <View style={styles.headerInner}>
           <View style={styles.liveDot} />
-          <Text style={styles.headerText}>AutoMatch RAG AI • Trực Tuyến</Text>
+          <Text style={styles.headerText}>AutoMatch RAG AI • SSE Trực Tuyến</Text>
         </View>
       </View>
 
@@ -226,6 +282,7 @@ export default function AIChatScreen() {
             ref={flatListRef}
             data={messages}
             keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <ChatBubble
                 message={item}
@@ -236,14 +293,6 @@ export default function AIChatScreen() {
               />
             )}
             contentContainerStyle={styles.chatList}
-            ListFooterComponent={
-              isTyping ? (
-                <View style={styles.typingIndicator}>
-                  <ActivityIndicator size="small" color={colors.primaryHover} style={{ marginRight: 6 }} />
-                  <Text style={styles.typingText}>AI đang phân tích & đối chiếu...</Text>
-                </View>
-              ) : null
-            }
           />
 
           {messages.length <= 2 && (
@@ -257,7 +306,7 @@ export default function AIChatScreen() {
         <View style={styles.inputBarInner}>
           <TextInput
             style={styles.textInput}
-            placeholder="Nhập yêu cầu tìm xe..."
+            placeholder="Nhập yêu cầu tìm xe (vd: SUV gầm cao dưới 1 tỷ)..."
             placeholderTextColor={colors.textMuted}
             value={input}
             onChangeText={setInput}
@@ -266,11 +315,15 @@ export default function AIChatScreen() {
           />
           <TouchableOpacity
             activeOpacity={0.8}
-            style={[styles.sendBtn, !input.trim() && styles.sendBtnDisabled]}
-            disabled={!input.trim()}
+            style={[styles.sendBtn, (!input.trim() || isTyping) && styles.sendBtnDisabled]}
+            disabled={!input.trim() || isTyping}
             onPress={() => handleSendMessage()}
           >
-            <Ionicons name="arrow-up" size={16} color={input.trim() ? '#FFFFFF' : colors.textMuted} />
+            <Ionicons
+              name={isTyping ? 'hourglass-outline' : 'arrow-up'}
+              size={16}
+              color={input.trim() && !isTyping ? '#FFFFFF' : colors.textMuted}
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -323,17 +376,6 @@ const styles = StyleSheet.create({
   chatList: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-  },
-  typingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 4,
-  },
-  typingText: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    fontStyle: 'italic',
   },
   inputBar: {
     backgroundColor: colors.surface,

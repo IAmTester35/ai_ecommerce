@@ -21,16 +21,17 @@ export const orderService = {
   },
 
   getOrderById: async (orderId: string): Promise<Order | null> => {
+    if (!orderId) return null;
     const { data, error } = await supabase
       .from('orders')
       .select('*, order_items(*, car:cars(*))')
       .eq('id', orderId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('[orderService] Error fetching order detail:', error.message);
       return null;
     }
-    return data as Order;
+    return data as Order | null;
   },
 };
