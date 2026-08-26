@@ -124,17 +124,20 @@ describe('CartService Suite - Cart Operations & Checkout RPC', () => {
   });
 
   describe('checkoutCart', () => {
-    it('executes atomic checkout via database RPC procedure', async () => {
+    it('executes atomic checkout via database RPC procedure with showroom, voucher, deposit rate', async () => {
       (supabase.auth.getUser as jest.Mock).mockResolvedValueOnce({ data: { user: mockUser } });
       (supabase.rpc as jest.Mock).mockResolvedValueOnce({
         data: 'order-12345',
         error: null,
       });
 
-      const orderId = await cartService.checkoutCart('zalopay');
+      const orderId = await cartService.checkoutCart('zalopay', 'sr-1', 'WELCOME10M', 0.10);
       expect(supabase.rpc).toHaveBeenCalledWith('checkout_cart', {
         p_user_id: 'u1',
         p_payment_method: 'zalopay',
+        p_showroom_id: 'sr-1',
+        p_voucher_code: 'WELCOME10M',
+        p_deposit_rate: 0.10,
       });
       expect(orderId).toBe('order-12345');
     });

@@ -133,9 +133,9 @@ export default function CarDetailScreen() {
     setIsTestDriveModalVisible(true);
   };
 
-  const handleSubmitTestDrive = async (scheduledDate: string, notes?: string) => {
+  const handleSubmitTestDrive = async (scheduledDate: string, notes?: string, showroomId?: string) => {
     if (!id) return;
-    await bookTestDrive(user?.id, id, scheduledDate, notes);
+    await bookTestDrive(user?.id, id, scheduledDate, showroomId || selectedCar?.showroom_id || undefined, notes);
   };
 
   const handleSubmitReview = async (rating: number, comment: string, authorName: string) => {
@@ -218,6 +218,24 @@ export default function CarDetailScreen() {
           dot
         />
       </View>
+
+      {/* Showroom Location Badge */}
+      {selectedCar.showroom && (
+        <View style={styles.showroomSidebarBox}>
+          <View style={styles.showroomSidebarHeader}>
+            <Ionicons name="business" size={13} color={colors.primaryHover} />
+            <Text style={styles.showroomSidebarTitle} numberOfLines={1}>
+              {selectedCar.showroom.name}
+            </Text>
+          </View>
+          <Text style={styles.showroomSidebarAddress} numberOfLines={2}>
+            {selectedCar.showroom.address}
+          </Text>
+          <Text style={styles.showroomSidebarContact}>
+            Hotline: {selectedCar.showroom.phone || '1900 8888'} • {selectedCar.showroom.opening_hours || '08:00 - 20:00'}
+          </Text>
+        </View>
+      )}
 
       <TouchableOpacity
         style={styles.breakdownLinkBtn}
@@ -379,6 +397,24 @@ export default function CarDetailScreen() {
                     dot
                   />
                 </View>
+
+                {/* Mobile Showroom Location Badge */}
+                {selectedCar.showroom && (
+                  <View style={styles.showroomSidebarBox}>
+                    <View style={styles.showroomSidebarHeader}>
+                      <Ionicons name="business" size={12} color={colors.primaryHover} />
+                      <Text style={styles.showroomSidebarTitle} numberOfLines={1}>
+                        {selectedCar.showroom.name}
+                      </Text>
+                    </View>
+                    <Text style={styles.showroomSidebarAddress} numberOfLines={2}>
+                      {selectedCar.showroom.address}
+                    </Text>
+                    <Text style={styles.showroomSidebarContact}>
+                      Hotline: {selectedCar.showroom.phone || '1900 8888'} • {selectedCar.showroom.opening_hours || '08:00 - 20:00'}
+                    </Text>
+                  </View>
+                )}
 
                 <TouchableOpacity
                   style={styles.breakdownLinkBtn}
@@ -1005,5 +1041,34 @@ const styles = StyleSheet.create({
   depositBtn: {
     flex: 1.45,
     height: 40,
+  },
+  showroomSidebarBox: {
+    backgroundColor: 'rgba(37, 99, 235, 0.08)',
+    borderRadius: radii.sm,
+    padding: spacing.sm,
+    marginVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    gap: 3,
+  },
+  showroomSidebarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  showroomSidebarTitle: {
+    color: colors.primaryHover,
+    fontSize: 11,
+    fontWeight: typography.weights.bold,
+  },
+  showroomSidebarAddress: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    lineHeight: 14,
+  },
+  showroomSidebarContact: {
+    color: colors.textMuted,
+    fontSize: 9,
+    marginTop: 2,
   },
 });

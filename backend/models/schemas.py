@@ -21,6 +21,7 @@ class CarResponse(BaseModel):
     year: Optional[int] = None
     engine_hp: Optional[int] = None
     price: Optional[int] = None
+    showroom_id: Optional[str] = None
     metadata: Optional[dict] = None
     review: Optional[str] = None
     similarity: Optional[float] = None

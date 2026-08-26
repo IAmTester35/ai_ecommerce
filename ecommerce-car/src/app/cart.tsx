@@ -170,6 +170,14 @@ export default function CartScreen() {
                   </View>
 
                   <Text style={styles.itemYear}>Năm {item.car?.year || 2024}</Text>
+                  {item.car?.showroom && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 1 }}>
+                      <Ionicons name="business-outline" size={10} color={colors.primaryHover} />
+                      <Text style={{ color: colors.primaryHover, fontSize: 9.5, fontWeight: '500' }}>
+                        {item.car.showroom.name} ({item.car.showroom.city})
+                      </Text>
+                    </View>
+                  )}
                   <Text style={styles.itemPrice}>
                     {formatVndPrice(item.car?.price, 'usd', {
                       engineHp: item.car?.engine_hp,

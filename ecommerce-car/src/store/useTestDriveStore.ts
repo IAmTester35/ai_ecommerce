@@ -12,6 +12,7 @@ interface TestDriveState {
     userId: string | undefined,
     carId: string,
     scheduledDate: string,
+    showroomId?: string,
     notes?: string
   ) => Promise<TestDrive>;
   cancelTestDrive: (testDriveId: string) => Promise<void>;
@@ -32,13 +33,14 @@ export const useTestDriveStore = create<TestDriveState>((set) => ({
     }
   },
 
-  bookTestDrive: async (userId, carId, scheduledDate, notes) => {
+  bookTestDrive: async (userId, carId, scheduledDate, showroomId, notes) => {
     set({ isLoading: true, error: null });
     try {
       const newBooking = await testDriveService.bookTestDrive(
         userId,
         carId,
         scheduledDate,
+        showroomId,
         notes
       );
       set((state) => ({

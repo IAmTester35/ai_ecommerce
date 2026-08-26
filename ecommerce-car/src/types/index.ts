@@ -9,6 +9,39 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface Showroom {
+  id: string;
+  name: string;
+  code: string;
+  address: string;
+  city: string;
+  phone?: string | null;
+  email?: string | null;
+  image_url?: string | null;
+  opening_hours?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Voucher {
+  id: string;
+  code: string;
+  title: string;
+  description?: string | null;
+  discount_type: 'fixed' | 'percentage';
+  discount_value: number;
+  max_discount_amount?: number | null;
+  min_order_value: number;
+  applies_to: 'deposit' | 'total';
+  usage_limit?: number | null;
+  used_count: number;
+  start_date?: string | null;
+  end_date?: string | null;
+  is_active: boolean;
+  created_at?: string;
+}
+
 export interface Car {
   id: string;
   make: string;
@@ -16,6 +49,8 @@ export interface Car {
   year: number;
   engine_hp?: number | null;
   price?: number | null;
+  showroom_id?: string | null;
+  showroom?: Showroom | null;
   metadata?: {
     transmission?: string;
     fuel_type?: string;
@@ -55,27 +90,38 @@ export interface TestDrive {
   id: string;
   user_id: string;
   car_id: string;
+  showroom_id?: string | null;
   scheduled_date: string;
   status: TestDriveStatus;
   notes?: string | null;
   created_at: string;
   car?: Car;
+  showroom?: Showroom | null;
 }
 
-export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled';
+export type OrderStatus = 'pending' | 'deposit_paid' | 'preparing_car' | 'ready_for_pickup' | 'completed' | 'cancelled';
 export type PaymentStatus = 'unpaid' | 'paid' | 'refunded';
+export type DepositStatus = 'unpaid' | 'paid' | 'refunded';
 
 export interface Order {
   id: string;
   user_id: string;
+  showroom_id?: string | null;
+  voucher_id?: string | null;
   total_amount: number;
+  deposit_amount: number;
+  remaining_amount: number;
+  discount_amount: number;
   status: OrderStatus;
   payment_method?: string | null;
   payment_status: PaymentStatus;
+  deposit_status: DepositStatus;
   contract_url?: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];
+  showroom?: Showroom | null;
+  voucher?: Voucher | null;
 }
 
 export interface OrderItem {
@@ -225,6 +271,8 @@ export interface CarFilterParams {
   minHp?: number;
   fuelType?: string;
   transmission?: string;
+  showroom_id?: string;
+  city?: string;
   sortBy?: CarSortOption;
   limit?: number;
   offset?: number;
@@ -247,6 +295,8 @@ export interface CarResponse {
   year?: number;
   engine_hp?: number | null;
   price?: number | null;
+  showroom_id?: string | null;
+  showroom?: Showroom | null;
   metadata?: Record<string, any> | null;
   review?: string | null;
   similarity?: number | null;

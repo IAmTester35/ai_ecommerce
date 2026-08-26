@@ -6,7 +6,7 @@ export const carService = {
   getTopCars: async (limit = 20): Promise<Car[]> => {
     const { data, error } = await supabase
       .from('cars')
-      .select('*')
+      .select('*, showroom:showrooms(*)')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -22,7 +22,7 @@ export const carService = {
     if (!carId) return null;
     const { data, error } = await supabase
       .from('cars')
-      .select('*')
+      .select('*, showroom:showrooms(*)')
       .eq('id', carId)
       .maybeSingle();
 
@@ -37,7 +37,7 @@ export const carService = {
     if (!carIds || carIds.length === 0) return [];
     const { data, error } = await supabase
       .from('cars')
-      .select('*')
+      .select('*, showroom:showrooms(*)')
       .in('id', carIds);
 
     if (error) {
@@ -48,13 +48,16 @@ export const carService = {
   },
 
   getCarsWithFilter: async (params: CarFilterParams): Promise<Car[]> => {
-    let query = supabase.from('cars').select('*').eq('is_active', true);
+    let query = supabase.from('cars').select('*, showroom:showrooms(*)').eq('is_active', true);
 
     if (params.query) {
       query = query.or(`make.ilike.%${params.query}%,model.ilike.%${params.query}%`);
     }
     if (params.make && params.make !== 'all') {
       query = query.ilike('make', `%${params.make}%`);
+    }
+    if (params.showroom_id && params.showroom_id !== 'all') {
+      query = query.eq('showroom_id', params.showroom_id);
     }
     const filterSpec = {
       engineHp: params.minHp,
@@ -109,7 +112,7 @@ export const carService = {
   getSavedCars: async (userId?: string): Promise<SavedCar[]> => {
     let query = supabase
       .from('saved_cars')
-      .select('*, car:cars(*)')
+      .select('*, car:cars(*, showroom:showrooms(*))')
       .order('created_at', { ascending: false });
 
     if (userId) {
@@ -133,7 +136,7 @@ export const carService = {
     const { data, error } = await supabase
       .from('saved_cars')
       .insert([record])
-      .select('*, car:cars(*)')
+      .select('*, car:cars(*, showroom:showrooms(*))')
       .single();
 
     if (error) {

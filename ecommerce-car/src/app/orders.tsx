@@ -24,8 +24,10 @@ import { FALLBACK_CAR_URL } from '../constants/images';
 
 const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'Tất cả' },
-  { id: 'processing', label: 'Đang xử lý' },
-  { id: 'completed', label: 'Đã giao xe' },
+  { id: 'pending', label: 'Chờ cọc' },
+  { id: 'deposit_paid', label: 'Đã cọc' },
+  { id: 'ready_for_pickup', label: 'Nhận xe' },
+  { id: 'completed', label: 'Đã giao' },
   { id: 'cancelled', label: 'Đã hủy' },
 ];
 
@@ -61,13 +63,17 @@ export default function OrdersScreen() {
     switch (status) {
       case 'completed':
         return <Badge label="Đã giao xe" variant="success" size="xs" dot />;
-      case 'processing':
-        return <Badge label="Đang xử lý" variant="primary" size="xs" dot />;
+      case 'ready_for_pickup':
+        return <Badge label="Sẵn sàng nhận xe" variant="success" size="xs" dot />;
+      case 'preparing_car':
+        return <Badge label="Đang chuẩn bị xe" variant="primary" size="xs" dot />;
+      case 'deposit_paid':
+        return <Badge label="Đã đặt cọc 10%" variant="primary" size="xs" dot />;
       case 'cancelled':
         return <Badge label="Đã hủy" variant="danger" size="xs" dot />;
       case 'pending':
       default:
-        return <Badge label="Chờ xác nhận" variant="warning" size="xs" dot />;
+        return <Badge label="Chờ cọc" variant="warning" size="xs" dot />;
     }
   };
 
@@ -83,6 +89,7 @@ export default function OrdersScreen() {
     });
 
     const firstCar = item.order_items?.[0]?.car;
+    const depositAmount = item.deposit_amount || Math.round(item.total_amount * 0.10);
 
     return (
       <TouchableOpacity
@@ -121,19 +128,21 @@ export default function OrdersScreen() {
               <Text style={styles.itemCountText}>
                 Số lượng: x{item.order_items?.reduce((s, i) => s + i.quantity, 0) || 1} xe
               </Text>
-              <Badge
-                label={item.payment_status === 'paid' ? 'Đã cọc ZaloPay' : 'Chưa thanh toán'}
-                variant={item.payment_status === 'paid' ? 'success' : 'warning'}
-                size="xs"
-                style={{ marginTop: 3 }}
-              />
+              {item.showroom && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 }}>
+                  <Ionicons name="business-outline" size={10} color={colors.textMuted} />
+                  <Text style={{ color: colors.textMuted, fontSize: 9.5 }} numberOfLines={1}>
+                    {item.showroom.name}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
 
           <View style={styles.cardFooter}>
             <View>
               <Text style={styles.depositLabel}>Tiền cọc (10%):</Text>
-              <Text style={styles.depositAmount}>{formatVndPrice(Math.round(item.total_amount * 0.10))}</Text>
+              <Text style={styles.depositAmount}>{formatVndPrice(depositAmount)}</Text>
             </View>
 
             <View style={styles.trackingLink}>

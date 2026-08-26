@@ -5,7 +5,7 @@ export const testDriveService = {
   getTestDrives: async (userId?: string): Promise<TestDrive[]> => {
     let query = supabase
       .from('test_drives')
-      .select('*, car:cars(*)')
+      .select('*, showroom:showrooms(*), car:cars(*, showroom:showrooms(*))')
       .order('created_at', { ascending: false });
 
     if (userId) {
@@ -24,6 +24,7 @@ export const testDriveService = {
     userId: string | undefined,
     carId: string,
     scheduledDate: string,
+    showroomId?: string,
     notes?: string
   ): Promise<TestDrive> => {
     const record: Record<string, any> = {
@@ -31,6 +32,9 @@ export const testDriveService = {
       scheduled_date: scheduledDate,
       notes: notes || undefined,
     };
+    if (showroomId) {
+      record['showroom_id'] = showroomId;
+    }
     if (userId) {
       record['user_id'] = userId;
     }
@@ -38,7 +42,7 @@ export const testDriveService = {
     const { data, error } = await supabase
       .from('test_drives')
       .insert([record])
-      .select('*, car:cars(*)')
+      .select('*, showroom:showrooms(*), car:cars(*, showroom:showrooms(*))')
       .single();
 
     if (error) {
@@ -53,7 +57,7 @@ export const testDriveService = {
       .from('test_drives')
       .update({ status: 'cancelled' })
       .eq('id', testDriveId)
-      .select('*, car:cars(*)')
+      .select('*, showroom:showrooms(*), car:cars(*, showroom:showrooms(*))')
       .single();
 
     if (error) {

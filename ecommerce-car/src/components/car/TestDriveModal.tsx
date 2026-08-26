@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,12 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radii, spacing, typography } from '../../theme';
-import { Car } from '../../types';
+import { Car, Showroom } from '../../types';
+import { useShowroomStore } from '../../store/useShowroomStore';
 import { ModalSheet } from '../ui/ModalSheet';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { globalAlert } from '../../store/useDialogStore';
 
 interface TestDriveModalProps {
@@ -20,7 +22,8 @@ interface TestDriveModalProps {
   car: Car | null;
   onSubmitBooking: (
     scheduledAt: string,
-    notes: string
+    notes: string,
+    showroomId?: string
   ) => Promise<void>;
 }
 
@@ -32,12 +35,25 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
   car,
   onSubmitBooking,
 }) => {
+  const { showrooms, fetchShowrooms } = useShowroomStore();
   const [selectedDayOffset, setSelectedDayOffset] = useState<number>(1); // 1 = tomorrow, 2 = day after
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>(TIME_SLOTS[0]);
+  const [selectedShowroomId, setSelectedShowroomId] = useState<string | undefined>(
+    car?.showroom_id || undefined
+  );
   const [phone, setPhone] = useState('');
   const [locationNote, setLocationNote] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      fetchShowrooms();
+      if (car?.showroom_id) {
+        setSelectedShowroomId(car.showroom_id);
+      }
+    }
+  }, [visible, car?.showroom_id, fetchShowrooms]);
 
   if (!car) return null;
 
@@ -72,7 +88,8 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
       await onSubmitBooking(
         scheduledDate.toISOString(),
-        notesParts.join(' | ')
+        notesParts.join(' | '),
+        selectedShowroomId
       );
       globalAlert(
         'Đặt Lịch Thành Công',
@@ -94,10 +111,51 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
       subtitle={car ? `${car.make} ${car.model}` : 'Chọn lịch lái thử'}
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scroll}>
-        {/* Date Selector */}
+        {/* 1. Showroom Selector */}
+        {showrooms.length > 0 && (
+          <View style={{ marginBottom: spacing.sm }}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="business-outline" size={13} color={colors.primaryHover} />
+              <Text style={styles.sectionTitle}>1. Địa điểm Showroom</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.showroomList}>
+              {showrooms.map((sr) => {
+                const isSelected = (selectedShowroomId || car?.showroom_id) === sr.id;
+                return (
+                  <TouchableOpacity
+                    key={sr.id}
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedShowroomId(sr.id)}
+                    style={[
+                      styles.showroomChip,
+                      isSelected ? styles.showroomChipActive : styles.showroomChipInactive,
+                    ]}
+                  >
+                    <Badge
+                      label={sr.city}
+                      variant={isSelected ? 'primary' : 'neutral'}
+                      size="xs"
+                    />
+                    <Text
+                      style={[
+                        styles.showroomChipText,
+                        isSelected && styles.showroomChipTextActive,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {sr.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        )}
+
+        {/* 2. Date Selector */}
         <View style={styles.sectionHeaderRow}>
           <Ionicons name="calendar-outline" size={13} color={colors.primaryHover} />
-          <Text style={styles.sectionTitle}>1. Chọn ngày</Text>
+          <Text style={styles.sectionTitle}>2. Chọn ngày</Text>
         </View>
         <View style={styles.dateRow}>
           {[1, 2, 3, 4].map((offset) => (
@@ -122,10 +180,10 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
           ))}
         </View>
 
-        {/* Time Slot */}
+        {/* 3. Time Slot */}
         <View style={[styles.sectionHeaderRow, { marginTop: spacing.sm }]}>
           <Ionicons name="time-outline" size={13} color={colors.primaryHover} />
-          <Text style={styles.sectionTitle}>2. Khung giờ</Text>
+          <Text style={styles.sectionTitle}>3. Khung giờ</Text>
         </View>
         <View style={styles.timeGrid}>
           {TIME_SLOTS.map((slot) => (
@@ -150,7 +208,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
           ))}
         </View>
 
-        {/* Phone Contact */}
+        {/* 4. Phone Contact */}
         <Input
           label="Số điện thoại liên hệ (Tùy chọn)"
           placeholder="0912 345 678"
@@ -160,7 +218,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
           containerStyle={{ marginTop: spacing.sm }}
         />
 
-        {/* Location & Preferred Address */}
+        {/* 5. Location & Preferred Address */}
         <Input
           label="Địa điểm mong muốn (Tùy chọn)"
           placeholder="Khu vực hẹn lái thử thuận tiện..."
@@ -169,7 +227,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
           containerStyle={{ marginTop: spacing.xs }}
         />
 
-        {/* Special Notes */}
+        {/* 6. Special Notes */}
         <Input
           label="Ghi chú (Tùy chọn)"
           placeholder="Tư vấn màu xe, bảo hiểm..."
@@ -196,7 +254,7 @@ export const TestDriveModal: React.FC<TestDriveModalProps> = ({
 
 const styles = StyleSheet.create({
   scroll: {
-    maxHeight: 420,
+    maxHeight: 460,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -209,6 +267,36 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
     fontWeight: typography.weights.semibold,
     lineHeight: 18,
+  },
+  showroomList: {
+    flexDirection: 'row',
+  },
+  showroomChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.sm,
+    marginRight: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  showroomChipInactive: {
+    backgroundColor: colors.surfaceElevated,
+  },
+  showroomChipActive: {
+    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+    borderColor: 'rgba(59, 130, 246, 0.4)',
+  },
+  showroomChipText: {
+    color: colors.textSecondary,
+    fontSize: 10.5,
+    fontWeight: typography.weights.medium,
+  },
+  showroomChipTextActive: {
+    color: colors.primaryHover,
+    fontWeight: typography.weights.semibold,
   },
   dateRow: {
     flexDirection: 'row',
@@ -276,4 +364,3 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xs,
   },
 });
-

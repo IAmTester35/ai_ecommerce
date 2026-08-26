@@ -13,7 +13,13 @@ interface CartState {
   addToCart: (userId: string | undefined, carId: string, quantity?: number) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   removeFromCart: (cartItemId: string) => Promise<void>;
-  checkout: (userId: string | undefined, paymentMethod: string) => Promise<string>;
+  checkout: (
+    userId: string | undefined,
+    paymentMethod: string,
+    showroomId?: string,
+    voucherCode?: string,
+    depositRate?: number
+  ) => Promise<string>;
   clearCartState: () => void;
   getTotalPrice: () => number;
   getItemCount: () => number;
@@ -84,13 +90,18 @@ export const useCartStore = create<CartState>((set, get) => ({
     }
   },
 
-  checkout: async (_userId, paymentMethod) => {
+  checkout: async (_userId, paymentMethod, showroomId, voucherCode, depositRate) => {
     if (get().isCheckingOut) {
       throw new Error('Đang xử lý thanh toán, vui lòng không gửi lại yêu cầu.');
     }
     set({ isCheckingOut: true, error: null });
     try {
-      const orderId = await cartService.checkoutCart(paymentMethod);
+      const orderId = await cartService.checkoutCart(
+        paymentMethod,
+        showroomId,
+        voucherCode,
+        depositRate
+      );
       set({ items: [], lastCreatedOrderId: orderId, isCheckingOut: false });
       return orderId;
     } catch (err: any) {

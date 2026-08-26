@@ -9,5 +9,7 @@ export * from './qaService';
 export * from './historyService';
 export * from './notificationService';
 export * from './paymentService';
+export * from './showroomService';
+export * from './voucherService';
 export * from './storage';
 

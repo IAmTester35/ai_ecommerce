@@ -94,9 +94,9 @@ describe('useCartStore Suite - Shopping Cart State & Calculations', () => {
     useCartStore.setState({ items: [sampleItem] });
     (cartService.checkoutCart as jest.Mock).mockResolvedValueOnce('ord-999');
 
-    const orderId = await useCartStore.getState().checkout('u1', 'zalopay');
+    const orderId = await useCartStore.getState().checkout('u1', 'zalopay', 'sr-1', 'WELCOME10M', 0.10);
 
-    expect(cartService.checkoutCart).toHaveBeenCalledWith('zalopay');
+    expect(cartService.checkoutCart).toHaveBeenCalledWith('zalopay', 'sr-1', 'WELCOME10M', 0.10);
     expect(orderId).toBe('ord-999');
     expect(useCartStore.getState().items).toEqual([]);
     expect(useCartStore.getState().lastCreatedOrderId).toBe('ord-999');

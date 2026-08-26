@@ -103,16 +103,31 @@ export const cartService = {
     }
   },
 
-  checkoutCart: async (paymentMethod: string): Promise<string> => {
+  checkoutCart: async (
+    paymentMethod: string,
+    showroomId?: string,
+    voucherCode?: string,
+    depositRate = 0.10
+  ): Promise<string> => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('Vui lòng đăng nhập để thực hiện đặt cọc.');
     }
 
-    const { data, error } = await supabase.rpc('checkout_cart', {
+    const rpcParams: Record<string, any> = {
       p_user_id: user.id,
       p_payment_method: paymentMethod,
-    });
+      p_deposit_rate: depositRate,
+    };
+
+    if (showroomId) {
+      rpcParams.p_showroom_id = showroomId;
+    }
+    if (voucherCode && voucherCode.trim()) {
+      rpcParams.p_voucher_code = voucherCode.trim().toUpperCase();
+    }
+
+    const { data, error } = await supabase.rpc('checkout_cart', rpcParams);
 
     if (error) {
       console.error('[cartService] Error during checkout RPC:', error.message);

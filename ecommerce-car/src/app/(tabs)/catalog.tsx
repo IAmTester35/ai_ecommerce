@@ -89,6 +89,7 @@ export default function CatalogScreen() {
     if (filters.make && filters.make !== 'all') count++;
     if (filters.bodyType && filters.bodyType !== 'all') count++;
     if (filters.fuelType && filters.fuelType !== 'all') count++;
+    if (filters.showroom_id && filters.showroom_id !== 'all') count++;
     if (filters.minPrice || filters.maxPrice) count++;
     if (filters.sortBy && filters.sortBy !== 'recommended') count++;
     return count;
@@ -108,6 +109,18 @@ export default function CatalogScreen() {
             }}
           >
             <Text style={styles.filterTagText}>Hãng: {filters.make}</Text>
+            <Ionicons name="close" size={10} color={colors.primaryHover} />
+          </TouchableOpacity>
+        )}
+        {filters.showroom_id && filters.showroom_id !== 'all' && (
+          <TouchableOpacity
+            style={styles.filterTag}
+            onPress={() => {
+              setFilters({ showroom_id: undefined });
+              applyFilters();
+            }}
+          >
+            <Text style={styles.filterTagText}>Showroom</Text>
             <Ionicons name="close" size={10} color={colors.primaryHover} />
           </TouchableOpacity>
         )}

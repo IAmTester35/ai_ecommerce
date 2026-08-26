@@ -202,6 +202,12 @@ export const CarCard: React.FC<CarCardProps> = ({
                 <Text style={styles.specChipText}>{spec}</Text>
               </View>
             ))}
+            {car.showroom && (
+              <View style={[styles.specChip, { backgroundColor: 'rgba(37, 99, 235, 0.12)' }]}>
+                <Ionicons name="location-outline" size={9} color={colors.primaryHover} style={{ marginRight: 2 }} />
+                <Text style={[styles.specChipText, { color: colors.primaryHover }]}>{car.showroom.city}</Text>
+              </View>
+            )}
           </View>
         )}
 

@@ -97,7 +97,8 @@ class ZaloPayService:
                 await asyncio.to_thread(
                     db.table("orders").update({
                         "payment_status": "paid",
-                        "status": "processing"
+                        "deposit_status": "paid",
+                        "status": "deposit_paid"
                     }).eq("id", order_id).execute
                 )
 

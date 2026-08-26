@@ -9,7 +9,10 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- 2. DROP EVERYTHING (Reverse dependency order to avoid constraint errors)
 DROP FUNCTION IF EXISTS checkout_cart CASCADE;
 DROP FUNCTION IF EXISTS match_cars CASCADE;
+DROP FUNCTION IF EXISTS distribute_cars_to_showrooms CASCADE;
 DROP FUNCTION IF EXISTS update_modified_column CASCADE;
+DROP FUNCTION IF EXISTS prevent_profile_role_escalation CASCADE;
+DROP FUNCTION IF EXISTS get_my_role CASCADE;
 
 DROP TABLE IF EXISTS cart_items CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
@@ -22,33 +25,71 @@ DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS test_drives CASCADE;
 DROP TABLE IF EXISTS saved_cars CASCADE;
-DROP TABLE IF EXISTS profiles CASCADE;
 DROP TABLE IF EXISTS cars CASCADE;
+DROP TABLE IF EXISTS vouchers CASCADE;
+DROP TABLE IF EXISTS showrooms CASCADE;
+DROP TABLE IF EXISTS profiles CASCADE;
 
 -- 3. TABLES CREATION
 
--- Profiles (Users)
+-- 3.1 Profiles (Users)
 CREATE TABLE profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT UNIQUE NOT NULL,
     full_name TEXT,
     phone TEXT,
     avatar_url TEXT,
-    role TEXT DEFAULT 'user',
+    role TEXT DEFAULT 'user' CHECK (role IN ('user', 'manager', 'owner')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Cars (Golden Dataset)
+-- 3.2 Showrooms (Hệ thống Chi nhánh / Đại lý Ô tô)
+CREATE TABLE showrooms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name TEXT NOT NULL,
+    code TEXT UNIQUE NOT NULL,
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    phone TEXT,
+    email TEXT,
+    image_url TEXT,
+    opening_hours TEXT DEFAULT '08:00 - 20:00',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3.3 Vouchers (Mã khuyến mãi & Ưu đãi đặt cọc / mua xe)
+CREATE TABLE vouchers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    code TEXT UNIQUE NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    discount_type TEXT NOT NULL CHECK (discount_type IN ('fixed', 'percentage')),
+    discount_value BIGINT NOT NULL,              -- Số tiền cố định (VNĐ) hoặc phần trăm (%)
+    max_discount_amount BIGINT,                  -- Giới hạn giảm tối đa cho voucher dạng %
+    min_order_value BIGINT DEFAULT 0,            -- Giá trị đơn hàng tối thiểu
+    applies_to TEXT DEFAULT 'deposit' CHECK (applies_to IN ('deposit', 'total')),
+    usage_limit INT DEFAULT 100,                 -- Giới hạn tổng số lượt sử dụng
+    used_count INT DEFAULT 0,                    -- Số lượt đã dùng
+    start_date TIMESTAMPTZ DEFAULT NOW(),
+    end_date TIMESTAMPTZ,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3.4 Cars (Golden Dataset & Inventory)
 CREATE TABLE cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     make TEXT NOT NULL,         
     model TEXT NOT NULL,
     year INT NOT NULL,
     engine_hp INT,
-    price BIGINT,                  -- MSRP 
-    metadata JSONB,             -- Chứa các thông số phụ (kiểu dáng, hộp số, nhiên liệu,...)
-    image_url TEXT,             -- Cache link ảnh xe
+    price BIGINT,                                -- MSRP (Giá niêm yết tính bằng VNĐ hoặc quy đổi)
+    showroom_id UUID REFERENCES showrooms(id) ON DELETE SET NULL, -- Showroom trưng bày / lưu kho
+    metadata JSONB,                              -- Thông số phụ (hộp số, nhiên liệu, số chỗ,...)
+    image_url TEXT,                              -- Link ảnh xe
     stock_quantity INT DEFAULT 10,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -58,7 +99,7 @@ CREATE TABLE cars (
 -- Tạo Index GIN cho metadata để truy vấn JSON tốc độ cao
 CREATE INDEX ON cars USING GIN (metadata);
 
--- Saved Cars (Wishlist)
+-- 3.5 Saved Cars (Wishlist)
 CREATE TABLE saved_cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
@@ -67,31 +108,38 @@ CREATE TABLE saved_cars (
     UNIQUE(user_id, car_id)
 );
 
--- Test Drives
+-- 3.6 Test Drives (Lịch hẹn Lái thử tại Showroom)
 CREATE TABLE test_drives (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
+    showroom_id UUID REFERENCES showrooms(id) ON DELETE SET NULL, -- Địa điểm lái thử
     scheduled_date TIMESTAMPTZ NOT NULL,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled')),
     notes TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Orders
+-- 3.7 Orders (Hợp đồng Đặt cọc & Mua xe)
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
-    total_amount BIGINT NOT NULL,
-    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'cancelled')),
+    showroom_id UUID REFERENCES showrooms(id) ON DELETE SET NULL, -- Showroom nhận xe / bàn giao
+    voucher_id UUID REFERENCES vouchers(id) ON DELETE SET NULL,   -- Voucher áp dụng
+    total_amount BIGINT NOT NULL,                                 -- Tổng giá trị xe sau giảm giá (VNĐ)
+    deposit_amount BIGINT NOT NULL DEFAULT 0,                     -- Số tiền đặt cọc cần thu online (VNĐ)
+    remaining_amount BIGINT NOT NULL DEFAULT 0,                   -- Số tiền còn lại thu tại Showroom (VNĐ)
+    discount_amount BIGINT NOT NULL DEFAULT 0,                    -- Số tiền đã giảm trừ từ voucher (VNĐ)
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'deposit_paid', 'preparing_car', 'ready_for_pickup', 'completed', 'cancelled')),
     payment_method TEXT,
-    payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'refunded')),
+    payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'refunded')), -- Trạng thái chung
+    deposit_status TEXT DEFAULT 'unpaid' CHECK (deposit_status IN ('unpaid', 'paid', 'refunded')), -- Trạng thái tiền cọc
     contract_url TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Order Items
+-- 3.8 Order Items
 CREATE TABLE order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
@@ -101,25 +149,23 @@ CREATE TABLE order_items (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Reviews
+-- 3.9 Reviews
 CREATE TABLE reviews (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE, -- Có thể NULL cho review từ external source
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
-    rating FLOAT, -- Hỗ trợ rating float từ file CSV
+    rating FLOAT,
     comment TEXT,
-    source TEXT DEFAULT 'user', -- 'user' hoặc 'edmunds'
-    embedding VECTOR(768),      -- Vector từ nội dung
+    source TEXT DEFAULT 'user',
+    embedding VECTOR(768),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Tạo Index HNSW cho việc tìm kiếm Vector siêu tốc
 CREATE INDEX ON reviews USING hnsw (embedding vector_cosine_ops);
-
--- Index hỗ trợ JOIN reviews → cars trong post-filter phase
 CREATE INDEX idx_reviews_car_id ON reviews (car_id);
 
--- Q&A
+-- 3.10 Q&A
 CREATE TABLE car_qa (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     car_id UUID REFERENCES cars(id) ON DELETE CASCADE,
@@ -131,7 +177,7 @@ CREATE TABLE car_qa (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Viewed Cars
+-- 3.11 Viewed Cars
 CREATE TABLE viewed_cars (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
@@ -139,7 +185,7 @@ CREATE TABLE viewed_cars (
     viewed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Search History
+-- 3.12 Search History
 CREATE TABLE search_history (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
@@ -147,17 +193,17 @@ CREATE TABLE search_history (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Chat Sessions (AI Chatbot)
+-- 3.13 Chat Sessions (AI Chatbot)
 CREATE TABLE chat_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id UUID NOT NULL,
-    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE, -- NULL cho guest
+    user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Notifications
+-- 3.14 Notifications
 CREATE TABLE notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
@@ -168,7 +214,7 @@ CREATE TABLE notifications (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Cart Items
+-- 3.15 Cart Items
 CREATE TABLE cart_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID DEFAULT auth.uid() REFERENCES profiles(id) ON DELETE CASCADE,
@@ -179,10 +225,16 @@ CREATE TABLE cart_items (
 );
 
 
--- 3.5. PERFORMANCE INDEXES
+-- ==============================================================================
+-- 3.16 PERFORMANCE INDEXES
+-- ==============================================================================
+CREATE INDEX IF NOT EXISTS idx_cars_showroom_id ON cars(showroom_id);
 CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_showroom_id ON orders(showroom_id);
+CREATE INDEX IF NOT EXISTS idx_orders_voucher_id ON orders(voucher_id);
 CREATE INDEX IF NOT EXISTS idx_test_drives_user_id ON test_drives(user_id);
 CREATE INDEX IF NOT EXISTS idx_test_drives_car_id ON test_drives(car_id);
+CREATE INDEX IF NOT EXISTS idx_test_drives_showroom_id ON test_drives(showroom_id);
 CREATE INDEX IF NOT EXISTS idx_viewed_cars_user_id_viewed_at ON viewed_cars(user_id, viewed_at DESC);
 CREATE INDEX IF NOT EXISTS idx_search_history_user_id ON search_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_session_id ON chat_sessions(session_id);
@@ -194,10 +246,14 @@ CREATE INDEX IF NOT EXISTS idx_car_qa_user_id ON car_qa(user_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_user_id ON reviews(user_id);
 CREATE INDEX IF NOT EXISTS idx_saved_cars_car_id ON saved_cars(car_id);
 CREATE INDEX IF NOT EXISTS idx_cart_items_car_id ON cart_items(car_id);
+CREATE INDEX IF NOT EXISTS idx_vouchers_code ON vouchers(code);
 
+
+-- ==============================================================================
 -- 4. FUNCTIONS & TRIGGERS
+-- ==============================================================================
 
--- Trigger Function: Update `updated_at`
+-- 4.1 Trigger Function: Update `updated_at`
 CREATE OR REPLACE FUNCTION update_modified_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -207,39 +263,134 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION update_modified_column();
+CREATE TRIGGER update_showrooms_updated_at BEFORE UPDATE ON showrooms FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 CREATE TRIGGER update_car_qa_updated_at BEFORE UPDATE ON car_qa FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
--- Function: Checkout Cart
-CREATE OR REPLACE FUNCTION checkout_cart(p_user_id UUID, p_payment_method TEXT)
+
+-- 4.2 Function: Phân bổ ngẫu nhiên xe vào N Showroom (Random distribution)
+CREATE OR REPLACE FUNCTION distribute_cars_to_showrooms()
+RETURNS INT AS $$
+DECLARE
+    v_showroom_ids UUID[];
+    v_showroom_count INT;
+    v_updated_count INT := 0;
+BEGIN
+    -- Lấy mảng ID của tất cả showroom đang hoạt động
+    SELECT array_agg(id) INTO v_showroom_ids FROM showrooms WHERE is_active = TRUE;
+    v_showroom_count := COALESCE(array_length(v_showroom_ids, 1), 0);
+    
+    IF v_showroom_count = 0 THEN
+        RAISE EXCEPTION 'No active showrooms found to distribute cars.';
+    END IF;
+
+    -- Phân bổ ngẫu nhiên và đồng đều toàn bộ xe vào các Showroom
+    WITH randomized_cars AS (
+        SELECT id, (ROW_NUMBER() OVER (ORDER BY random()) - 1) % v_showroom_count + 1 AS showroom_idx
+        FROM cars
+    )
+    UPDATE cars c
+    SET showroom_id = v_showroom_ids[rc.showroom_idx]
+    FROM randomized_cars rc
+    WHERE c.id = rc.id;
+
+    GET DIAGNOSTICS v_updated_count = ROW_COUNT;
+    RETURN v_updated_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+
+-- 4.3 Function: Checkout Cart & Đặt cọc (Deposit & Voucher aware)
+CREATE OR REPLACE FUNCTION checkout_cart(
+    p_user_id UUID,
+    p_payment_method TEXT,
+    p_showroom_id UUID DEFAULT NULL,
+    p_voucher_code TEXT DEFAULT NULL,
+    p_deposit_rate FLOAT DEFAULT 0.10
+)
 RETURNS UUID AS $$
 DECLARE
     v_order_id UUID;
     v_total_amount BIGINT := 0;
+    v_deposit_amount BIGINT := 0;
+    v_remaining_amount BIGINT := 0;
+    v_discount_amount BIGINT := 0;
+    v_voucher_id UUID := NULL;
+    v_voucher RECORD;
+    v_final_showroom_id UUID := p_showroom_id;
     cart_item RECORD;
 BEGIN
-    -- Kiểm tra giỏ hàng
+    -- 1. Kiểm tra giỏ hàng
     IF NOT EXISTS (SELECT 1 FROM cart_items WHERE user_id = p_user_id) THEN
         RAISE EXCEPTION 'Cart is empty';
     END IF;
 
-    -- Tạo order với tổng tiền = 0 trước
-    INSERT INTO orders (user_id, total_amount, payment_method, status)
-    VALUES (p_user_id, 0, p_payment_method, 'pending')
+    -- 2. Kiểm tra Voucher nếu có truyền vào
+    IF p_voucher_code IS NOT NULL AND TRIM(p_voucher_code) <> '' THEN
+        SELECT * INTO v_voucher 
+        FROM vouchers 
+        WHERE UPPER(code) = UPPER(TRIM(p_voucher_code))
+          AND is_active = TRUE
+          AND (start_date IS NULL OR start_date <= NOW())
+          AND (end_date IS NULL OR end_date >= NOW())
+          AND (usage_limit IS NULL OR used_count < usage_limit);
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Voucher invalid, expired, or out of usages: %', p_voucher_code;
+        END IF;
+
+        v_voucher_id := v_voucher.id;
+    END IF;
+
+    -- 3. Tạo order sơ bộ
+    INSERT INTO orders (
+        user_id, 
+        showroom_id,
+        voucher_id,
+        total_amount, 
+        deposit_amount, 
+        remaining_amount, 
+        discount_amount, 
+        payment_method, 
+        status, 
+        deposit_status, 
+        payment_status
+    )
+    VALUES (
+        p_user_id, 
+        v_final_showroom_id,
+        v_voucher_id,
+        0, 
+        0, 
+        0, 
+        0, 
+        p_payment_method, 
+        'pending', 
+        'unpaid', 
+        'unpaid'
+    )
     RETURNING id INTO v_order_id;
 
-    -- Khóa (Lock) các xe trong giỏ hàng để tránh race condition
+    -- 4. Khóa các xe trong giỏ hàng để kiểm tra tồn kho và trừ kho
     FOR cart_item IN
-        SELECT ci.car_id, ci.quantity AS order_qty, c.price, c.stock_quantity 
+        SELECT ci.car_id, ci.quantity AS order_qty, c.price, c.stock_quantity, c.showroom_id
         FROM cart_items ci
         JOIN cars c ON ci.car_id = c.id
         WHERE ci.user_id = p_user_id
         ORDER BY ci.car_id
         FOR UPDATE OF c
     LOOP
-        -- Kiểm tra tồn kho
         IF COALESCE(cart_item.stock_quantity, 0) < cart_item.order_qty THEN
             RAISE EXCEPTION 'Car ID % out of stock or not enough stock', cart_item.car_id;
+        END IF;
+
+        IF cart_item.price IS NULL THEN
+            RAISE EXCEPTION 'Car ID % has no price set', cart_item.car_id;
+        END IF;
+
+        -- Tự động fallback showroom_id từ xe nếu người dùng chưa chọn showroom
+        IF v_final_showroom_id IS NULL AND cart_item.showroom_id IS NOT NULL THEN
+            v_final_showroom_id := cart_item.showroom_id;
         END IF;
 
         -- Trừ tồn kho và cập nhật is_active nếu hết hàng
@@ -252,32 +403,59 @@ BEGIN
         INSERT INTO order_items (order_id, car_id, price, quantity)
         VALUES (v_order_id, cart_item.car_id, cart_item.price, cart_item.order_qty);
 
-        -- Kiểm tra giá xe (chống lỗi NULL price biến tổng tiền thành NULL)
-        IF cart_item.price IS NULL THEN
-            RAISE EXCEPTION 'Car ID % has no price set', cart_item.car_id;
-        END IF;
-
-        -- Cộng dồn tổng tiền
+        -- Cộng dồn tổng giá trị niêm yết
         v_total_amount := v_total_amount + (cart_item.price * cart_item.order_qty);
     END LOOP;
 
-    IF v_total_amount = 0 THEN
-        RAISE EXCEPTION 'Cart items have no price';
+    IF v_total_amount <= 0 THEN
+        RAISE EXCEPTION 'Cart items have invalid total price';
     END IF;
 
-    -- Cập nhật tổng tiền chính thức
-    UPDATE orders SET total_amount = v_total_amount WHERE id = v_order_id;
+    -- 5. Tính toán giảm giá Voucher (nếu có)
+    IF v_voucher_id IS NOT NULL THEN
+        IF v_voucher.min_order_value > 0 AND v_total_amount < v_voucher.min_order_value THEN
+            RAISE EXCEPTION 'Order value (%) must be at least % to apply voucher %', 
+                v_total_amount, v_voucher.min_order_value, p_voucher_code;
+        END IF;
 
-    -- Xóa giỏ hàng
+        IF v_voucher.discount_type = 'fixed' THEN
+            v_discount_amount := v_voucher.discount_value;
+        ELSIF v_voucher.discount_type = 'percentage' THEN
+            v_discount_amount := (v_total_amount * v_voucher.discount_value) / 100;
+            IF v_voucher.max_discount_amount IS NOT NULL AND v_discount_amount > v_voucher.max_discount_amount THEN
+                v_discount_amount := v_voucher.max_discount_amount;
+            END IF;
+        END IF;
+
+        -- Đảm bảo giảm giá không vượt quá tổng tiền đơn hàng
+        v_discount_amount := LEAST(v_discount_amount, v_total_amount);
+
+        -- Tăng số lượt đã sử dụng voucher
+        UPDATE vouchers SET used_count = used_count + 1 WHERE id = v_voucher_id;
+    END IF;
+
+    -- 6. Tính toán Tiền cọc (Deposit) & Tiền còn lại thanh toán tại Showroom
+    v_deposit_amount := GREATEST(0, ROUND((v_total_amount - v_discount_amount) * COALESCE(p_deposit_rate, 0.10)));
+    v_remaining_amount := GREATEST(0, (v_total_amount - v_discount_amount) - v_deposit_amount);
+
+    -- 7. Cập nhật đơn hàng chính thức
+    UPDATE orders 
+    SET total_amount = (v_total_amount - v_discount_amount),
+        deposit_amount = v_deposit_amount,
+        remaining_amount = v_remaining_amount,
+        discount_amount = v_discount_amount,
+        showroom_id = v_final_showroom_id
+    WHERE id = v_order_id;
+
+    -- 8. Xóa giỏ hàng
     DELETE FROM cart_items WHERE user_id = p_user_id;
 
     RETURN v_order_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- Function: Match Cars (Vector Search RAG) — Post-filter architecture
-DROP FUNCTION IF EXISTS match_cars;
 
+-- 4.4 Function: Match Cars (Vector Search RAG) — Post-filter architecture
 CREATE OR REPLACE FUNCTION match_cars(
   query_embedding VECTOR(768),
   match_threshold FLOAT DEFAULT 0.3,
@@ -286,7 +464,8 @@ CREATE OR REPLACE FUNCTION match_cars(
   filter_max_price BIGINT DEFAULT NULL,
   filter_target_year INT DEFAULT NULL,
   filter_min_hp INT DEFAULT NULL,
-  filter_fuel_type TEXT DEFAULT NULL
+  filter_fuel_type TEXT DEFAULT NULL,
+  filter_showroom_id UUID DEFAULT NULL
 )
 RETURNS TABLE (
   id UUID,
@@ -295,6 +474,7 @@ RETURNS TABLE (
   year INT,
   engine_hp INT,
   price BIGINT,
+  showroom_id UUID,
   metadata JSONB,
   review TEXT,
   similarity DOUBLE PRECISION,
@@ -305,7 +485,7 @@ AS $$
 BEGIN
   RETURN QUERY
 
-  -- Phase 1: Pure vector search, ÉP Postgres phải chạy riêng bước này với HNSW Index
+  -- Phase 1: Vector search trên reviews bằng HNSW
   WITH vector_matches AS MATERIALIZED (
     SELECT
       r.id AS review_id,
@@ -318,7 +498,7 @@ BEGIN
     LIMIT match_count * 20
   ),
 
-  -- Phase 2: JOIN + filter trên cars và lấy luôn data để khỏi JOIN lại
+  -- Phase 2: JOIN + filter
   filtered AS (
     SELECT
       vm.review_id,
@@ -330,6 +510,7 @@ BEGIN
       c.year AS car_year,
       c.engine_hp AS car_engine_hp,
       c.price AS car_price,
+      c.showroom_id AS car_showroom_id,
       c.metadata AS car_metadata,
       c.image_url AS car_image_url
     FROM vector_matches vm
@@ -341,9 +522,10 @@ BEGIN
       AND (filter_target_year IS NULL OR c.year >= filter_target_year - 2)
       AND (filter_min_hp IS NULL OR c.engine_hp >= filter_min_hp)
       AND (filter_fuel_type IS NULL OR c.metadata->>'engine_fuel_type' ILIKE '%' || filter_fuel_type || '%')
+      AND (filter_showroom_id IS NULL OR c.showroom_id = filter_showroom_id)
   ),
 
-  -- Phase 3: Deduplicate (1 review/car, giữ similarity cao nhất)
+  -- Phase 3: Deduplicate (1 review per car)
   deduplicated AS (
     SELECT
       *,
@@ -351,7 +533,7 @@ BEGIN
     FROM filtered
   )
 
-  -- Phase 4: Trả về kết quả, không JOIN lại bảng cars
+  -- Phase 4: Output
   SELECT
     d.car_id AS id,
     d.car_make AS make,
@@ -359,6 +541,7 @@ BEGIN
     d.car_year AS year,
     d.car_engine_hp AS engine_hp,
     d.car_price AS price,
+    d.car_showroom_id AS showroom_id,
     d.car_metadata AS metadata,
     d.comment AS review,
     d.sim AS similarity,
@@ -376,7 +559,6 @@ $$;
 -- 5. ROW LEVEL SECURITY (RLS) & ACCESS CONTROL
 -- ==============================================================================
 
--- Helper Function: Get User Role safely (Custom Claim JWT -> Profiles Table fallback)
 CREATE OR REPLACE FUNCTION get_my_role()
 RETURNS TEXT 
 LANGUAGE sql 
@@ -390,7 +572,6 @@ STABLE AS $$
   );
 $$;
 
--- Trigger Function: Prevent Privilege Escalation on `profiles.role`
 CREATE OR REPLACE FUNCTION prevent_profile_role_escalation()
 RETURNS TRIGGER 
 LANGUAGE plpgsql 
@@ -412,9 +593,10 @@ BEFORE UPDATE ON profiles
 FOR EACH ROW
 EXECUTE FUNCTION prevent_profile_role_escalation();
 
-
 -- ENABLE RLS ON ALL TABLES
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE showrooms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vouchers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_cars ENABLE ROW LEVEL SECURITY;
 ALTER TABLE test_drives ENABLE ROW LEVEL SECURITY;
@@ -428,7 +610,6 @@ ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chat_sessions ENABLE ROW LEVEL SECURITY;
 
-
 -- 5.1 PROFILES POLICIES
 CREATE POLICY "Profiles read access" ON profiles 
   FOR SELECT USING (id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
@@ -439,17 +620,28 @@ CREATE POLICY "Profiles self insert" ON profiles
 CREATE POLICY "Profiles update access" ON profiles 
   FOR UPDATE USING (id = auth.uid() OR get_my_role() = 'owner');
 
+-- 5.2 SHOWROOMS POLICIES
+CREATE POLICY "Showrooms public read" ON showrooms 
+  FOR SELECT USING (is_active = TRUE OR get_my_role() IN ('manager', 'owner'));
 
--- 5.2 CARS POLICIES
+CREATE POLICY "Showrooms admin write" ON showrooms 
+  FOR ALL USING (get_my_role() IN ('manager', 'owner'));
+
+-- 5.3 VOUCHERS POLICIES
+CREATE POLICY "Vouchers public read active" ON vouchers 
+  FOR SELECT USING (is_active = TRUE OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Vouchers admin write" ON vouchers 
+  FOR ALL USING (get_my_role() IN ('manager', 'owner'));
+
+-- 5.4 CARS POLICIES
 CREATE POLICY "Cars public read" ON cars 
   FOR SELECT USING (is_active = TRUE OR get_my_role() IN ('manager', 'owner'));
 
 CREATE POLICY "Cars admin write" ON cars 
   FOR ALL USING (get_my_role() IN ('manager', 'owner'));
 
-
--- 5.3 ORDERS POLICIES
--- NOTE: Users CANNOT INSERT/UPDATE directly via REST API. Orders must be created via `checkout_cart()` (SECURITY DEFINER).
+-- 5.5 ORDERS POLICIES
 CREATE POLICY "Orders select policy" ON orders 
   FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
@@ -459,9 +651,7 @@ CREATE POLICY "Orders manager update policy" ON orders
 CREATE POLICY "Orders owner full access" ON orders 
   FOR ALL USING (get_my_role() = 'owner');
 
-
--- 5.4 ORDER_ITEMS POLICIES
--- NOTE: Users read items belonging to their own orders via EXISTS subquery.
+-- 5.6 ORDER_ITEMS POLICIES
 CREATE POLICY "Order items select policy" ON order_items 
   FOR SELECT USING (
     EXISTS (
@@ -475,13 +665,11 @@ CREATE POLICY "Order items select policy" ON order_items
 CREATE POLICY "Order items owner full access" ON order_items 
   FOR ALL USING (get_my_role() = 'owner');
 
-
--- 5.5 CART ITEMS POLICIES
+-- 5.7 CART ITEMS POLICIES
 CREATE POLICY "Cart items user policy" ON cart_items 
   FOR ALL USING (user_id = auth.uid());
 
-
--- 5.6 TEST DRIVES POLICIES
+-- 5.8 TEST DRIVES POLICIES
 CREATE POLICY "Test drives select policy" ON test_drives 
   FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
@@ -497,8 +685,7 @@ CREATE POLICY "Test drives update policy" ON test_drives
 CREATE POLICY "Test drives delete policy" ON test_drives 
   FOR DELETE USING (get_my_role() IN ('manager', 'owner'));
 
-
--- 5.7 REVIEWS POLICIES
+-- 5.9 REVIEWS POLICIES
 CREATE POLICY "Reviews public read" ON reviews 
   FOR SELECT USING (TRUE);
 
@@ -511,8 +698,7 @@ CREATE POLICY "Reviews user update" ON reviews
 CREATE POLICY "Reviews delete policy" ON reviews 
   FOR DELETE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
-
--- 5.8 CAR QA POLICIES
+-- 5.10 CAR QA POLICIES
 CREATE POLICY "Car QA public read" ON car_qa 
   FOR SELECT USING (TRUE);
 
@@ -525,23 +711,19 @@ CREATE POLICY "Car QA update policy" ON car_qa
 CREATE POLICY "Car QA delete policy" ON car_qa 
   FOR DELETE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
-
--- 5.9 SAVED CARS POLICIES
+-- 5.11 SAVED CARS POLICIES
 CREATE POLICY "Saved cars user policy" ON saved_cars 
   FOR ALL USING (user_id = auth.uid());
 
-
--- 5.10 VIEWED CARS POLICIES
+-- 5.12 VIEWED CARS POLICIES
 CREATE POLICY "Viewed cars user policy" ON viewed_cars 
   FOR ALL USING (user_id = auth.uid());
 
-
--- 5.11 SEARCH HISTORY POLICIES
+-- 5.13 SEARCH HISTORY POLICIES
 CREATE POLICY "Search history user policy" ON search_history 
   FOR ALL USING (user_id = auth.uid());
 
-
--- 5.12 NOTIFICATIONS POLICIES
+-- 5.14 NOTIFICATIONS POLICIES
 CREATE POLICY "Notifications select policy" ON notifications 
   FOR SELECT USING (user_id = auth.uid());
 
@@ -551,8 +733,116 @@ CREATE POLICY "Notifications update policy" ON notifications
 CREATE POLICY "Notifications insert policy" ON notifications 
   FOR INSERT WITH CHECK (get_my_role() IN ('manager', 'owner'));
 
-
--- 5.13 CHAT SESSIONS POLICIES
+-- 5.15 CHAT SESSIONS POLICIES
 CREATE POLICY "Chat sessions user policy" ON chat_sessions 
   FOR ALL USING (user_id = auth.uid() OR user_id IS NULL);
 
+
+-- ==============================================================================
+-- 6. SEED DATA (Showrooms & Vouchers)
+-- ==============================================================================
+
+-- 6.1 Showrooms Seed
+INSERT INTO showrooms (name, code, address, city, phone, email, image_url, opening_hours)
+VALUES 
+    (
+        'AutoMatch Hà Nội - Cầu Giấy Flagship',
+        'SR_HN_CG',
+        'Số 68 Đường Cầu Giấy, Phường Quan Hoa, Quận Cầu Giấy',
+        'Hà Nội',
+        '024 3888 9999',
+        'hanoi.caugiay@automatch.vn',
+        'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1200&q=80',
+        '08:00 - 21:00'
+    ),
+    (
+        'AutoMatch TP.HCM - Landmark Quận 7',
+        'SR_HCM_Q7',
+        'Số 101 Tôn Dật Tiên, Phường Tân Phú, Quận 7',
+        'TP. Hồ Chí Minh',
+        '028 5411 2233',
+        'hcm.quan7@automatch.vn',
+        'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=1200&q=80',
+        '08:00 - 21:30'
+    ),
+    (
+        'AutoMatch TP.HCM - Trung Tâm Thủ Đức',
+        'SR_HCM_TD',
+        'Số 216 Võ Văn Ngân, Phường Linh Chiểu, TP. Thủ Đức',
+        'TP. Hồ Chí Minh',
+        '028 3722 5566',
+        'hcm.thuduc@automatch.vn',
+        'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1200&q=80',
+        '08:00 - 20:30'
+    ),
+    (
+        'AutoMatch Đà Nẵng - Hải Châu Center',
+        'SR_DN_HC',
+        'Số 45 Nguyễn Văn Linh, Phường Nam Dương, Quận Hải Châu',
+        'Đà Nẵng',
+        '0236 365 8888',
+        'danang.haichau@automatch.vn',
+        'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80',
+        '08:00 - 20:00'
+    ),
+    (
+        'AutoMatch Hải Phòng - Lê Chân Hub',
+        'SR_HP_LC',
+        'Số 12 Hồ Sen, Phường Trại Cau, Quận Lê Chân',
+        'Hải Phòng',
+        '0225 385 7777',
+        'haiphong@automatch.vn',
+        'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=1200&q=80',
+        '08:00 - 20:00'
+    )
+ON CONFLICT (code) DO NOTHING;
+
+-- 6.2 Vouchers Seed
+INSERT INTO vouchers (code, title, description, discount_type, discount_value, max_discount_amount, min_order_value, applies_to, usage_limit, is_active)
+VALUES
+    (
+        'WELCOME10M',
+        'Ưu đãi Chào mừng Khách hàng mới',
+        'Giảm trực tiếp 10.000.000 VNĐ vào tiền đặt cọc giữ xe trực tuyến.',
+        'fixed',
+        10000000,
+        10000000,
+        300000000,
+        'deposit',
+        500,
+        TRUE
+    ),
+    (
+        'SUMMER50M',
+        'Đại tiệc Mua xe Mùa hè',
+        'Giảm ngay 50.000.000 VNĐ vào tổng giá trị hợp đồng mua xe.',
+        'fixed',
+        50000000,
+        50000000,
+        800000000,
+        'total',
+        100,
+        TRUE
+    ),
+    (
+        'VIPPROMO5',
+        'Đặc quyền Khách hàng VIP',
+        'Giảm 5% tổng giá trị xe (Tối đa 30.000.000 VNĐ).',
+        'percentage',
+        5,
+        30000000,
+        500000000,
+        'total',
+        200,
+        TRUE
+    )
+ON CONFLICT (code) DO NOTHING;
+
+-- 6.3 Tự động phân bổ ngẫu nhiên danh sách xe ban đầu vào các Showroom (nếu có xe trong bảng cars)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM cars) THEN
+        PERFORM distribute_cars_to_showrooms();
+    END IF;
+END;
+$$;

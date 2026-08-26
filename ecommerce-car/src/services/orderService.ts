@@ -5,7 +5,7 @@ export const orderService = {
   getOrders: async (userId?: string): Promise<Order[]> => {
     let query = supabase
       .from('orders')
-      .select('*, order_items(*, car:cars(*))')
+      .select('*, showroom:showrooms(*), voucher:vouchers(*), order_items(*, car:cars(*, showroom:showrooms(*)))')
       .order('created_at', { ascending: false });
 
     if (userId) {
@@ -24,7 +24,7 @@ export const orderService = {
     if (!orderId) return null;
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_items(*, car:cars(*))')
+      .select('*, showroom:showrooms(*), voucher:vouchers(*), order_items(*, car:cars(*, showroom:showrooms(*)))')
       .eq('id', orderId)
       .maybeSingle();
 

@@ -11,6 +11,8 @@ import { CarFilterParams, CarSortOption } from '../../types';
 import { ModalSheet } from '../ui/ModalSheet';
 import { Button } from '../ui/Button';
 
+import { useShowroomStore } from '../../store/useShowroomStore';
+
 interface CarFilterModalProps {
   visible: boolean;
   onClose: () => void;
@@ -46,9 +48,11 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
   onApplyFilters,
   onResetFilters,
 }) => {
+  const { showrooms, fetchShowrooms } = useShowroomStore();
   const [selectedMake, setSelectedMake] = useState<string>(filters.make || 'all');
   const [selectedBodyType, setSelectedBodyType] = useState<string>(filters.bodyType || 'all');
   const [selectedFuelType, setSelectedFuelType] = useState<string>(filters.fuelType || 'all');
+  const [selectedShowroomId, setSelectedShowroomId] = useState<string>(filters.showroom_id || 'all');
   const [selectedPriceRangeIndex, setSelectedPriceRangeIndex] = useState<number>(() => {
     if (!filters.minPrice && !filters.maxPrice) return 0;
     const idx = PRICE_RANGES.findIndex(
@@ -60,6 +64,12 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
     filters.sortBy || 'recommended'
   );
 
+  React.useEffect(() => {
+    if (visible) {
+      fetchShowrooms();
+    }
+  }, [visible, fetchShowrooms]);
+
   const handleApply = () => {
     const priceRange = PRICE_RANGES[selectedPriceRangeIndex];
     onApplyFilters({
@@ -67,6 +77,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
       make: selectedMake === 'all' ? undefined : selectedMake,
       bodyType: selectedBodyType === 'all' ? undefined : selectedBodyType,
       fuelType: selectedFuelType === 'all' ? undefined : selectedFuelType,
+      showroom_id: selectedShowroomId === 'all' ? undefined : selectedShowroomId,
       minPrice: priceRange.min,
       maxPrice: priceRange.max,
       sortBy: selectedSort,
@@ -78,6 +89,7 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
     setSelectedMake('all');
     setSelectedBodyType('all');
     setSelectedFuelType('all');
+    setSelectedShowroomId('all');
     setSelectedPriceRangeIndex(0);
     setSelectedSort('recommended');
     onResetFilters();
@@ -216,6 +228,52 @@ export const CarFilterModal: React.FC<CarFilterModalProps> = ({
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* Showroom Location */}
+        {showrooms.length > 0 && (
+          <>
+            <Text style={styles.sectionHeader}>Chi nhánh Showroom</Text>
+            <View style={styles.chipsContainer}>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setSelectedShowroomId('all')}
+                style={[
+                  styles.chip,
+                  selectedShowroomId === 'all' ? styles.chipActive : styles.chipInactive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    selectedShowroomId === 'all' ? styles.chipTextActive : styles.chipTextInactive,
+                  ]}
+                >
+                  Tất cả Showroom
+                </Text>
+              </TouchableOpacity>
+              {showrooms.map((sr) => (
+                <TouchableOpacity
+                  key={sr.id}
+                  activeOpacity={0.8}
+                  onPress={() => setSelectedShowroomId(sr.id)}
+                  style={[
+                    styles.chip,
+                    selectedShowroomId === sr.id ? styles.chipActive : styles.chipInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedShowroomId === sr.id ? styles.chipTextActive : styles.chipTextInactive,
+                    ]}
+                  >
+                    {sr.city} - {sr.name.split('-')[1]?.trim() || sr.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
       </ScrollView>
 
       <View style={styles.footer}>

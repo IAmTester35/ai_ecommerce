@@ -78,6 +78,7 @@ async def hybrid_search(
     target_year: Optional[int] = None,
     min_hp: Optional[int] = None,
     fuel_type: Optional[str] = None,
+    showroom_id: Optional[str] = None,
     top_k: int = 5
 ) -> Tuple[List[Dict[str, Any]], bool, List[str]]:
     """
@@ -102,7 +103,8 @@ async def hybrid_search(
         'filter_max_price': max_price,
         'filter_target_year': target_year,
         'filter_min_hp': min_hp,
-        'filter_fuel_type': fuel_type
+        'filter_fuel_type': fuel_type,
+        'filter_showroom_id': showroom_id
     }
 
     # 2. Strict Search
