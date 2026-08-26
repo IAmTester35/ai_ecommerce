@@ -7,7 +7,7 @@ import {
   CheckCheck,
   ExternalLink,
   ChevronRight,
-  Shield,
+  LogOut,
 } from 'lucide-react';
 import type { NavView } from './Sidebar';
 import { useData } from '../../context/DataContext';
@@ -15,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { formatDateTime } from '../../lib/utils';
+import { ROLE_INFO } from '../../lib/permissions';
 
 interface TopHeaderProps {
   currentView: NavView;
@@ -30,10 +31,12 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   onQuickAddCar,
 }) => {
   const { notifications, markNotificationRead, isLiveSupabase } = useData();
-  const { currentUser } = useAuth();
+  const { currentUser, role, signOut, can } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
+  const currentRoleInfo = role ? ROLE_INFO[role] : ROLE_INFO.manager;
 
   const viewTitles: Record<NavView, { title: string; subtitle: string }> = {
     dashboard: {
@@ -114,18 +117,19 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       <div className="flex items-center gap-3">
         {/* Supabase Connection Status Badge */}
         <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-medium">
-          <Database className={`w-3.5 h-3.5 ${isLiveSupabase ? 'text-emerald-600' : 'text-blue-600'}`} />
+          <Database className={`w-3.5 h-3.5 ${isLiveSupabase ? 'text-emerald-600' : 'text-rose-600'}`} />
           <span className="text-slate-600">
-            {isLiveSupabase ? 'Supabase Live' : 'Active Demo Store'}
+            {isLiveSupabase ? 'Supabase Live DB' : 'Supabase Disconnected'}
           </span>
           <span
-            className={`w-2 h-2 rounded-full ${isLiveSupabase ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'
-              }`}
+            className={`w-2 h-2 rounded-full ${
+              isLiveSupabase ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+            }`}
           />
         </div>
 
         {/* Quick Add Car Action */}
-        {onQuickAddCar && (
+        {onQuickAddCar && can('CARS_CREATE') && (
           <Button
             size="sm"
             variant="primary"
@@ -179,8 +183,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                     <div
                       key={notif.id}
                       onClick={() => markNotificationRead(notif.id)}
-                      className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer text-left ${!notif.is_read ? 'bg-blue-50/40' : ''
-                        }`}
+                      className={`p-4 hover:bg-slate-50 transition-colors cursor-pointer text-left ${
+                        !notif.is_read ? 'bg-blue-50/40' : ''
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <p className="text-xs font-bold text-slate-900">{notif.title}</p>
@@ -213,22 +218,57 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
           )}
         </div>
 
-        {/* User Pill */}
-        <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-          <img
-            src={currentUser.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-            alt="Profile"
-            className="w-8 h-8 rounded-lg object-cover border border-slate-200"
-          />
-          <div className="hidden xl:block text-left">
-            <p className="text-xs font-bold text-slate-900 leading-tight">
-              {currentUser.full_name?.split(' ').slice(-2).join(' ') || 'Admin'}
-            </p>
-            <span className="text-[10px] font-semibold text-blue-600 flex items-center gap-0.5">
-              <Shield className="w-2.5 h-2.5" />
-              {currentUser.role.toUpperCase()}
-            </span>
-          </div>
+        {/* User Profile Pill & Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            className="flex items-center gap-2.5 pl-2 py-1 pr-2 rounded-xl border border-transparent hover:border-slate-200 hover:bg-slate-50 transition-all cursor-pointer"
+          >
+            <img
+              src={
+                currentUser?.avatar_url ||
+                'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+              }
+              alt="Profile"
+              className="w-8 h-8 rounded-lg object-cover border border-slate-200"
+            />
+            <div className="hidden xl:block text-left">
+              <p className="text-xs font-bold text-slate-900 leading-tight truncate max-w-32">
+                {currentUser?.full_name || currentUser?.email?.split('@')[0] || 'Admin'}
+              </p>
+              <span
+                className="text-[10px] font-bold px-1.5 py-0.2 rounded-md uppercase inline-block mt-0.5"
+                style={{ backgroundColor: currentRoleInfo.bg, color: currentRoleInfo.color }}
+              >
+                {currentRoleInfo.tag}
+              </span>
+            </div>
+          </button>
+
+          {showProfileMenu && (
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden py-2 text-left animate-in zoom-in-95 duration-100">
+              <div className="px-4 py-2 border-b border-slate-100">
+                <p className="text-xs font-bold text-slate-900">{currentUser?.full_name || 'Admin'}</p>
+                <p className="text-[11px] text-slate-500 truncate">{currentUser?.email}</p>
+              </div>
+
+              <div className="px-4 py-2 text-[11px] text-slate-500 border-b border-slate-100">
+                <span className="font-semibold text-slate-700">Quyền: </span>
+                {currentRoleInfo.label}
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowProfileMenu(false);
+                  signOut();
+                }}
+                className="w-full px-4 py-2.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Đăng Xuất</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

@@ -39,7 +39,7 @@ export const NotificationsView: React.FC = () => {
     await createNotification(title, content, userId, notifType);
 
     setIsSending(false);
-    success('Đã phát thông báo thành công!', 'Thông báo đã được gửi đến thiết bị người dùng.');
+    success('Đã phát thông báo thành công!', 'Thông báo đã được lưu và gửi đến thiết bị người dùng.');
     setTitle('');
     setContent('');
   };
@@ -47,7 +47,7 @@ export const NotificationsView: React.FC = () => {
   const templates = [
     {
       title: 'Đặc Quyền Đặt Cọc Xe Sang Mùa Thu',
-      content: 'Giảm ngay 100.000.000 VNĐ vào tiền đặt cọc giữ xe Porsche và Mercedes-Benz khi áp dụng mã VIPCAR100M.',
+      content: 'Giảm ngay 50.000.000 VNĐ vào tiền đặt cọc giữ xe Porsche và Mercedes-Benz khi áp dụng mã AUTOSUMMER50M.',
       type: 'promotion',
     },
     {
@@ -57,7 +57,7 @@ export const NotificationsView: React.FC = () => {
     },
     {
       title: 'Nhắc Nhở Lịch Hẹn Lái Thử Tại Showroom',
-      content: 'Chuyên viên AutoMatch đã chuẩn bị sẵn xe và cung đường trải nghiệm cho bạn. Vui lòng đến đúng giờ.',
+      content: 'Chuyên viên AutoMatch đã chuẩn bị sẵn xe và cung đường trải nghiệm cho bạn. Vui lòng đến đúng giờ hẹn.',
       type: 'test_drive',
     },
   ];
@@ -93,7 +93,7 @@ export const NotificationsView: React.FC = () => {
                 <Select
                   label="Đối Tượng Nhận Thông Báo *"
                   value={targetType}
-                  onChange={(e) => setTargetType(e.target.value as any)}
+                  onChange={(e) => setTargetType(e.target.value as 'broadcast' | 'user')}
                 >
                   <option value="broadcast">Phát toàn hệ thống (Tất cả người dùng)</option>
                   <option value="user">Gửi cho một khách hàng cụ thể</option>
@@ -191,26 +191,30 @@ export const NotificationsView: React.FC = () => {
                 <Clock className="w-4 h-4 text-slate-600" />
                 Lịch Sử Thông Báo
               </CardTitle>
-              <CardDescription>{notifications.length} thông báo đã lưu</CardDescription>
+              <CardDescription>{notifications.length} thông báo đã lưu trong Supabase</CardDescription>
             </div>
           </CardHeader>
 
           <CardContent className="p-0 max-h-125 overflow-y-auto divide-y divide-slate-100">
-            {notifications.map((notif) => (
-              <div key={notif.id} className="p-4 space-y-1.5 hover:bg-slate-50/60 transition-colors">
-                <div className="flex items-start justify-between gap-2">
-                  <h5 className="font-bold text-xs text-slate-900 leading-snug">{notif.title}</h5>
-                  <Badge variant={notif.type === 'system' ? 'secondary' : 'primary'} size="sm">
-                    {notif.type || 'broadcast'}
-                  </Badge>
+            {notifications.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400">Chưa có thông báo nào</div>
+            ) : (
+              notifications.map((notif) => (
+                <div key={notif.id} className="p-4 space-y-1.5 hover:bg-slate-50/60 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <h5 className="font-bold text-xs text-slate-900 leading-snug">{notif.title}</h5>
+                    <Badge variant={notif.type === 'system' ? 'secondary' : 'primary'} size="sm">
+                      {notif.type || 'broadcast'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">{notif.content}</p>
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                    <span>{notif.user_id ? 'Gửi cá nhân' : 'Toàn hệ thống'}</span>
+                    <span>{formatDateTime(notif.created_at)}</span>
+                  </div>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed">{notif.content}</p>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-                  <span>{notif.user_id ? 'Gửi cá nhân' : 'Toàn hệ thống'}</span>
-                  <span>{formatDateTime(notif.created_at)}</span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

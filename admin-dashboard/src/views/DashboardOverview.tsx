@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   DollarSign,
   Car,
@@ -23,6 +23,7 @@ import {
   Cell,
 } from 'recharts';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import { MetricCard } from '../components/ui/MetricCard';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -37,34 +38,68 @@ interface DashboardOverviewProps {
   onOpenAddCar: () => void;
 }
 
-// Chart data
-const monthlyRevenueData = [
-  { month: 'T3', revenue: 4200000000, deposit: 420000000, orders: 4 },
-  { month: 'T4', revenue: 6800000000, deposit: 680000000, orders: 6 },
-  { month: 'T5', revenue: 11200000000, deposit: 1120000000, orders: 9 },
-  { month: 'T6', revenue: 9400000000, deposit: 940000000, orders: 8 },
-  { month: 'T7', revenue: 14500000000, deposit: 1450000000, orders: 12 },
-  { month: 'T8', revenue: 22690000000, deposit: 2269000000, orders: 16 },
-];
-
-const brandPopularityData = [
-  { name: 'Porsche', count: 6, color: '#2563EB' },
-  { name: 'Tesla', count: 5, color: '#4F46E5' },
-  { name: 'Mercedes-Benz', count: 4, color: '#059669' },
-  { name: 'BMW', count: 3, color: '#D97706' },
-  { name: 'VinFast', count: 8, color: '#0284C7' },
-];
+const BRAND_COLORS = ['#2563EB', '#4F46E5', '#059669', '#D97706', '#0284C7', '#7C3AED', '#EC4899', '#64748B'];
 
 export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate, onOpenAddCar }) => {
-  const { metrics, orders, testDrives } = useData();
+  const { metrics, orders, testDrives, cars } = useData();
+  const { can } = useAuth();
 
   const recentOrders = orders.slice(0, 5);
   const upcomingTestDrives = testDrives.filter((t) => t.status === 'confirmed' || t.status === 'pending').slice(0, 4);
 
+  // Dynamic Monthly Revenue & Deposit Trend from Real Orders
+  const monthlyRevenueData = useMemo(() => {
+    if (!orders.length) {
+      // Return 6 month window structure if no orders yet
+      const months = ['T3', 'T4', 'T5', 'T6', 'T7', 'T8'];
+      return months.map((m) => ({ month: m, revenue: 0, deposit: 0, orders: 0 }));
+    }
+
+    const monthMap: Record<string, { month: string; revenue: number; deposit: number; orders: number }> = {};
+    orders.forEach((ord) => {
+      const d = ord.created_at ? new Date(ord.created_at) : new Date(2026, 0, 1);
+      const mKey = `T${d.getMonth() + 1}`;
+      if (!monthMap[mKey]) {
+        monthMap[mKey] = { month: mKey, revenue: 0, deposit: 0, orders: 0 };
+      }
+      monthMap[mKey].revenue += Number(ord.total_amount || 0);
+      monthMap[mKey].deposit += Number(ord.deposit_amount || 0);
+      monthMap[mKey].orders += 1;
+    });
+
+    const data = Object.values(monthMap);
+    return data.length > 0
+      ? data
+      : [{ month: 'T1', revenue: 0, deposit: 0, orders: 0 }];
+  }, [orders]);
+
+  // Dynamic Brand Distribution from Real Cars in Supabase
+  const brandPopularityData = useMemo(() => {
+    if (!cars.length) {
+      return [{ name: 'Đang tải xe...', count: 0, color: '#94A3B8' }];
+    }
+
+    const makeCount: Record<string, number> = {};
+    cars.forEach((c) => {
+      const make = c.make || 'Khác';
+      makeCount[make] = (makeCount[make] || 0) + 1;
+    });
+
+    const sorted = Object.entries(makeCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+
+    return sorted.map(([name, count], idx) => ({
+      name,
+      count,
+      color: BRAND_COLORS[idx % BRAND_COLORS.length],
+    }));
+  }, [cars]);
+
   return (
     <div className="space-y-6">
       {/* Welcome Banner with Quick AI & Inventory Shortcut */}
-      <div className="relative overflow-hidden bg-linear-to-r from-blue-600 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-blue-900/10">
+      <div className="relative overflow-hidden bg-linear-to-r from-blue-600 via-indigo-600 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-blue-900/10 text-left">
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-md text-xs font-semibold text-blue-100">
             <Sparkles className="w-3.5 h-3.5 text-blue-200 animate-spin" style={{ animationDuration: '4s' }} />
@@ -89,15 +124,17 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
             >
               Mở AI Vector & Conflict Hub
             </Button>
-            <Button
-              variant="outline"
-              size="md"
-              leftIcon={<Car className="w-4 h-4 text-white" />}
-              onClick={onOpenAddCar}
-              className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm"
-            >
-              Nhập Xe Vào Kho
-            </Button>
+            {can('CARS_CREATE') && (
+              <Button
+                variant="outline"
+                size="md"
+                leftIcon={<Car className="w-4 h-4 text-white" />}
+                onClick={onOpenAddCar}
+                className="bg-white/10 text-white hover:bg-white/20 border-white/20 backdrop-blur-sm"
+              >
+                Nhập Xe Vào Kho
+              </Button>
+            )}
           </div>
         </div>
 
@@ -106,13 +143,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         <div className="absolute bottom-0 right-1/4 -mb-16 w-60 h-60 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none" />
       </div>
 
-      {/* 4 Core Executive Metric Cards */}
+      {/* 4 Core Executive Metric Cards (Calculated from Real Database) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <MetricCard
           title="Tổng Tiền Cọc Đã Thu"
           value={formatVNDCompact(metrics.totalDeposit)}
-          change={24.8}
-          changePeriod="so với tháng trước"
+          change={metrics.totalDeposit > 0 ? 100 : 0}
+          changePeriod="từ hợp đồng đặt cọc"
           icon={<DollarSign className="w-6 h-6" />}
           iconBgColor="bg-emerald-50 text-emerald-600 border border-emerald-100"
           subtitle="Thu qua ZaloPay & Chuyển khoản"
@@ -121,20 +158,20 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
         <MetricCard
           title="Xe Sẵn Sàng Giao"
-          value={`${metrics.activeCars} mẫu xe`}
-          change={12.5}
-          changePeriod="tồn kho 5 Showroom"
+          value={`${metrics.activeCars || cars.length} mẫu xe`}
+          change={cars.length}
+          changePeriod="tổng số xe trong DB"
           icon={<Car className="w-6 h-6" />}
           iconBgColor="bg-blue-50 text-blue-600 border border-blue-100"
-          subtitle="Xe sang & EV thế hệ mới"
+          subtitle="Dữ liệu thực từ Supabase"
           onClick={() => onNavigate('cars')}
         />
 
         <MetricCard
-          title="Hợp Đồng Đặt Cọc Mới"
+          title="Hợp Đồng Đặt Cọc"
           value={`${metrics.totalOrders} đơn`}
-          change={metrics.pendingOrders > 0 ? metrics.pendingOrders : 0}
-          changePeriod={`${metrics.pendingOrders} đơn chờ xử lý`}
+          change={metrics.pendingOrders}
+          changePeriod={`${metrics.pendingOrders} đơn chờ duyệt`}
           icon={<ShoppingBag className="w-6 h-6" />}
           iconBgColor="bg-amber-50 text-amber-600 border border-amber-100"
           subtitle="Hợp đồng điện tử online"
@@ -144,11 +181,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         <MetricCard
           title="Lịch Lái Thử Tuần Này"
           value={`${metrics.testDrivesThisWeek} cuộc hẹn`}
-          change={18.0}
-          changePeriod="Tỷ lệ cọc sau lái: 68%"
+          change={testDrives.length}
+          changePeriod="tổng lịch hẹn khách hàng"
           icon={<Calendar className="w-6 h-6" />}
           iconBgColor="bg-indigo-50 text-indigo-600 border border-indigo-100"
-          subtitle="Showroom Hà Nội & TP.HCM"
+          subtitle="Tại mạng lưới Showroom"
           onClick={() => onNavigate('test_drives')}
         />
       </div>
@@ -156,14 +193,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       {/* Analytics Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue & Deposit Trend Chart (2 columns) */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 text-left">
           <CardHeader>
             <div>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-blue-600" />
                 Xu Hướng Doanh Số & Dòng Tiền Đặt Cọc
               </CardTitle>
-              <CardDescription>Biểu đồ doanh thu dự toán và tiền cọc thực thu 6 tháng gần nhất</CardDescription>
+              <CardDescription>Biểu đồ dòng tiền cọc thực thu từ cơ sở dữ liệu Supabase</CardDescription>
             </div>
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center gap-1 text-xs text-slate-600">
@@ -189,7 +226,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                   tickFormatter={(val) => `${(val / 1000000000).toFixed(1)}T`}
                 />
                 <Tooltip
-                  formatter={(val: any) => [formatVND(Number(val)), 'Tiền Cọc']}
+                  formatter={(val) => [formatVND(Number(val)), 'Tiền Cọc']}
                   labelFormatter={(label) => `Tháng ${label}`}
                   contentStyle={{
                     backgroundColor: '#FFFFFF',
@@ -213,14 +250,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         </Card>
 
         {/* Brand Distribution Breakdown (1 column) */}
-        <Card>
+        <Card className="text-left">
           <CardHeader>
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Award className="w-4 h-4 text-indigo-600" />
                 Cơ Cấu Thương Hiệu
               </CardTitle>
-              <CardDescription>Tỷ lệ xe trong kho theo Hãng sản xuất</CardDescription>
+              <CardDescription>Top thương hiệu xe trong kho Supabase</CardDescription>
             </div>
           </CardHeader>
           <CardContent className="h-80 flex flex-col justify-between">
@@ -241,7 +278,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: any, name: any) => [`${val} mẫu xe`, name]}
+                    formatter={(val, name) => [`${val} mẫu xe`, String(name)]}
                     contentStyle={{
                       backgroundColor: '#FFFFFF',
                       borderRadius: '10px',
@@ -267,7 +304,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       </div>
 
       {/* Lower Section: Recent Orders & Upcoming Test Drives */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 text-left">
         {/* Recent Orders (2 columns) */}
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -276,7 +313,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                 <ShoppingBag className="w-4 h-4 text-blue-600" />
                 Hợp Đồng Đặt Cọc Gần Đây
               </CardTitle>
-              <CardDescription>Các giao dịch mua xe trực tuyến mới phát sinh</CardDescription>
+              <CardDescription>Giao dịch mua xe trực tuyến mới phát sinh</CardDescription>
             </div>
             <Button
               variant="ghost"
@@ -289,82 +326,88 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </CardHeader>
 
           <div className="p-0 overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã Đơn / Khách Hàng</TableHead>
-                  <TableHead>Mẫu Xe</TableHead>
-                  <TableHead>Tiền Cọc (VNĐ)</TableHead>
-                  <TableHead>Trạng Thái</TableHead>
-                  <TableHead>Thanh Toán</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentOrders.map((ord) => {
-                  const statusInfo = (statusMap as any)[ord.status] || {
-                    label: ord.status,
-                    bg: '#F1F5F9',
-                    color: '#475569',
-                    dotColor: 'bg-slate-500',
-                  };
-                  const paymentInfo = (statusMap as any)[ord.deposit_status] || {
-                    label: ord.deposit_status,
-                    bg: '#F1F5F9',
-                    color: '#475569',
-                  };
+            {recentOrders.length === 0 ? (
+              <div className="p-8 text-center text-xs text-slate-400">
+                Chưa có giao dịch đặt cọc nào được ghi nhận trong cơ sở dữ liệu.
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mã Đơn / Khách Hàng</TableHead>
+                    <TableHead>Mẫu Xe</TableHead>
+                    <TableHead>Tiền Cọc (VNĐ)</TableHead>
+                    <TableHead>Trạng Thái</TableHead>
+                    <TableHead>Thanh Toán</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentOrders.map((ord) => {
+                    const statusInfo = statusMap[ord.status as keyof typeof statusMap] || {
+                      label: ord.status,
+                      bg: '#F1F5F9',
+                      color: '#475569',
+                      dotColor: 'bg-slate-500',
+                    };
+                    const paymentInfo = statusMap[ord.deposit_status as keyof typeof statusMap] || {
+                      label: ord.deposit_status,
+                      bg: '#F1F5F9',
+                      color: '#475569',
+                    };
 
-                  const carName = ord.items?.[0]?.car
-                    ? `${ord.items[0].car.make} ${ord.items[0].car.model}`
-                    : 'Giao dịch xe';
+                    const carName = ord.items?.[0]?.car
+                      ? `${ord.items[0].car.make} ${ord.items[0].car.model}`
+                      : 'Giao dịch xe';
 
-                  return (
-                    <TableRow key={ord.id}>
-                      <TableCell>
-                        <div className="font-bold text-slate-900 text-xs uppercase">{ord.id}</div>
-                        <div className="text-xs text-slate-500">
-                          {ord.profile?.full_name || ord.profile?.email || 'Khách vãng lai'}
-                        </div>
-                      </TableCell>
+                    return (
+                      <TableRow key={ord.id}>
+                        <TableCell>
+                          <div className="font-bold text-slate-900 text-xs uppercase">{ord.id.slice(0, 8)}</div>
+                          <div className="text-xs text-slate-500">
+                            {ord.profile?.full_name || ord.profile?.email || 'Khách vãng lai'}
+                          </div>
+                        </TableCell>
 
-                      <TableCell>
-                        <span className="font-semibold text-slate-800 text-xs">{carName}</span>
-                        <div className="text-[11px] text-slate-400">
-                          {ord.showroom?.name?.split('-')[0] || 'Showroom trung tâm'}
-                        </div>
-                      </TableCell>
+                        <TableCell>
+                          <span className="font-semibold text-slate-800 text-xs">{carName}</span>
+                          <div className="text-[11px] text-slate-400">
+                            {ord.showroom?.name?.split('-')[0] || 'Showroom trung tâm'}
+                          </div>
+                        </TableCell>
 
-                      <TableCell>
-                        <span className="font-bold text-blue-600 text-xs">
-                          {formatVND(ord.deposit_amount)}
-                        </span>
-                        <div className="text-[10px] text-slate-400">
-                          Tổng: {formatVNDCompact(ord.total_amount)}
-                        </div>
-                      </TableCell>
+                        <TableCell>
+                          <span className="font-bold text-blue-600 text-xs">
+                            {formatVND(ord.deposit_amount)}
+                          </span>
+                          <div className="text-[10px] text-slate-400">
+                            Tổng: {formatVNDCompact(ord.total_amount)}
+                          </div>
+                        </TableCell>
 
-                      <TableCell>
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                          style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}
-                        >
-                          <span className={cn('w-1.5 h-1.5 rounded-full', statusInfo.dotColor)} />
-                          {statusInfo.label}
-                        </span>
-                      </TableCell>
+                        <TableCell>
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                            style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}
+                          >
+                            <span className={cn('w-1.5 h-1.5 rounded-full', statusInfo.dotColor)} />
+                            {statusInfo.label}
+                          </span>
+                        </TableCell>
 
-                      <TableCell>
-                        <Badge
-                          variant={ord.deposit_status === 'paid' ? 'success' : 'warning'}
-                          size="sm"
-                        >
-                          {paymentInfo.label}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        <TableCell>
+                          <Badge
+                            variant={ord.deposit_status === 'paid' ? 'success' : 'warning'}
+                            size="sm"
+                          >
+                            {paymentInfo.label}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </div>
         </Card>
 
@@ -417,7 +460,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                       {formatDateTime(td.scheduled_date)}
                     </span>
                     <span className="truncate max-w-30">
-                      {td.showroom?.city || 'Hà Nội'}
+                      {td.showroom?.city || 'Chi nhánh'}
                     </span>
                   </div>
                 </div>

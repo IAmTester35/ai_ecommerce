@@ -13,10 +13,12 @@ import {
   Settings,
   ShieldCheck,
   Zap,
+  LogOut,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useData } from '../../context/DataContext';
 import { useAuth } from '../../context/AuthContext';
+import { ROLE_INFO } from '../../lib/permissions';
 
 export type NavView =
   | 'dashboard'
@@ -58,9 +60,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed = false,
 }) => {
   const { metrics, notifications } = useData();
-  const { currentUser, switchRole } = useAuth();
+  const { currentUser, signOut, role } = useAuth();
 
   const unreadNotifs = notifications.filter((n) => !n.is_read).length;
+  const currentRoleInfo = role ? ROLE_INFO[role] : ROLE_INFO.manager;
 
   const navItems: NavGroup[] = [
     {
@@ -86,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           id: 'cars',
           label: 'Kho Xe & Thông Số',
           icon: <CarIcon className="w-4 h-4" />,
-          badge: metrics.activeCars,
+          badge: metrics.activeCars > 0 ? metrics.activeCars : undefined,
         },
         {
           id: 'orders',
@@ -231,62 +234,55 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </div>
 
-      {/* Profile & Role Switcher Footer */}
+      {/* Profile & Sign Out Footer */}
       <div className="p-3 border-t border-slate-100 bg-slate-50/60">
         {!isCollapsed ? (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             <div className="flex items-center gap-3 px-2">
               <img
-                src={currentUser.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-                alt={currentUser.full_name || 'Admin'}
-                className="w-9 h-9 rounded-xl object-cover border border-slate-200"
+                src={currentUser?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+                alt={currentUser?.full_name || 'Admin'}
+                className="w-9 h-9 rounded-xl object-cover border border-slate-200 shrink-0"
               />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-slate-900 truncate">
-                  {currentUser.full_name || 'Admin User'}
+                  {currentUser?.full_name || 'Admin User'}
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <ShieldCheck className="w-3 h-3 text-blue-600" />
-                  <span className="text-[10px] font-semibold text-blue-600 uppercase">
-                    {currentUser.role}
+                  <ShieldCheck className="w-3 h-3 text-indigo-600 shrink-0" />
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.2 rounded-md uppercase"
+                    style={{ backgroundColor: currentRoleInfo.bg, color: currentRoleInfo.color }}
+                  >
+                    {currentRoleInfo.tag}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Quick Role Switcher for Testing/Role Demonstration */}
-            <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
-              <button
-                onClick={() => switchRole('owner')}
-                className={cn(
-                  'flex-1 text-[10px] font-bold py-1 rounded-lg transition-all',
-                  currentUser.role === 'owner'
-                    ? 'bg-blue-600 text-white shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                )}
-              >
-                Owner
-              </button>
-              <button
-                onClick={() => switchRole('manager')}
-                className={cn(
-                  'flex-1 text-[10px] font-bold py-1 rounded-lg transition-all',
-                  currentUser.role === 'manager'
-                    ? 'bg-blue-600 text-white shadow-2xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                )}
-              >
-                Manager
-              </button>
-            </div>
+            {/* Sign Out Button */}
+            <button
+              onClick={() => signOut()}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition-all cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Đăng Xuất</span>
+            </button>
           </div>
         ) : (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center gap-2">
             <img
-              src={currentUser.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
-              alt={currentUser.full_name || 'Admin'}
+              src={currentUser?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'}
+              alt={currentUser?.full_name || 'Admin'}
               className="w-9 h-9 rounded-xl object-cover border border-slate-200"
             />
+            <button
+              onClick={() => signOut()}
+              title="Đăng Xuất"
+              className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         )}
       </div>

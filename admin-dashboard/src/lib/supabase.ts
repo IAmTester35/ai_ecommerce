@@ -12,7 +12,8 @@ export async function checkSupabaseConnection(): Promise<{ connected: boolean; m
       return { connected: false, message: error.message };
     }
     return { connected: true, message: 'Kết nối Supabase PostgreSQL thành công' };
-  } catch (err: any) {
-    return { connected: false, message: err?.message || 'Không thể kết nối đến Supabase' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Không thể kết nối đến Supabase';
+    return { connected: false, message: msg };
   }
 }

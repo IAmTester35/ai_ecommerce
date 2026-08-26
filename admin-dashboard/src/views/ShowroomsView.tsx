@@ -8,8 +8,10 @@ import {
   Edit2,
   Car,
   Shuffle,
+  ShieldAlert,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import type { Showroom } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -20,6 +22,7 @@ import { Switch } from '../components/ui/Switch';
 
 export const ShowroomsView: React.FC = () => {
   const { showrooms, cars, addShowroom, updateShowroom, distributeCarsToShowrooms } = useData();
+  const { isOwner, can } = useAuth();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingShowroom, setEditingShowroom] = useState<Showroom | null>(null);
@@ -72,7 +75,15 @@ export const ShowroomsView: React.FC = () => {
   };
 
   const handleAutoDistribute = async () => {
-    if (window.confirm('Hệ thống sẽ tự động phân bổ đồng đều toàn bộ xe trong kho đến các Showroom đang hoạt động. Bạn có chắc chắn?')) {
+    if (!isOwner) {
+      alert('Chỉ tài khoản cấp Owner mới có quyền kích hoạt phân bổ kho xe.');
+      return;
+    }
+    if (
+      window.confirm(
+        `Hệ thống sẽ tự động phân bổ đồng đều ${cars.length} mẫu xe trong kho đến ${showrooms.length} Showroom đang hoạt động. Bạn có chắc chắn?`
+      )
+    ) {
       setIsDistributing(true);
       await distributeCarsToShowrooms();
       setIsDistributing(false);
@@ -80,7 +91,7 @@ export const ShowroomsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left">
       {/* Header Info */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -91,187 +102,212 @@ export const ShowroomsView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <Button
-            variant="outline"
-            size="md"
-            leftIcon={<Shuffle className="w-4 h-4 text-indigo-600" />}
-            onClick={handleAutoDistribute}
-            isLoading={isDistributing}
-            title="Kích hoạt hàm RPC phân bổ ngẫu nhiên và đồng đều toàn bộ xe vào các chi nhánh"
-          >
-            Phân Bổ Kho Tự Động
-          </Button>
+          {isOwner ? (
+            <Button
+              variant="outline"
+              size="md"
+              leftIcon={<Shuffle className="w-4 h-4 text-indigo-600" />}
+              onClick={handleAutoDistribute}
+              isLoading={isDistributing}
+              title="Kích hoạt hàm RPC phân bổ ngẫu nhiên và đồng đều toàn bộ xe vào các chi nhánh"
+            >
+              Phân Bổ Xe Tự Động (RPC)
+            </Button>
+          ) : (
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-[11px] text-slate-500 border border-slate-200">
+              <ShieldAlert className="w-3.5 h-3.5 text-slate-400" />
+              <span>RPC Phân bổ: Owner only</span>
+            </div>
+          )}
 
-          <Button
-            variant="primary"
-            size="md"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={openCreateModal}
-          >
-            Thêm Showroom
-          </Button>
+          {can('SHOWROOMS_CREATE') && (
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<Plus className="w-4 h-4" />}
+              onClick={openCreateModal}
+            >
+              Thêm Showroom
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Showrooms Grid */}
+      {/* Grid of Showrooms */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {showrooms.map((sr) => {
-          const carCount = cars.filter((c) => c.showroom_id === sr.id).length;
+          const showroomCars = cars.filter((c) => c.showroom_id === sr.id);
+
           return (
-            <Card key={sr.id} className="overflow-hidden flex flex-col justify-between group">
+            <Card key={sr.id} className="overflow-hidden group hover:border-blue-300 transition-all flex flex-col justify-between">
               <div>
-                <div className="relative h-48 w-full bg-slate-100 overflow-hidden">
+                <div className="relative h-48 bg-slate-100 overflow-hidden">
                   <img
                     src={sr.image_url || 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80'}
                     alt={sr.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-lg text-white text-xs font-bold">
-                    {sr.code}
-                  </div>
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
                     <Badge variant={sr.is_active ? 'success' : 'neutral'} size="sm">
-                      {sr.is_active ? 'Đang hoạt động' : 'Tạm đóng cửa'}
+                      {sr.is_active ? 'Đang hoạt động' : 'Tạm dừng'}
                     </Badge>
                   </div>
-                  <div className="absolute bottom-3 right-3 bg-blue-600/90 backdrop-blur-md px-3 py-1 rounded-xl text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md">
-                    <Car className="w-3.5 h-3.5" />
-                    {carCount} xe tại showroom
+                  <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-xs font-mono font-bold px-2.5 py-1 rounded-lg">
+                    Mã: {sr.code}
                   </div>
                 </div>
 
-                <div className="p-5 space-y-3">
+                <div className="p-5 space-y-3.5">
                   <div>
-                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">{sr.city}</span>
-                    <h4 className="text-base font-bold text-slate-900 mt-0.5 leading-snug">{sr.name}</h4>
+                    <h3 className="font-bold text-slate-900 text-base leading-snug">{sr.name}</h3>
+                    <div className="flex items-start gap-1.5 text-xs text-slate-500 mt-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                      <span>{sr.address}, {sr.city}</span>
+                    </div>
                   </div>
 
-                  <div className="space-y-2 text-xs text-slate-600 pt-2 border-t border-slate-100">
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                      <span className="leading-relaxed">{sr.address}</span>
+                  <div className="space-y-1.5 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-slate-500">
+                        <Phone className="w-3 h-3" />
+                        Hotline:
+                      </span>
+                      <span className="font-semibold text-slate-800">{sr.phone || 'Chưa cập nhật'}</span>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="font-semibold text-slate-800">{sr.phone || '1900 6868'}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-slate-500">
+                        <Mail className="w-3 h-3" />
+                        Email:
+                      </span>
+                      <span className="font-semibold text-slate-800">{sr.email || 'Chưa cập nhật'}</span>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span>{sr.opening_hours}</span>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-slate-500">
+                        <Clock className="w-3 h-3" />
+                        Giờ mở cửa:
+                      </span>
+                      <span className="font-semibold text-slate-800">{sr.opening_hours}</span>
                     </div>
-
-                    {sr.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span className="truncate">{sr.email}</span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-slate-400">Chi nhánh chuẩn Flagship</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  leftIcon={<Edit2 className="w-3.5 h-3.5" />}
-                  onClick={() => openEditModal(sr)}
-                >
-                  Chỉnh Sửa
-                </Button>
+              {/* Showroom Inventory Footer */}
+              <div className="p-5 pt-0">
+                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600">
+                    <Car className="w-4 h-4" />
+                    <span>{showroomCars.length} mẫu xe trưng bày</span>
+                  </div>
+
+                  {can('SHOWROOMS_UPDATE') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                      onClick={() => openEditModal(sr)}
+                    >
+                      Sửa
+                    </Button>
+                  )}
+                </div>
               </div>
             </Card>
           );
         })}
       </div>
 
-      {/* Add / Edit Showroom Modal */}
+      {/* Modal Add / Edit Showroom */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingShowroom ? `Chỉnh Sửa Showroom: ${editingShowroom.name}` : 'Thêm Chi Nhánh Showroom Mới'}
-        description="Thông tin trung tâm phân phối và địa điểm bàn giao xe"
+        title={editingShowroom ? `Cập Nhật Showroom: ${editingShowroom.name}` : 'Thêm Showroom Mới'}
+        description="Quản lý thông tin chi nhánh đại lý trên toàn quốc"
         maxWidth="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Tên Showroom *"
-            placeholder="VD: AutoMatch Cần Thơ - Ninh Kiều Center"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            required
-          />
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Tên Showroom *"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="VD: AutoMatch Hà Nội - Cầu Giấy"
+              required
+            />
+
+            <Input
+              label="Mã Chi Nhánh (Code) *"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              placeholder="VD: SR_HN_CG"
+              required
+            />
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Mã Chi Nhánh (Code) *"
-              placeholder="VD: SR_CT_NK"
-              value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-              required
-            />
-            <Input
               label="Tỉnh / Thành Phố *"
-              placeholder="VD: Hà Nội, TP.HCM, Đà Nẵng..."
               value={formData.city}
               onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              placeholder="VD: Hà Nội, TP. Hồ Chí Minh..."
               required
+            />
+
+            <Input
+              label="Giờ Mở Cửa"
+              value={formData.opening_hours}
+              onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
+              placeholder="08:00 - 21:00"
             />
           </div>
 
           <Input
             label="Địa Chỉ Chi Tiết *"
-            placeholder="Số nhà, tên đường, phường/quận..."
             value={formData.address}
             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            placeholder="Số 68 Đường Cầu Giấy, Phường Quan Hoa..."
             required
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Số Điện Thoại Hotline"
-              placeholder="VD: 028 5411 2233"
               value={formData.phone || ''}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="024 3888 9999"
             />
+
             <Input
-              label="Giờ Mở Cửa"
-              placeholder="08:00 - 21:00"
-              value={formData.opening_hours}
-              onChange={(e) => setFormData({ ...formData, opening_hours: e.target.value })}
+              label="Email Liên Hệ"
+              type="email"
+              value={formData.email || ''}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              placeholder="hanoi@automatch.vn"
             />
           </div>
 
           <Input
-            label="Email Liên Hệ"
-            placeholder="showroom@automatch.vn"
-            value={formData.email || ''}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          />
-
-          <Input
-            label="Link Hình Ảnh Mặt Tiền Showroom"
-            placeholder="https://images.unsplash.com/..."
+            label="Link Hình Ảnh Showroom (Image URL)"
             value={formData.image_url || ''}
             onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+            placeholder="https://images.unsplash.com/..."
           />
 
-          <Switch
-            checked={formData.is_active}
-            onChange={(checked) => setFormData({ ...formData, is_active: checked })}
-            label="Đang mở cửa hoạt động"
-            description="Cho phép khách hàng chọn showroom này để lái thử và nhận xe"
-          />
+          <div className="pt-2">
+            <Switch
+              label="Trạng Thái Hoạt Động"
+              description="Cho phép khách hàng chọn showroom này để lái thử và nhận xe"
+              checked={formData.is_active}
+              onChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            />
+          </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
               Hủy
             </Button>
             <Button variant="primary" type="submit">
-              {editingShowroom ? 'Lưu Thay Đổi' : 'Thêm Showroom'}
+              {editingShowroom ? 'Lưu Thay Đổi' : 'Thêm Mới'}
             </Button>
           </div>
         </form>

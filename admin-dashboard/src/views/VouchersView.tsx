@@ -5,10 +5,10 @@ import {
   Trash2,
   Copy,
   Check,
-  Percent,
-  DollarSign,
+  Ticket,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import type { Voucher, DiscountType, VoucherAppliesTo } from '../types';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -18,11 +18,13 @@ import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { Switch } from '../components/ui/Switch';
+import { EmptyState } from '../components/ui/EmptyState';
 import { formatVND, formatVNDCompact, formatDate } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 
 export const VouchersView: React.FC = () => {
   const { vouchers, addVoucher, updateVoucher, deleteVoucher } = useData();
+  const { isOwner, can } = useAuth();
   const { success } = useToast();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -88,8 +90,18 @@ export const VouchersView: React.FC = () => {
     setIsModalOpen(false);
   };
 
+  const handleDelete = async (v: Voucher) => {
+    if (!isOwner) {
+      alert('Chỉ tài khoản cấp Owner mới có quyền xóa mã voucher.');
+      return;
+    }
+    if (window.confirm(`Bạn có chắc chắn muốn xóa mã voucher ${v.code}?`)) {
+      await deleteVoucher(v.id);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left">
       {/* Header Info */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -99,221 +111,253 @@ export const VouchersView: React.FC = () => {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          size="md"
-          leftIcon={<Plus className="w-4 h-4" />}
-          onClick={openCreateModal}
-        >
-          Tạo Mã Voucher Mới
-        </Button>
+        {can('VOUCHERS_CREATE') && (
+          <Button
+            variant="primary"
+            size="md"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={openCreateModal}
+            className="w-full sm:w-auto"
+          >
+            Tạo Mã Voucher
+          </Button>
+        )}
       </div>
 
-      {/* Voucher Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vouchers.map((v) => {
-          const usagePercent = Math.min(100, Math.round((v.used_count / v.usage_limit) * 100));
-          return (
-            <Card key={v.id} className="relative overflow-hidden flex flex-col justify-between group">
-              <div className="p-5 space-y-3.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
-                      {v.discount_type === 'percentage' ? (
-                        <Percent className="w-4 h-4" />
-                      ) : (
-                        <DollarSign className="w-4 h-4" />
-                      )}
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{v.title}</h4>
-                      <span className="text-[10px] text-slate-400">
-                        Áp dụng: {v.applies_to === 'deposit' ? 'Tiền cọc xe' : 'Tổng giá trị'}
+      {/* Vouchers Grid */}
+      {vouchers.length === 0 ? (
+        <EmptyState
+          icon={<Ticket className="w-8 h-8" />}
+          title="Chưa có mã khuyến mãi nào"
+          description="Tạo các mã khuyến mãi giảm giá cọc để kích cầu người mua đặt cọc xe trực tuyến."
+          actionLabel="Tạo voucher đầu tiên"
+          onAction={openCreateModal}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {vouchers.map((vc) => {
+            const usagePercent = vc.usage_limit > 0 ? Math.round((vc.used_count / vc.usage_limit) * 100) : 0;
+
+            return (
+              <Card key={vc.id} className="overflow-hidden flex flex-col justify-between hover:border-blue-300 transition-all">
+                <div className="p-6 space-y-4">
+                  {/* Top Bar with Code & Badge */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-base font-extrabold text-blue-600 bg-blue-50 px-3 py-1 rounded-xl border border-blue-200/80 tracking-wider">
+                          {vc.code}
+                        </span>
+                        <button
+                          onClick={() => handleCopyCode(vc.code)}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                          title="Sao chép mã"
+                        >
+                          {copiedCode === vc.code ? (
+                            <Check className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Badge variant={vc.is_active ? 'success' : 'neutral'} size="sm">
+                      {vc.is_active ? 'Đang chạy' : 'Tạm dừng'}
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm leading-snug">{vc.title}</h3>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                      {vc.description || 'Không có mô tả chi tiết'}
+                    </p>
+                  </div>
+
+                  {/* Value Summary Box */}
+                  <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Mức Giảm Giá:</span>
+                      <span className="font-extrabold text-blue-700">
+                        {vc.discount_type === 'percentage'
+                          ? `${vc.discount_value}% (Tối đa ${formatVNDCompact(vc.max_discount_amount || 0)})`
+                          : formatVND(vc.discount_value)}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Áp Dụng Cho:</span>
+                      <span className="font-semibold text-slate-800 capitalize">
+                        {vc.applies_to === 'deposit' ? 'Tiền Cọc Giữ Xe' : 'Tổng Hợp Đồng Xe'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Đơn Tối Thiểu:</span>
+                      <span className="font-semibold text-slate-800">
+                        {vc.min_order_value > 0 ? formatVNDCompact(vc.min_order_value) : 'Không giới hạn'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-500">Thời Gian:</span>
+                      <span className="font-semibold text-slate-800">
+                        {vc.end_date ? `Đến ${formatDate(vc.end_date)}` : 'Vô thời hạn'}
                       </span>
                     </div>
                   </div>
 
-                  <Badge variant={v.is_active ? 'success' : 'neutral'} size="sm">
-                    {v.is_active ? 'Đang chạy' : 'Đã dừng'}
-                  </Badge>
-                </div>
-
-                {/* Coupon Code Strip */}
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                  <div className="font-mono font-extrabold text-blue-700 text-base tracking-wider">
-                    {v.code}
-                  </div>
-                  <button
-                    onClick={() => handleCopyCode(v.code)}
-                    className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                    title="Sao chép mã"
-                  >
-                    {copiedCode === v.code ? (
-                      <Check className="w-4 h-4 text-emerald-600" />
-                    ) : (
-                      <Copy className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-
-                <p className="text-xs text-slate-600 leading-relaxed">{v.description || 'Ưu đãi đặc biệt'}</p>
-
-                {/* Value & Constraints */}
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
-                  <div>
-                    <span className="text-slate-400 block text-[11px]">Mức giảm:</span>
-                    <span className="font-extrabold text-slate-900 text-sm">
-                      {v.discount_type === 'percentage'
-                        ? `${v.discount_value}%`
-                        : formatVND(v.discount_value)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-400 block text-[11px]">Đơn tối thiểu:</span>
-                    <span className="font-semibold text-slate-800">
-                      {formatVNDCompact(v.min_order_value)}
-                    </span>
+                  {/* Usage Progress Bar */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium">
+                      <span>Đã dùng: {vc.used_count} / {vc.usage_limit} lượt</span>
+                      <span className="font-bold text-slate-800">{usagePercent}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-linear-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300"
+                        style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Usage Progress Bar */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-slate-500">Đã dùng:</span>
-                    <span className="font-bold text-slate-800">
-                      {v.used_count} / {v.usage_limit} lượt ({usagePercent}%)
-                    </span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-600 rounded-full transition-all duration-300"
-                      style={{ width: `${usagePercent}%` }}
-                    />
-                  </div>
+                {/* Footer Actions */}
+                <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-end gap-2">
+                  {can('VOUCHERS_UPDATE') && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      leftIcon={<Edit2 className="w-3.5 h-3.5" />}
+                      onClick={() => openEditModal(vc)}
+                    >
+                      Sửa
+                    </Button>
+                  )}
+                  {isOwner && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={<Trash2 className="w-3.5 h-3.5 text-rose-600" />}
+                      onClick={() => handleDelete(vc)}
+                    >
+                      Xóa
+                    </Button>
+                  )}
                 </div>
-              </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
-              {/* Card Footer Actions */}
-              <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-xs">
-                <span className="text-[11px] text-slate-400">
-                  HSD: {formatDate(v.end_date)}
-                </span>
-
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEditModal(v)}
-                    title="Chỉnh sửa"
-                  >
-                    <Edit2 className="w-3.5 h-3.5 text-slate-600" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      if (window.confirm(`Xác nhận xóa mã ${v.code}?`)) {
-                        deleteVoucher(v.id);
-                      }
-                    }}
-                    title="Xóa voucher"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Add / Edit Voucher Modal */}
+      {/* Modal Add / Edit Voucher */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingVoucher ? `Chỉnh Sửa Mã: ${editingVoucher.code}` : 'Tạo Chiến Dịch Voucher Mới'}
-        description="Cấu hình quy tắc giảm giá và giới hạn lượt áp dụng"
+        title={editingVoucher ? `Chỉnh Sửa Voucher: ${editingVoucher.code}` : 'Tạo Chiến Dịch Khuyến Mãi'}
+        description="Ưu đãi sẽ được tự động áp dụng khi khách hàng đặt cọc giữ xe trực tuyến"
         maxWidth="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 text-left">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Mã Voucher (Code) *"
-              placeholder="VD: VIP100M, SUMMER5"
               value={formData.code}
-              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().trim() })}
+              placeholder="VD: AUTOSUMMER50M"
               required
             />
+
             <Input
-              label="Tên Chương Trình *"
-              placeholder="VD: Ưu đãi Đặt Cọc Mùa Hè"
+              label="Tên Chiến Dịch *"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="VD: Siêu Ưu Đãi Đặt Cọc Mùa Hè"
               required
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Textarea
+            label="Mô Tả Điều Khoản Áp Dụng"
+            rows={2}
+            value={formData.description || ''}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Giảm ngay 50.000.000 VNĐ vào tiền đặt cọc giữ xe..."
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
-              label="Loại Giảm Giá *"
+              label="Loại Hình Chiết Khấu *"
               value={formData.discount_type}
-              onChange={(e) =>
-                setFormData({ ...formData, discount_type: e.target.value as DiscountType })
-              }
+              onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as DiscountType })}
             >
               <option value="fixed">Số tiền cố định (VNĐ)</option>
               <option value="percentage">Phần trăm (%)</option>
             </Select>
 
-            <Input
-              label={formData.discount_type === 'percentage' ? 'Giá Trị Giảm (%) *' : 'Giá Trị Giảm (VNĐ) *'}
-              type="number"
-              value={formData.discount_value}
-              onChange={(e) =>
-                setFormData({ ...formData, discount_value: parseInt(e.target.value) || 0 })
-              }
-              required
-            />
-
             <Select
-              label="Áp Dụng Cho *"
+              label="Áp Dụng Cho Phần Tiền *"
               value={formData.applies_to}
-              onChange={(e) =>
-                setFormData({ ...formData, applies_to: e.target.value as VoucherAppliesTo })
-              }
+              onChange={(e) => setFormData({ ...formData, applies_to: e.target.value as VoucherAppliesTo })}
             >
-              <option value="deposit">Tiền đặt cọc (Deposit)</option>
-              <option value="total">Tổng giá xe (Total)</option>
+              <option value="deposit">Tiền Đặt Cọc (Deposit)</option>
+              <option value="total">Tổng Giá Trị Hợp Đồng Xe</option>
             </Select>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Giá Trị Đơn Hàng Tối Thiểu (VNĐ)"
+              label={formData.discount_type === 'percentage' ? 'Phần Trăm Giảm (%) *' : 'Số Tiền Giảm (VNĐ) *'}
               type="number"
-              value={formData.min_order_value}
-              onChange={(e) =>
-                setFormData({ ...formData, min_order_value: parseInt(e.target.value) || 0 })
-              }
-            />
-            <Input
-              label="Giới Hạn Lượt Sử Dụng *"
-              type="number"
-              value={formData.usage_limit}
-              onChange={(e) =>
-                setFormData({ ...formData, usage_limit: parseInt(e.target.value) || 1 })
-              }
+              value={formData.discount_value}
+              onChange={(e) => setFormData({ ...formData, discount_value: Number(e.target.value) })}
+              min={1}
               required
             />
+
+            {formData.discount_type === 'percentage' ? (
+              <Input
+                label="Giảm Tối Đa (VNĐ)"
+                type="number"
+                value={formData.max_discount_amount || ''}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    max_discount_amount: e.target.value ? Number(e.target.value) : null,
+                  })
+                }
+                placeholder="VD: 50000000"
+              />
+            ) : (
+              <Input
+                label="Giá Trị Đơn Hàng Tối Thiểu (VNĐ)"
+                type="number"
+                value={formData.min_order_value}
+                onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
+                step={50000000}
+                min={0}
+              />
+            )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Input
+              label="Giới Hạn Lượt Dùng *"
+              type="number"
+              value={formData.usage_limit}
+              onChange={(e) => setFormData({ ...formData, usage_limit: Number(e.target.value) })}
+              min={1}
+              required
+            />
+
             <Input
               label="Ngày Bắt Đầu"
               type="date"
               value={formData.start_date || ''}
               onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
             />
+
             <Input
               label="Ngày Kết Thúc"
               type="date"
@@ -322,22 +366,16 @@ export const VouchersView: React.FC = () => {
             />
           </div>
 
-          <Textarea
-            label="Mô Tả Điều Khoản Áp Dụng"
-            rows={2}
-            placeholder="Chi tiết điều kiện áp dụng cho khách hàng..."
-            value={formData.description || ''}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          />
+          <div className="pt-2">
+            <Switch
+              label="Trạng Thái Phát Hành"
+              description="Cho phép khách hàng áp dụng voucher này vào hợp đồng cọc"
+              checked={formData.is_active}
+              onChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            />
+          </div>
 
-          <Switch
-            checked={formData.is_active}
-            onChange={(checked) => setFormData({ ...formData, is_active: checked })}
-            label="Kích hoạt voucher ngay lập tức"
-            description="Cho phép khách hàng nhập mã này khi checkout cọc xe"
-          />
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
               Hủy
             </Button>

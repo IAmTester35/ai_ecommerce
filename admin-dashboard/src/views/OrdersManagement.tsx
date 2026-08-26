@@ -2,15 +2,15 @@ import React, { useState, useMemo } from 'react';
 import {
   ShoppingBag,
   CheckCircle2,
-  Car,
-  DollarSign,
   User,
   Building2,
   Eye,
   RefreshCw,
   Percent,
+  Trash2,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
+import { useAuth } from '../context/AuthContext';
 import type { Order, OrderStatus, PaymentStatus } from '../types';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
@@ -27,7 +27,8 @@ import { checkZaloPayStatus } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 
 export const OrdersManagement: React.FC = () => {
-  const { orders, updateOrderStatus } = useData();
+  const { orders, updateOrderStatus, deleteOrder } = useData();
+  const { isOwner } = useAuth();
   const { success, info } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +50,29 @@ export const OrdersManagement: React.FC = () => {
   const handleUpdateStatus = async (status: OrderStatus, paymentStatus?: PaymentStatus) => {
     if (!selectedOrder) return;
     await updateOrderStatus(selectedOrder.id, status, paymentStatus, paymentStatus);
-    setSelectedOrder((prev) => (prev ? { ...prev, status, ...(paymentStatus ? { deposit_status: paymentStatus, payment_status: paymentStatus } : {}) } : null));
+    setSelectedOrder((prev) =>
+      prev
+        ? {
+            ...prev,
+            status,
+            ...(paymentStatus
+              ? { deposit_status: paymentStatus, payment_status: paymentStatus }
+              : {}),
+          }
+        : null
+    );
+  };
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!isOwner) {
+      alert('Chỉ tài khoản cấp Owner mới có quyền hủy/xóa đơn đặt cọc.');
+      return;
+    }
+    if (window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng #${orderId.slice(0, 8)} khỏi cơ sở dữ liệu?`)) {
+      await deleteOrder(orderId);
+      setIsDrawerOpen(false);
+      setSelectedOrder(null);
+    }
   };
 
   const handleCheckZaloPay = async () => {
@@ -97,22 +120,22 @@ export const OrdersManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left">
       {/* Header Info */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Quản Lý Hợp Đồng & Đặt Cọc Xe</h2>
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Hợp Đồng & Đặt Cọc Xe</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Xử lý quy trình đặt cọc 10%, kiểm tra biên lai ZaloPay và theo dõi tiến trình bàn giao xe
+            Quản lý quy trình xử lý đơn đặt cọc trực tuyến, đối soát ZaloPay và lịch bàn giao xe tại Showroom
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <Badge variant="primary" size="md">
-            {orders.filter((o) => o.status === 'deposit_paid').length} đơn đã nhận cọc
+            {orders.length} hợp đồng
           </Badge>
           <Badge variant="warning" size="md">
-            {orders.filter((o) => o.status === 'pending').length} đơn chờ xử lý
+            {orders.filter((o) => o.status === 'pending').length} chờ duyệt
           </Badge>
         </div>
       </div>
@@ -127,7 +150,7 @@ export const OrdersManagement: React.FC = () => {
                 setSearchTerm(val);
                 setCurrentPage(1);
               }}
-              placeholder="Tìm mã đơn, tên khách, email, mẫu xe..."
+              placeholder="Tìm theo mã đơn, tên khách hàng, mẫu xe..."
               shortcutHint="/"
             />
 
@@ -139,12 +162,12 @@ export const OrdersManagement: React.FC = () => {
               }}
             >
               <option value="all">Tất cả trạng thái tiến độ</option>
-              <option value="pending">Chờ xử lý (Pending)</option>
-              <option value="deposit_paid">Đã nhận cọc (Deposit Paid)</option>
-              <option value="preparing_car">Đang chuẩn bị xe (Preparing)</option>
-              <option value="ready_for_pickup">Sẵn sàng bàn giao (Ready)</option>
-              <option value="completed">Đã hoàn tất (Completed)</option>
-              <option value="cancelled">Đã hủy (Cancelled)</option>
+              <option value="pending">Chờ duyệt hợp đồng</option>
+              <option value="deposit_paid">Đã nhận tiền cọc</option>
+              <option value="preparing_car">Đang chuẩn bị xe</option>
+              <option value="ready_for_pickup">Sẵn sàng bàn giao</option>
+              <option value="completed">Đã hoàn tất giao xe</option>
+              <option value="cancelled">Đã hủy</option>
             </Select>
 
             <Select
@@ -154,21 +177,21 @@ export const OrdersManagement: React.FC = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="all">Tất cả trạng thái thanh toán</option>
+              <option value="all">Tất cả trạng thái tiền cọc</option>
               <option value="paid">Đã thanh toán (Paid)</option>
               <option value="unpaid">Chưa thanh toán (Unpaid)</option>
-              <option value="refunded">Đã hoàn tiền (Refunded)</option>
+              <option value="refunded">Đã hoàn cọc (Refunded)</option>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Table Orders */}
+      {/* Table */}
       {paginatedOrders.length === 0 ? (
         <EmptyState
           icon={<ShoppingBag className="w-8 h-8" />}
-          title="Không tìm thấy đơn hàng nào"
-          description="Thử thay đổi bộ lọc tìm kiếm hoặc từ khóa tra cứu."
+          title="Không tìm thấy hợp đồng nào"
+          description="Chưa có đơn đặt cọc nào khớp với bộ lọc tìm kiếm trong cơ sở dữ liệu Supabase."
           actionLabel="Xóa bộ lọc"
           onAction={() => {
             setSearchTerm('');
@@ -183,62 +206,54 @@ export const OrdersManagement: React.FC = () => {
               <TableRow>
                 <TableHead>Mã Hợp Đồng</TableHead>
                 <TableHead>Khách Hàng</TableHead>
-                <TableHead>Mẫu Xe Đặt Mua</TableHead>
-                <TableHead>Tiền Cọc Thu (10%)</TableHead>
-                <TableHead>Còn Lại Tại Showroom</TableHead>
-                <TableHead>Trạng Thái Tiến Độ</TableHead>
-                <TableHead>Cổng Thanh Toán</TableHead>
-                <TableHead className="text-right">Chi Tiết</TableHead>
+                <TableHead>Mẫu Xe / Chi Nhánh</TableHead>
+                <TableHead>Tiền Cọc (VNĐ)</TableHead>
+                <TableHead>Tổng Giá Trị Xe</TableHead>
+                <TableHead>Tiến Độ Hợp Đồng</TableHead>
+                <TableHead>Thanh Toán Cọc</TableHead>
+                <TableHead className="text-right">Hành Động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedOrders.map((ord) => {
-                const statusInfo = (statusMap as any)[ord.status] || {
+                const statusInfo = statusMap[ord.status as keyof typeof statusMap] || {
                   label: ord.status,
                   bg: '#F1F5F9',
                   color: '#475569',
                   dotColor: 'bg-slate-500',
                 };
-                const depositPayment = (statusMap as any)[ord.deposit_status] || {
+                const paymentInfo = statusMap[ord.deposit_status as keyof typeof statusMap] || {
                   label: ord.deposit_status,
+                  bg: '#F1F5F9',
+                  color: '#475569',
                 };
-                const carItem = ord.items?.[0]?.car;
+
+                const carName = ord.items?.[0]?.car
+                  ? `${ord.items[0].car.make} ${ord.items[0].car.model}`
+                  : 'Giao dịch xe';
 
                 return (
                   <TableRow key={ord.id}>
                     <TableCell>
-                      <div className="font-bold text-slate-900 text-xs uppercase">
-                        #{ord.id}
+                      <div className="font-bold text-slate-900 text-xs font-mono">
+                        #{ord.id.slice(0, 8)}
                       </div>
-                      <span className="text-[10px] text-slate-400">
+                      <div className="text-[10px] text-slate-400">
                         {formatDateTime(ord.created_at)}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="font-semibold text-slate-900 text-xs">
-                        {ord.profile?.full_name || 'Khách vãng lai'}
                       </div>
-                      <div className="text-[11px] text-slate-500">{ord.profile?.phone || ord.profile?.email}</div>
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {carItem?.image_url && (
-                          <img
-                            src={carItem.image_url}
-                            alt=""
-                            className="w-10 h-7 rounded object-cover border border-slate-200 shrink-0"
-                          />
-                        )}
-                        <div>
-                          <div className="font-bold text-slate-900 text-xs">
-                            {carItem ? `${carItem.make} ${carItem.model}` : 'Giao dịch xe'}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            Giá: {formatVNDCompact(ord.total_amount)}
-                          </div>
-                        </div>
+                      <div className="font-bold text-slate-900 text-xs">
+                        {ord.profile?.full_name || ord.profile?.email || 'Khách vãng lai'}
+                      </div>
+                      <div className="text-[11px] text-slate-500">{ord.profile?.phone || 'Chưa có SĐT'}</div>
+                    </TableCell>
+
+                    <TableCell>
+                      <span className="font-semibold text-slate-800 text-xs">{carName}</span>
+                      <div className="text-[11px] text-slate-400">
+                        {ord.showroom?.name?.split('-')[0] || 'Showroom trung tâm'}
                       </div>
                     </TableCell>
 
@@ -247,20 +262,16 @@ export const OrdersManagement: React.FC = () => {
                         {formatVND(ord.deposit_amount)}
                       </span>
                       {ord.discount_amount > 0 && (
-                        <div className="text-[10px] text-emerald-600 font-semibold flex items-center gap-0.5">
-                          <Percent className="w-2.5 h-2.5" />
-                          Giảm {formatVNDCompact(ord.discount_amount)}
+                        <div className="text-[10px] text-emerald-600 font-medium">
+                          Voucher: -{formatVNDCompact(ord.discount_amount)}
                         </div>
                       )}
                     </TableCell>
 
                     <TableCell>
-                      <span className="font-semibold text-slate-700 text-xs">
-                        {formatVND(ord.remaining_amount)}
+                      <span className="font-bold text-slate-800 text-xs">
+                        {formatVNDCompact(ord.total_amount)}
                       </span>
-                      <div className="text-[10px] text-slate-400">
-                        {ord.showroom?.city || 'Showroom chỉ định'}
-                      </div>
                     </TableCell>
 
                     <TableCell>
@@ -274,17 +285,12 @@ export const OrdersManagement: React.FC = () => {
                     </TableCell>
 
                     <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Badge
-                          variant={ord.deposit_status === 'paid' ? 'success' : 'warning'}
-                          size="sm"
-                        >
-                          {depositPayment.label}
-                        </Badge>
-                      </div>
-                      <span className="text-[10px] text-slate-400 block mt-0.5">
-                        {ord.payment_method || 'ZaloPay'}
-                      </span>
+                      <Badge
+                        variant={ord.deposit_status === 'paid' ? 'success' : 'warning'}
+                        size="sm"
+                      >
+                        {paymentInfo.label}
+                      </Badge>
                     </TableCell>
 
                     <TableCell className="text-right">
@@ -294,7 +300,7 @@ export const OrdersManagement: React.FC = () => {
                         leftIcon={<Eye className="w-3.5 h-3.5" />}
                         onClick={() => openOrderDrawer(ord)}
                       >
-                        Xem
+                        Chi Tiết
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -313,114 +319,49 @@ export const OrdersManagement: React.FC = () => {
         </Card>
       )}
 
-      {/* Detailed Order Inspection Drawer */}
-      {selectedOrder && (
-        <Drawer
-          isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-          title={`Hợp Đồng Đặt Cọc #${selectedOrder.id}`}
-          description={`Tạo lúc ${formatDateTime(selectedOrder.created_at)}`}
-          width="xl"
-          footer={
-            <div className="flex flex-wrap items-center justify-between gap-3 w-full">
-              <Button
-                variant="outline"
-                size="sm"
-                leftIcon={<RefreshCw className={cn('w-3.5 h-3.5', isCheckingZalo ? 'animate-spin' : '')} />}
-                onClick={handleCheckZaloPay}
-                isLoading={isCheckingZalo}
-              >
-                Đối Soát ZaloPay
-              </Button>
-
-              <div className="flex items-center gap-2">
-                {selectedOrder.status === 'pending' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleUpdateStatus('deposit_paid', 'paid')}
-                  >
-                    Duyệt Tiền Cọc
-                  </Button>
-                )}
-
-                {selectedOrder.status === 'deposit_paid' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleUpdateStatus('preparing_car')}
-                  >
-                    Bắt Đầu Chuẩn Bị Xe
-                  </Button>
-                )}
-
-                {selectedOrder.status === 'preparing_car' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleUpdateStatus('ready_for_pickup')}
-                  >
-                    Sẵn Sàng Bàn Giao
-                  </Button>
-                )}
-
-                {selectedOrder.status === 'ready_for_pickup' && (
-                  <Button
-                    variant="primary"
-                    size="sm"
-                    onClick={() => handleUpdateStatus('completed', 'paid')}
-                  >
-                    Xác Nhận Đã Bàn Giao Xe
-                  </Button>
-                )}
-
-                {selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'completed' && (
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={() => {
-                      if (window.confirm('Bạn có chắc chắn muốn hủy đơn và hoàn cọc?')) {
-                        handleUpdateStatus('cancelled', 'refunded');
-                      }
-                    }}
-                  >
-                    Hủy Hợp Đồng
-                  </Button>
-                )}
-              </div>
-            </div>
-          }
-        >
+      {/* Order Detail & Action Drawer */}
+      <Drawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title={selectedOrder ? `Hợp Đồng #${selectedOrder.id.slice(0, 8)}` : 'Chi Tiết Đơn Hàng'}
+        width="lg"
+      >
+        {selectedOrder && (
           <div className="space-y-6 text-left">
-            {/* Status Progress Stepper */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-                Tiến Độ Hợp Đồng
-              </p>
+            {/* Stepper Header */}
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Tiến Trình Xử Lý Hợp Đồng
+              </span>
               <div className="flex items-center justify-between relative">
-                <div className="absolute top-4 left-4 right-4 h-0.5 bg-slate-200 z-0" />
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-slate-200 w-full z-0" />
                 {steps.map((step, idx) => {
                   const currentIdx = getStepIndex(selectedOrder.status);
-                  const isDone = idx <= currentIdx && selectedOrder.status !== 'cancelled';
-                  const isCurrent = idx === currentIdx;
+                  const isDone = currentIdx >= idx;
+                  const isCurrent = currentIdx === idx;
 
                   return (
                     <div key={step.key} className="relative z-10 flex flex-col items-center">
                       <div
                         className={cn(
-                          'w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border-2 transition-all',
-                          isDone
-                            ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                            : 'bg-white border-slate-300 text-slate-400',
-                          isCurrent ? 'ring-4 ring-blue-100' : ''
+                          'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                          isCurrent
+                            ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md'
+                            : isDone
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-slate-200 text-slate-500'
                         )}
                       >
                         {isDone ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
                       </div>
                       <span
                         className={cn(
-                          'text-[11px] font-semibold mt-1.5 text-center',
-                          isDone ? 'text-slate-900' : 'text-slate-400'
+                          'text-[10px] font-semibold mt-1.5 whitespace-nowrap',
+                          isCurrent
+                            ? 'text-blue-600 font-bold'
+                            : isDone
+                            ? 'text-slate-800'
+                            : 'text-slate-400'
                         )}
                       >
                         {step.label}
@@ -431,123 +372,145 @@ export const OrdersManagement: React.FC = () => {
               </div>
             </div>
 
-            {/* Customer Information */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                <User className="w-4 h-4 text-blue-600" />
-                Thông Tin Khách Hàng
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-400 block">Họ và tên:</span>
-                  <span className="font-bold text-slate-900 text-sm">
-                    {selectedOrder.profile?.full_name || 'Khách hàng'}
-                  </span>
+            {/* Customer & Showroom Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <User className="w-4 h-4 text-blue-600" />
+                  <span>Khách Hàng Đặt Mua</span>
                 </div>
-                <div>
-                  <span className="text-slate-400 block">Số điện thoại:</span>
-                  <span className="font-semibold text-slate-800">
-                    {selectedOrder.profile?.phone || 'Chưa cung cấp'}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block">Email đăng ký:</span>
-                  <span className="font-semibold text-slate-800">{selectedOrder.profile?.email}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block">Phân quyền tài khoản:</span>
-                  <Badge variant="primary" size="sm">
-                    {selectedOrder.profile?.role.toUpperCase() || 'USER'}
-                  </Badge>
+                <div className="space-y-1 text-xs">
+                  <p className="font-bold text-slate-900">
+                    {selectedOrder.profile?.full_name || 'Khách Hàng'}
+                  </p>
+                  <p className="text-slate-500">{selectedOrder.profile?.email}</p>
+                  <p className="text-slate-500">{selectedOrder.profile?.phone || 'Chưa cập nhật SĐT'}</p>
                 </div>
               </div>
-            </div>
 
-            {/* Ordered Car Breakdown */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                <Car className="w-4 h-4 text-indigo-600" />
-                Xe Đã Đặt Cọc
-              </div>
-              {selectedOrder.items?.map((item) => (
-                <div key={item.id} className="flex items-start gap-4 p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                  {item.car?.image_url && (
-                    <img
-                      src={item.car.image_url}
-                      alt=""
-                      className="w-20 h-14 rounded-lg object-cover border border-slate-200 shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <h5 className="font-bold text-slate-900 text-sm">
-                      {item.car?.make} {item.car?.model} ({item.car?.year})
-                    </h5>
-                    <p className="text-xs text-slate-500">
-                      Màu: {item.car?.metadata?.color || 'Đặc biệt'} • Nhiên liệu:{' '}
-                      {item.car?.metadata?.engine_fuel_type || 'Xăng'}
-                    </p>
-                    <p className="text-xs font-extrabold text-blue-600">
-                      Đơn giá: {formatVND(item.price)} x {item.quantity}
-                    </p>
-                  </div>
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <Building2 className="w-4 h-4 text-indigo-600" />
+                  <span>Showroom Bàn Giao</span>
                 </div>
-              ))}
-            </div>
-
-            {/* Financial Summary & Breakdown */}
-            <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3 text-xs">
-              <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-blue-900">
-                <DollarSign className="w-4 h-4 text-blue-600" />
-                Hạch Toán Dòng Tiền Hợp Đồng
-              </div>
-
-              <div className="space-y-2 pt-1 border-t border-blue-200/50">
-                <div className="flex justify-between text-slate-600">
-                  <span>Tổng giá trị xe niêm yết:</span>
-                  <span className="font-semibold text-slate-900">
-                    {formatVND(selectedOrder.total_amount + selectedOrder.discount_amount)}
-                  </span>
-                </div>
-
-                {selectedOrder.discount_amount > 0 && (
-                  <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Mã voucher áp dụng ({selectedOrder.voucher?.code || 'VOUCHER'}):</span>
-                    <span>- {formatVND(selectedOrder.discount_amount)}</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-slate-900 font-bold pt-2 border-t border-blue-200/50 text-sm">
-                  <span>Giá sau ưu đãi:</span>
-                  <span>{formatVND(selectedOrder.total_amount)}</span>
-                </div>
-
-                <div className="flex justify-between text-blue-700 font-extrabold text-sm bg-white p-2.5 rounded-xl border border-blue-200">
-                  <span>Tiền cọc giữ xe (10%):</span>
-                  <span>{formatVND(selectedOrder.deposit_amount)}</span>
-                </div>
-
-                <div className="flex justify-between text-slate-700 font-bold">
-                  <span>Số tiền còn lại thu tại Showroom:</span>
-                  <span>{formatVND(selectedOrder.remaining_amount)}</span>
+                <div className="space-y-1 text-xs">
+                  <p className="font-bold text-slate-900">
+                    {selectedOrder.showroom?.name || 'Showroom Trung Tâm'}
+                  </p>
+                  <p className="text-slate-500">{selectedOrder.showroom?.address}</p>
+                  <p className="text-slate-500">Hotline: {selectedOrder.showroom?.phone || '1900 8888'}</p>
                 </div>
               </div>
             </div>
 
-            {/* Handover Showroom Location */}
-            <div className="p-4 bg-white rounded-2xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-slate-700">
-                <Building2 className="w-4 h-4 text-slate-600" />
-                Địa Điểm Nhận Xe
+            {/* Financial Summary */}
+            <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Giá Niêm Yết Xe:</span>
+                <span className="text-xs font-bold text-slate-900">
+                  {formatVND(selectedOrder.total_amount + selectedOrder.discount_amount)}
+                </span>
               </div>
-              <p className="font-bold text-slate-900 text-sm">
-                {selectedOrder.showroom?.name || 'AutoMatch Hà Nội - Cầu Giấy'}
-              </p>
-              <p className="text-slate-500">{selectedOrder.showroom?.address}</p>
-              <p className="text-slate-500">Hotline: {selectedOrder.showroom?.phone || '1900 6868'}</p>
+
+              {selectedOrder.discount_amount > 0 && (
+                <div className="flex items-center justify-between text-xs text-emerald-700">
+                  <span className="flex items-center gap-1 font-semibold">
+                    <Percent className="w-3.5 h-3.5" />
+                    Voucher Đã Giảm ({selectedOrder.voucher?.code || 'PROMO'}):
+                  </span>
+                  <span className="font-bold">-{formatVND(selectedOrder.discount_amount)}</span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2 border-t border-blue-200/60">
+                <span className="text-xs font-extrabold text-blue-900">Tiền Đặt Cọc Cần Thu (Online):</span>
+                <span className="text-sm font-extrabold text-blue-600">
+                  {formatVND(selectedOrder.deposit_amount)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-600">
+                <span>Còn Lại Thanh Toán Tại Showroom:</span>
+                <span className="font-semibold text-slate-800">
+                  {formatVND(selectedOrder.remaining_amount)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Bar & Status Controllers */}
+            <div className="space-y-3 pt-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
+                Cập Nhật Trạng Thái & Quản Trị Đơn
+              </span>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUpdateStatus('deposit_paid', 'paid')}
+                  disabled={selectedOrder.status === 'deposit_paid'}
+                >
+                  Xác Nhận Đã Nhận Cọc
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUpdateStatus('preparing_car')}
+                  disabled={selectedOrder.status === 'preparing_car'}
+                >
+                  Bắt Đầu Chuẩn Bị Xe
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleUpdateStatus('ready_for_pickup')}
+                  disabled={selectedOrder.status === 'ready_for_pickup'}
+                >
+                  Sẵn Sàng Bàn Giao
+                </Button>
+
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => handleUpdateStatus('completed')}
+                  disabled={selectedOrder.status === 'completed'}
+                >
+                  Hoàn Tất Giao Xe
+                </Button>
+              </div>
+
+              {/* ZaloPay Direct Check Button */}
+              <div className="pt-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isCheckingZalo ? 'animate-spin' : ''}`} />}
+                  onClick={handleCheckZaloPay}
+                  isLoading={isCheckingZalo}
+                >
+                  Đối Soát Cổng Thanh Toán ZaloPay
+                </Button>
+              </div>
+
+              {/* Owner Only Delete Order Action */}
+              {isOwner && (
+                <div className="pt-4 border-t border-slate-200">
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                    onClick={() => handleDeleteOrder(selectedOrder.id)}
+                  >
+                    Xóa Hợp Đồng (Owner Only)
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
-        </Drawer>
-      )}
+        )}
+      </Drawer>
     </div>
   );
 };

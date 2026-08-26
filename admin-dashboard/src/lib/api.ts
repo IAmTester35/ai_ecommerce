@@ -18,7 +18,7 @@ export async function searchWithAI(query: string): Promise<AISearchResponse> {
 
     const data: AISearchResponse = await response.json();
     return data;
-  } catch (error: any) {
+  } catch (error) {
     console.warn('FastAPI AI Search offline, returning smart simulated response:', error);
     // Intelligent simulation for demo/testing purposes
     const lower = query.toLowerCase();
@@ -90,7 +90,12 @@ export async function sendBroadcastNotification(title: string, body: string): Pr
   }
 }
 
-export async function checkZaloPayStatus(appTransId: string): Promise<any> {
+export async function checkZaloPayStatus(appTransId: string): Promise<{
+  return_code: number;
+  return_message: string;
+  is_processing?: boolean;
+  amount?: number;
+}> {
   try {
     const res = await fetch(`${API_BASE_URL}/api/payment/status`, {
       method: 'POST',
@@ -109,7 +114,8 @@ export async function checkBackendHealth(): Promise<{ status: 'online' | 'offlin
     await fetch(`${API_BASE_URL}/docs`, { method: 'HEAD', mode: 'no-cors' });
     const end = performance.now();
     return { status: 'online', latencyMs: Math.round(end - start), details: 'FastAPI Backend hoạt động tốt' };
-  } catch (err: any) {
-    return { status: 'offline', details: err?.message || 'Không thể kết nối FastAPI (Port 8000)' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Không thể kết nối FastAPI (Port 8000)';
+    return { status: 'offline', details: msg };
   }
 }
