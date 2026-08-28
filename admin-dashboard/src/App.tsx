@@ -30,16 +30,16 @@ const AppContent: React.FC = () => {
     setIsAddCarModalOpen(true);
   };
 
-  // Luxury Fullscreen Loading State
+  // Luxury Fullscreen Loading State (Light Mode Admin Standard)
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-xl shadow-blue-500/20 animate-pulse">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-900 space-y-4 select-none">
+        <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-blue-600 via-blue-700 to-indigo-700 flex items-center justify-center text-white shadow-xl shadow-blue-500/20 animate-pulse">
           <Zap className="w-7 h-7 fill-current" />
         </div>
         <div className="text-center space-y-1">
-          <h3 className="font-extrabold text-lg tracking-tight text-white">AutoMatch AI Executive</h3>
-          <p className="text-xs text-slate-400">Đang khởi tạo phiên làm việc bảo mật Supabase RLS...</p>
+          <h3 className="font-extrabold text-lg tracking-tight text-slate-900">AutoMatch AI Executive</h3>
+          <p className="text-xs text-slate-500 font-medium">Đang khởi tạo phiên làm việc bảo mật Supabase RLS...</p>
         </div>
       </div>
     );

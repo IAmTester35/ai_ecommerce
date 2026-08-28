@@ -285,7 +285,7 @@ export const SystemSettings: React.FC = () => {
                 <span>Phân Quyền (profiles)</span>
               </div>
               <p className="text-[11px] text-slate-500">
-                {isOwner ? 'Toàn quyền nâng/hạ cấp Owner/Manager' : 'Chỉ xem danh sách người dùng'}
+                {isOwner ? 'Toàn quyền bổ nhiệm & thu hồi quyền Manager' : 'Chỉ xem danh bạ nhân sự'}
               </p>
             </div>
           </div>

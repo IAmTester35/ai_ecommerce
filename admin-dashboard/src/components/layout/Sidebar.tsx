@@ -122,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         },
         {
           id: 'customers',
-          label: 'Khách Hàng & Quyền',
+          label: 'Khách Hàng & Ban Quản Trị',
           icon: <Users className="w-4 h-4" />,
         },
         {

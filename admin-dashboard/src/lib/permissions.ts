@@ -130,9 +130,9 @@ export function hasPermission(role: UserRole | undefined | null, permission: App
  */
 export const ROLE_INFO: Record<UserRole, { label: string; tag: string; description: string; color: string; bg: string }> = {
   owner: {
-    label: 'Chủ Sở Hữu (Super Admin)',
+    label: 'Chủ Sở Hữu Duy Nhất (Super Admin)',
     tag: 'OWNER',
-    description: 'Toàn quyền điều hành: Quản lý phân quyền, phân bổ kho xe RPC, xóa xe/voucher/đơn hàng, cấu hình RLS.',
+    description: 'Toàn quyền điều hành tối cao: Bổ nhiệm & quản lý Manager, phân bổ kho xe RPC, xóa xe/voucher/đơn hàng, cấu hình RLS.',
     color: '#4F46E5',
     bg: '#EEF2FF',
   },

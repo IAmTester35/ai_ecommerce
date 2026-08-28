@@ -64,8 +64,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       subtitle: 'Chiến dịch ưu đãi trừ tiền cọc trực tiếp, giới hạn và phân tích hiệu quả',
     },
     customers: {
-      title: 'Khách Hàng & Phân Quyền Hệ Thống',
-      subtitle: 'Danh bạ người dùng, lịch sử giao dịch và phân quyền Owner / Manager',
+      title: 'Khách Hàng & Ban Quản Trị Nội Bộ',
+      subtitle: 'Danh bạ khách hàng CRM và quản lý nhân sự điều hành (Owner, Manager)',
     },
     reviews_qa: {
       title: 'Đánh Giá Xe & Hỏi Đáp Khách Hàng',

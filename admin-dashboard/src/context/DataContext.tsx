@@ -444,17 +444,46 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // ==========================================
-  // Customer Actions (Role Management)
+  // Customer & Staff Actions (Role Management)
   // ==========================================
   const updateCustomerRole = async (id: string, role: UserRole): Promise<boolean> => {
     if (!isOwner) {
-      error('Quyền hạn bị từ chối', 'Chỉ tài khoản cấp Owner mới có quyền thay đổi phân quyền người dùng.');
+      error('Quyền hạn bị từ chối', 'Chỉ tài khoản cấp Owner mới có quyền thay đổi phân quyền nhân sự.');
       return false;
     }
+
+    // Đảm bảo chỉ có DUY NHẤT 01 tài khoản Owner
+    if (role === 'owner') {
+      const existingOwner = customers.find((c) => c.role === 'owner' && c.id !== id);
+      if (existingOwner) {
+        error(
+          'Thao tác không hợp lệ',
+          `Hệ thống chỉ cho phép DUY NHẤT 01 tài khoản Chủ Sở Hữu (Owner: ${existingOwner.email}).`
+        );
+        return false;
+      }
+    }
+
+    // Không cho phép hạ cấp tài khoản Owner duy nhất
+    const target = customers.find((c) => c.id === id);
+    if (target?.role === 'owner' && role !== 'owner') {
+      const ownerCount = customers.filter((c) => c.role === 'owner').length;
+      if (ownerCount <= 1) {
+        error(
+          'Thao tác bị từ chối',
+          'Không thể hạ cấp tài khoản Chủ Sở Hữu (Owner) duy nhất của hệ thống.'
+        );
+        return false;
+      }
+    }
+
     try {
       const updatedProfile = await dataServices.updateProfileRole(id, role);
       setCustomers((prev) => prev.map((c) => (c.id === id ? updatedProfile : c)));
-      success('Cập nhật phân quyền thành công', `Người dùng được gán quyền: ${role.toUpperCase()}`);
+      success(
+        'Cập nhật phân quyền thành công',
+        `Tài khoản ${updatedProfile.email} được gán vai trò: ${role.toUpperCase()}`
+      );
       return true;
     } catch (err) {
       error('Lỗi phân quyền', err instanceof Error ? err.message : 'Lỗi không xác định');
