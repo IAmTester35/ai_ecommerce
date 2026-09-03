@@ -15,13 +15,16 @@ router = APIRouter(prefix="/api/payment", tags=["Payment"])
 zalopay_service = ZaloPayService()
 
 @router.post("/create")
-async def create_payment(req: CreatePaymentRequest):
+async def create_payment(
+    req: CreatePaymentRequest,
+    db: Client = Depends(get_supabase)
+):
     """
     Tạo đơn hàng thanh toán ZaloPay
     """
     try:
         logger.info(f"Creating payment order for order_id: {req.order_id}, amount: {req.amount}")
-        res = await zalopay_service.create_payment(req)
+        res = await zalopay_service.create_payment(req, db=db)
         logger.info(f"Payment order created successfully: {res.get('order_url', '')}")
         return res
     except Exception as e:

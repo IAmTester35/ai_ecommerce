@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import {
+  Calendar,
   Clock,
   Phone,
-  Calendar,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import type { TestDrive, TestDriveStatus } from '../types';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
-import { Textarea } from '../components/ui/Textarea';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardContent } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
+import { Textarea } from '../components/ui/Textarea';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pagination } from '../components/ui/Pagination';
@@ -20,31 +20,34 @@ import { formatDateTime, cn } from '../lib/utils';
 import { statusMap } from '../design-system/tokens';
 
 export const TestDrivesView: React.FC = () => {
-  const { testDrives, showrooms, updateTestDriveStatus } = useData();
+  const { testDrives, showrooms, customers, updateTestDriveStatus, assignTestDriveStaff } = useData();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterShowroom, setFilterShowroom] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterShowroom, setFilterShowroom] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
-  // Edit / Action Modal State
-  const [selectedTestDrive, setSelectedTestDrive] = useState<TestDrive | null>(null);
-  const [actionNotes, setActionNotes] = useState('');
+  // Action Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTD, setSelectedTD] = useState<TestDrive | null>(null);
   const [targetStatus, setTargetStatus] = useState<TestDriveStatus>('confirmed');
+  const [notes, setNotes] = useState('');
+
+  const staffMembers = useMemo(() => {
+    return customers.filter((c) => c.role === 'owner' || c.role === 'manager');
+  }, [customers]);
 
   const openActionModal = (td: TestDrive, status: TestDriveStatus) => {
-    setSelectedTestDrive(td);
+    setSelectedTD(td);
     setTargetStatus(status);
-    setActionNotes(td.notes || '');
+    setNotes(td.notes || '');
     setIsModalOpen(true);
   };
 
-  const handleConfirmAction = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedTestDrive) return;
-    await updateTestDriveStatus(selectedTestDrive.id, targetStatus, actionNotes);
+  const handleConfirmStatus = async () => {
+    if (!selectedTD) return;
+    await updateTestDriveStatus(selectedTD.id, targetStatus, notes);
     setIsModalOpen(false);
   };
 
@@ -61,7 +64,7 @@ export const TestDrivesView: React.FC = () => {
     });
   }, [testDrives, searchTerm, filterShowroom, filterStatus]);
 
-  const totalPages = Math.ceil(filteredTestDrives.length / pageSize);
+  const totalPages = Math.ceil(filteredTestDrives.length / pageSize) || 1;
   const paginatedTestDrives = filteredTestDrives.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -74,13 +77,13 @@ export const TestDrivesView: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Lịch Hẹn Lái Thử Thực Tế</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý lịch hẹn trải nghiệm xe thể thao, chuẩn bị xe và phân công cố vấn kỹ thuật tại Showroom
+            Quản lý lịch hẹn trải nghiệm xe thể thao, chuẩn bị xe và phân công cố vấn bán hàng tại Showroom
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Badge variant="primary" size="md">
-            {testDrives.filter((t) => t.status === 'confirmed').length} lịch đã xác nhận
+            {testDrives.filter((t) => t.status === 'confirmed').length} lịch đã duyệt
           </Badge>
           <Badge variant="warning" size="md">
             {testDrives.filter((t) => t.status === 'pending').length} chờ duyệt
@@ -138,14 +141,8 @@ export const TestDrivesView: React.FC = () => {
       {paginatedTestDrives.length === 0 ? (
         <EmptyState
           icon={<Calendar className="w-8 h-8" />}
-          title="Không tìm thấy lịch hẹn nào"
-          description="Chưa có lịch lái thử nào trong cơ sở dữ liệu Supabase."
-          actionLabel="Xóa bộ lọc"
-          onAction={() => {
-            setSearchTerm('');
-            setFilterShowroom('all');
-            setFilterStatus('all');
-          }}
+          title="Không có lịch hẹn lái thử nào"
+          description="Khách hàng đặt lịch lái thử trực tuyến qua trang chủ sẽ hiển thị tập trung tại đây."
         />
       ) : (
         <Card className="overflow-hidden">
@@ -153,9 +150,10 @@ export const TestDrivesView: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Khách Hàng</TableHead>
-                <TableHead>Mẫu Xe Lái Thử</TableHead>
-                <TableHead>Địa Điểm / Showroom</TableHead>
-                <TableHead>Thời Gian Lịch Hẹn</TableHead>
+                <TableHead>Mẫu Xe Trải Nghiệm</TableHead>
+                <TableHead>Showroom Tiếp Đón</TableHead>
+                <TableHead>Cố Vấn Bán Hàng</TableHead>
+                <TableHead>Thời Gian Hẹn</TableHead>
                 <TableHead>Trạng Thái</TableHead>
                 <TableHead>Ghi Chú</TableHead>
                 <TableHead className="text-right">Hành Động</TableHead>
@@ -163,10 +161,11 @@ export const TestDrivesView: React.FC = () => {
             </TableHeader>
             <TableBody>
               {paginatedTestDrives.map((td) => {
-                const statusInfo = statusMap[td.status as keyof typeof statusMap] || {
+                const statusInfo = statusMap[td.status] || {
                   label: td.status,
-                  bg: '#F1F5F9',
                   color: '#475569',
+                  bg: '#F1F5F9',
+                  border: '#E2E8F0',
                   dotColor: 'bg-slate-500',
                 };
 
@@ -202,6 +201,22 @@ export const TestDrivesView: React.FC = () => {
                         {td.showroom?.name?.split('-')[0] || 'Showroom Trung Tâm'}
                       </div>
                       <div className="text-[11px] text-slate-400">{td.showroom?.city || 'Hà Nội'}</div>
+                    </TableCell>
+
+                    {/* Sales Advisor Assignment */}
+                    <TableCell>
+                      <Select
+                        value={td.assigned_staff_id || ''}
+                        onChange={(e) => assignTestDriveStaff(td.id, e.target.value || null)}
+                        className="text-xs py-1"
+                      >
+                        <option value="">-- Chưa chỉ định --</option>
+                        {staffMembers.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.full_name || s.email}
+                          </option>
+                        ))}
+                      </Select>
                     </TableCell>
 
                     <TableCell>
@@ -251,10 +266,10 @@ export const TestDrivesView: React.FC = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => openActionModal(td, 'cancelled')}
                             className="text-rose-600 hover:bg-rose-50"
+                            onClick={() => openActionModal(td, 'cancelled')}
                           >
-                            Hủy
+                            Hủy Lịch
                           </Button>
                         )}
                       </div>
@@ -275,46 +290,50 @@ export const TestDrivesView: React.FC = () => {
         </Card>
       )}
 
-      {/* Action Modal */}
-      {selectedTestDrive && (
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          title={`Cập Nhật Trạng Thái Lịch Lái Thử`}
-          description={`Khách hàng: ${selectedTestDrive.profile?.full_name || 'Khách hàng'} — Mẫu xe: ${selectedTestDrive.car?.make} ${selectedTestDrive.car?.model}`}
-          maxWidth="md"
-        >
-          <form onSubmit={handleConfirmAction} className="space-y-4 text-left">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-              <span className="text-slate-500 font-semibold">Chuyển sang trạng thái:</span>
-              <div className="font-bold text-slate-900 text-sm capitalize">
-                {targetStatus === 'confirmed'
-                  ? 'ĐÃ DUYỆT & XÁC NHẬN LỊCH HẸN'
-                  : targetStatus === 'completed'
-                  ? 'ĐÃ HOÀN TẤT LÁI THỬ'
-                  : 'HỦY LỊCH HẸN'}
-              </div>
-            </div>
+      {/* Confirmation & Note Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={
+          targetStatus === 'confirmed'
+            ? 'Xác Nhận Duyệt Lịch Hẹn Lái Thử'
+            : targetStatus === 'completed'
+              ? 'Xác Nhận Hoàn Tất Buổi Lái Thử'
+              : 'Hủy Lịch Hẹn Lái Thử'
+        }
+        description={
+          targetStatus === 'confirmed'
+            ? 'Hệ thống sẽ gửi thông báo tự động đến ứng dụng của khách hàng để nhắc lịch hẹn.'
+            : undefined
+        }
+        maxWidth="md"
+      >
+        <div className="space-y-4 text-left">
+          <Textarea
+            label="Ghi Chú Cho Buổi Trải Nghiệm Xe"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="VD: Xe Porsche 911 đã được rửa sạch và sạc đầy pin tại Showroom Tây Hồ..."
+          />
 
-            <Textarea
-              label="Ghi Chú Cố Vấn Bán Hàng"
-              rows={3}
-              value={actionNotes}
-              onChange={(e) => setActionNotes(e.target.value)}
-              placeholder="VD: Đã gọi điện xác nhận, chuẩn bị lộ trình lái thử 5km..."
-            />
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
-                Đóng
-              </Button>
-              <Button variant="primary" type="submit">
-                Xác Nhận Cập Nhật
-              </Button>
-            </div>
-          </form>
-        </Modal>
-      )}
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Quay lại
+            </Button>
+            <Button
+              variant={targetStatus === 'cancelled' ? 'danger' : 'primary'}
+              onClick={handleConfirmStatus}
+            >
+              {targetStatus === 'confirmed'
+                ? 'Duyệt Lịch Hẹn'
+                : targetStatus === 'completed'
+                  ? 'Ghi Nhận Hoàn Tất'
+                  : 'Xác Nhận Hủy'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

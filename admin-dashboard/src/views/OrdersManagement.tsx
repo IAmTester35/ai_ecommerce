@@ -9,6 +9,12 @@ import {
   Percent,
   Trash2,
   Car,
+  Ban,
+  RotateCcw,
+  FileText,
+  Download,
+  ExternalLink,
+  Printer,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -16,25 +22,39 @@ import type { Order, OrderStatus, PaymentStatus } from '../types';
 import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
-import { Card, CardContent } from '../components/ui/Card';
+import { Card } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Drawer } from '../components/ui/Drawer';
+import { Modal } from '../components/ui/Modal';
+import { Input } from '../components/ui/Input';
+import { Textarea } from '../components/ui/Textarea';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pagination } from '../components/ui/Pagination';
-import { formatVND, formatVNDCompact, formatDateTime, cn } from '../lib/utils';
+import { formatVND, formatDateTime, cn } from '../lib/utils';
 import { statusMap } from '../design-system/tokens';
 import { checkZaloPayStatus } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 
 export const OrdersManagement: React.FC = () => {
-  const { orders, updateOrderStatus, deleteOrder } = useData();
+  const {
+    orders,
+    showrooms,
+    updateOrderStatus,
+    cancelOrder,
+    refundOrder,
+    updateOrderShowroom,
+    updateOrderContract,
+    deleteOrder,
+  } = useData();
   const { isOwner } = useAuth();
-  const { success, info } = useToast();
+  const { success, info, error } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterPayment, setFilterPayment] = useState<string>('all');
+  const [filterShowroom, setFilterShowroom] = useState<string>('all');
+  const [filterDateRange, setFilterDateRange] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
@@ -42,6 +62,24 @@ export const OrdersManagement: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCheckingZalo, setIsCheckingZalo] = useState(false);
+
+  // Order Cancellation Modal State
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [isSubmittingCancel, setIsSubmittingCancel] = useState(false);
+
+  // Refund Modal State
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [refundAmount, setRefundAmount] = useState<number>(0);
+  const [refundReason, setRefundReason] = useState('');
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+
+  // Contract URL Modal State
+  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
+  const [contractUrlInput, setContractUrlInput] = useState('');
+
+  // Handover Sheet (Biên bản bàn giao) Modal State
+  const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
 
   const openOrderDrawer = (order: Order) => {
     setSelectedOrder(order);
@@ -64,9 +102,18 @@ export const OrdersManagement: React.FC = () => {
     );
   };
 
+  const handleShowroomChange = async (newShowroomId: string) => {
+    if (!selectedOrder || !newShowroomId) return;
+    const ok = await updateOrderShowroom(selectedOrder.id, newShowroomId);
+    if (ok) {
+      const updatedShowroom = showrooms.find((s) => s.id === newShowroomId) || null;
+      setSelectedOrder((prev) => (prev ? { ...prev, showroom_id: newShowroomId, showroom: updatedShowroom } : null));
+    }
+  };
+
   const handleDeleteOrder = async (orderId: string) => {
     if (!isOwner) {
-      alert('Chỉ tài khoản cấp Owner mới có quyền hủy/xóa đơn đặt cọc.');
+      error('Quyền hạn bị từ chối', 'Chỉ tài khoản cấp Owner mới có quyền xóa đơn đặt cọc.');
       return;
     }
     if (window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng #${orderId.slice(0, 8)} khỏi cơ sở dữ liệu?`)) {
@@ -76,35 +123,181 @@ export const OrdersManagement: React.FC = () => {
     }
   };
 
+  // ZaloPay Status Reconciliation
   const handleCheckZaloPay = async () => {
     if (!selectedOrder) return;
+    const transId = selectedOrder.app_trans_id;
+    if (!transId) {
+      info(
+        'Cổng Thanh Toán ZaloPay',
+        'Đơn hàng này chưa có mã giao dịch cổng ZaloPay (app_trans_id). Khách hàng có thể đã chọn thanh toán tiền mặt tại showroom.'
+      );
+      return;
+    }
+
     setIsCheckingZalo(true);
-    const res = await checkZaloPayStatus(selectedOrder.id);
+    const res = await checkZaloPayStatus(transId);
     setIsCheckingZalo(false);
+
     if (res.return_code === 1) {
-      success('ZaloPay Gateway xác nhận', `Giao dịch ${formatVND(selectedOrder.deposit_amount)} đã khớp lệnh trên cổng.`);
+      success(
+        'Khớp lệnh thành công',
+        `Mã giao dịch ${transId} (${formatVND(selectedOrder.deposit_amount)}) đã được xác nhận thanh toán trên cổng ZaloPay.`
+      );
       if (selectedOrder.deposit_status === 'unpaid') {
         handleUpdateStatus('deposit_paid', 'paid');
       }
     } else {
-      info('ZaloPay Gateway', res.return_message || 'Chưa ghi nhận giao dịch thành công');
+      info('ZaloPay Gateway', res.return_message || 'Chưa ghi nhận thanh toán thành công trên cổng.');
     }
+  };
+
+  // Confirm Cancellation
+  const handleConfirmCancel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder || !cancelReason.trim()) return;
+
+    setIsSubmittingCancel(true);
+    const ok = await cancelOrder(selectedOrder.id, cancelReason.trim());
+    setIsSubmittingCancel(false);
+
+    if (ok) {
+      setIsCancelModalOpen(false);
+      setCancelReason('');
+      setSelectedOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: 'cancelled',
+              cancellation_reason: cancelReason.trim(),
+              cancelled_at: new Date().toISOString(),
+            }
+          : null
+      );
+    }
+  };
+
+  // Confirm Refund
+  const handleConfirmRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder || refundAmount <= 0) return;
+
+    setIsSubmittingRefund(true);
+    const ok = await refundOrder(selectedOrder.id, refundAmount, refundReason.trim());
+    setIsSubmittingRefund(false);
+
+    if (ok) {
+      setIsRefundModalOpen(false);
+      setRefundReason('');
+      setSelectedOrder((prev) =>
+        prev
+          ? {
+              ...prev,
+              payment_status: 'refunded',
+              deposit_status: 'refunded',
+              refund_amount: refundAmount,
+              refund_reason: refundReason.trim(),
+              refunded_at: new Date().toISOString(),
+            }
+          : null
+      );
+    }
+  };
+
+  // Save Contract URL
+  const handleSaveContract = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    const ok = await updateOrderContract(selectedOrder.id, contractUrlInput.trim());
+    if (ok) {
+      setSelectedOrder((prev) => (prev ? { ...prev, contract_url: contractUrlInput.trim() } : null));
+      setIsContractModalOpen(false);
+    }
+  };
+
+  // Export CSV
+  const handleExportCSV = () => {
+    if (!filteredOrders.length) {
+      info('Xuất báo cáo', 'Không có đơn hàng nào khớp với bộ lọc hiện tại.');
+      return;
+    }
+
+    const headers = [
+      'Mã Hợp Đồng',
+      'Khách Hàng',
+      'Email',
+      'SĐT',
+      'Showroom Bàn Giao',
+      'Mã ZaloPay',
+      'Tổng Giá Trị Xe (VNĐ)',
+      'Tiền Cọc (VNĐ)',
+      'Tiền Còn Lại (VNĐ)',
+      'Giảm Giá (VNĐ)',
+      'Trạng Thái Hợp Đồng',
+      'Trạng Thái Cọc',
+      'Ngày Khởi Tạo',
+      'Lý Do Hủy / Hoàn Cọc',
+    ];
+
+    const rows = filteredOrders.map((o) => [
+      `"${o.id}"`,
+      `"${o.profile?.full_name || 'Khách hàng'}"`,
+      `"${o.profile?.email || ''}"`,
+      `"${o.profile?.phone || ''}"`,
+      `"${o.showroom?.name || 'Showroom Trung Tâm'}"`,
+      `"${o.app_trans_id || 'N/A'}"`,
+      o.total_amount,
+      o.deposit_amount,
+      o.remaining_amount,
+      o.discount_amount,
+      `"${statusMap[o.status]?.label || o.status}"`,
+      `"${o.deposit_status === 'paid' ? 'Đã thu cọc' : o.deposit_status === 'refunded' ? 'Đã hoàn cọc' : 'Chưa thu cọc'}"`,
+      `"${formatDateTime(o.created_at)}"`,
+      `"${o.cancellation_reason || o.refund_reason || ''}"`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Don_hang_AutoMatch_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    success('Xuất dữ liệu thành công!', `Đã xuất ${filteredOrders.length} đơn hàng ra file CSV.`);
   };
 
   // Filtered Orders
   const filteredOrders = useMemo(() => {
+    const now = new Date();
     return orders.filter((ord) => {
       const matchSearch =
-        `${ord.id} ${ord.profile?.full_name || ''} ${ord.profile?.email || ''} ${ord.items?.[0]?.car?.model || ''}`
+        `${ord.id} ${ord.app_trans_id || ''} ${ord.profile?.full_name || ''} ${ord.profile?.email || ''} ${ord.items?.[0]?.car?.model || ''}`
           .toLowerCase()
           .includes(searchTerm.toLowerCase());
       const matchStatus = filterStatus === 'all' || ord.status === filterStatus;
       const matchPayment = filterPayment === 'all' || ord.deposit_status === filterPayment;
-      return matchSearch && matchStatus && matchPayment;
-    });
-  }, [orders, searchTerm, filterStatus, filterPayment]);
+      const matchShowroom = filterShowroom === 'all' || ord.showroom_id === filterShowroom;
 
-  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+      let matchDate = true;
+      if (filterDateRange !== 'all' && ord.created_at) {
+        const ordDate = new Date(ord.created_at);
+        if (filterDateRange === 'today') {
+          matchDate = ordDate.toDateString() === now.toDateString();
+        } else if (filterDateRange === '7_days') {
+          const diffDays = (now.getTime() - ordDate.getTime()) / (1000 * 3600 * 24);
+          matchDate = diffDays <= 7;
+        } else if (filterDateRange === 'this_month') {
+          matchDate = ordDate.getMonth() === now.getMonth() && ordDate.getFullYear() === now.getFullYear();
+        }
+      }
+
+      return matchSearch && matchStatus && matchPayment && matchShowroom && matchDate;
+    });
+  }, [orders, searchTerm, filterStatus, filterPayment, filterShowroom, filterDateRange]);
+
+  const totalPages = Math.ceil(filteredOrders.length / pageSize) || 1;
   const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Status Stepper list
@@ -120,6 +313,18 @@ export const OrdersManagement: React.FC = () => {
     return steps.findIndex((s) => s.key === status);
   };
 
+  const getStatusBadgeVariant = (status: OrderStatus): 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'neutral' => {
+    switch (status) {
+      case 'pending': return 'warning';
+      case 'deposit_paid': return 'primary';
+      case 'preparing_car': return 'info';
+      case 'ready_for_pickup': return 'secondary';
+      case 'completed': return 'success';
+      case 'cancelled': return 'danger';
+      default: return 'neutral';
+    }
+  };
+
   return (
     <div className="space-y-6 text-left">
       {/* Header Info */}
@@ -127,11 +332,19 @@ export const OrdersManagement: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">Hợp Đồng & Đặt Cọc Xe</h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý quy trình xử lý đơn đặt cọc trực tuyến, đối soát ZaloPay và lịch bàn giao xe tại Showroom
+            Quản lý quy trình xử lý đơn đặt cọc trực tuyến, đối soát ZaloPay, hủy hoàn cọc và hợp đồng điện tử
           </p>
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Download className="w-4 h-4" />}
+            onClick={handleExportCSV}
+          >
+            Xuất Báo Cáo CSV
+          </Button>
           <Badge variant="primary" size="md">
             {orders.length} hợp đồng
           </Badge>
@@ -141,64 +354,56 @@ export const OrdersManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Filter Controls */}
-      <Card>
-        <CardContent className="p-4 space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <SearchBar
-              value={searchTerm}
-              onChange={(val) => {
-                setSearchTerm(val);
-                setCurrentPage(1);
-              }}
-              placeholder="Tìm theo mã đơn, tên khách hàng, mẫu xe..."
-              shortcutHint="/"
-            />
+      {/* Filter Toolbar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="lg:col-span-2">
+          <SearchBar
+            placeholder="Tìm theo mã HĐ, mã ZaloPay, khách hàng, mẫu xe..."
+            value={searchTerm}
+            onChange={setSearchTerm}
+          />
+        </div>
 
-            <Select
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Tất cả trạng thái tiến độ</option>
-              <option value="pending">Chờ duyệt hợp đồng</option>
-              <option value="deposit_paid">Đã nhận tiền cọc</option>
-              <option value="preparing_car">Đang chuẩn bị xe</option>
-              <option value="ready_for_pickup">Sẵn sàng bàn giao</option>
-              <option value="completed">Đã hoàn tất giao xe</option>
-              <option value="cancelled">Đã hủy</option>
-            </Select>
+        <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="all">Tất cả tiến độ</option>
+          <option value="pending">Chờ xác nhận</option>
+          <option value="deposit_paid">Đã nhận cọc</option>
+          <option value="preparing_car">Đang chuẩn bị xe</option>
+          <option value="ready_for_pickup">Sẵn sàng bàn giao</option>
+          <option value="completed">Đã hoàn tất giao xe</option>
+          <option value="cancelled">Đã hủy hợp đồng</option>
+        </Select>
 
-            <Select
-              value={filterPayment}
-              onChange={(e) => {
-                setFilterPayment(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="all">Tất cả trạng thái tiền cọc</option>
-              <option value="paid">Đã thanh toán (Paid)</option>
-              <option value="unpaid">Chưa thanh toán (Unpaid)</option>
-              <option value="refunded">Đã hoàn cọc (Refunded)</option>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+        <Select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)}>
+          <option value="all">Tất cả thanh toán</option>
+          <option value="unpaid">Chưa thu cọc</option>
+          <option value="paid">Đã thu cọc</option>
+          <option value="refunded">Đã hoàn cọc</option>
+        </Select>
 
-      {/* Table */}
-      {paginatedOrders.length === 0 ? (
+        <Select value={filterShowroom} onChange={(e) => setFilterShowroom(e.target.value)}>
+          <option value="all">Tất cả Showroom</option>
+          {showrooms.map((sr) => (
+            <option key={sr.id} value={sr.id}>
+              {sr.name}
+            </option>
+          ))}
+        </Select>
+
+        <Select value={filterDateRange} onChange={(e) => setFilterDateRange(e.target.value)}>
+          <option value="all">Mọi thời gian</option>
+          <option value="today">Hôm nay</option>
+          <option value="7_days">7 ngày qua</option>
+          <option value="this_month">Tháng này</option>
+        </Select>
+      </div>
+
+      {/* Orders List Table */}
+      {filteredOrders.length === 0 ? (
         <EmptyState
-          icon={<ShoppingBag className="w-8 h-8" />}
+          icon={<ShoppingBag className="w-12 h-12 text-slate-300" />}
           title="Không tìm thấy hợp đồng nào"
-          description="Chưa có đơn đặt cọc nào khớp với bộ lọc tìm kiếm trong cơ sở dữ liệu Supabase."
-          actionLabel="Xóa bộ lọc"
-          onAction={() => {
-            setSearchTerm('');
-            setFilterStatus('all');
-            setFilterPayment('all');
-          }}
+          description="Thử thay đổi bộ lọc tìm kiếm hoặc từ khóa tra cứu."
         />
       ) : (
         <Card className="overflow-hidden">
@@ -207,96 +412,100 @@ export const OrdersManagement: React.FC = () => {
               <TableRow>
                 <TableHead>Mã Hợp Đồng</TableHead>
                 <TableHead>Khách Hàng</TableHead>
-                <TableHead>Mẫu Xe / Chi Nhánh</TableHead>
-                <TableHead>Tiền Cọc (VNĐ)</TableHead>
-                <TableHead>Tổng Giá Trị Xe</TableHead>
-                <TableHead>Tiến Độ Hợp Đồng</TableHead>
-                <TableHead>Thanh Toán Cọc</TableHead>
+                <TableHead>Mẫu Xe Đặt</TableHead>
+                <TableHead>Showroom Bàn Giao</TableHead>
+                <TableHead>Tổng Giá Trị</TableHead>
+                <TableHead>Tiền Cọc Thu</TableHead>
+                <TableHead>Tiến Độ HĐ</TableHead>
                 <TableHead className="text-right">Hành Động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedOrders.map((ord) => {
-                const statusInfo = statusMap[ord.status as keyof typeof statusMap] || {
+                const statusConfig = statusMap[ord.status] || {
                   label: ord.status,
-                  bg: '#F1F5F9',
-                  color: '#475569',
-                  dotColor: 'bg-slate-500',
+                  variant: 'neutral',
                 };
-                const paymentInfo = statusMap[ord.deposit_status as keyof typeof statusMap] || {
-                  label: ord.deposit_status,
-                  bg: '#F1F5F9',
-                  color: '#475569',
-                };
-
-                const carName = ord.items?.[0]?.car
-                  ? `${ord.items[0].car.make} ${ord.items[0].car.model}`
-                  : 'Giao dịch xe';
+                const firstItem = ord.items?.[0];
+                const car = firstItem?.car;
 
                 return (
-                  <TableRow key={ord.id}>
-                    <TableCell>
-                      <div className="font-bold text-slate-900 text-xs font-mono">
-                        #{ord.id.slice(0, 8)}
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {formatDateTime(ord.created_at)}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="font-bold text-slate-900 text-xs">
-                        {ord.profile?.full_name || ord.profile?.email || 'Khách vãng lai'}
-                      </div>
-                      <div className="text-[11px] text-slate-500">{ord.profile?.phone || 'Chưa có SĐT'}</div>
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="font-semibold text-slate-800 text-xs">{carName}</span>
-                      <div className="text-[11px] text-slate-400">
-                        {ord.showroom?.name?.split('-')[0] || 'Showroom trung tâm'}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <span className="font-extrabold text-blue-600 text-xs">
-                        {formatVND(ord.deposit_amount)}
-                      </span>
-                      {ord.discount_amount > 0 && (
-                        <div className="text-[10px] text-emerald-600 font-medium">
-                          Voucher: -{formatVNDCompact(ord.discount_amount)}
+                  <TableRow key={ord.id} className="hover:bg-slate-50/80 transition-colors">
+                    <TableCell className="font-mono text-xs font-bold text-slate-800">
+                      <div>#{ord.id.slice(0, 8)}</div>
+                      {ord.app_trans_id && (
+                        <div className="text-[10px] font-normal text-blue-600 font-mono">
+                          ZP: {ord.app_trans_id}
                         </div>
                       )}
                     </TableCell>
-
                     <TableCell>
-                      <span className="font-bold text-slate-800 text-xs">
-                        {formatVNDCompact(ord.total_amount)}
+                      <div className="flex flex-col">
+                        <span className="font-bold text-xs text-slate-900">
+                          {ord.profile?.full_name || 'Khách hàng ẩn danh'}
+                        </span>
+                        <span className="text-[11px] text-slate-500">{ord.profile?.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {car?.image_url && (
+                          <img
+                            src={car.image_url}
+                            alt=""
+                            className="w-8 h-8 rounded-lg object-cover bg-slate-100 shrink-0"
+                          />
+                        )}
+                        <div>
+                          <p className="font-bold text-xs text-slate-900 leading-snug">
+                            {car ? `${car.make} ${car.model}` : 'Đơn đặt cọc xe'}
+                          </p>
+                          <span className="text-[10px] text-slate-400">
+                            {firstItem ? `SL: x${firstItem.quantity}` : '1 xe'}
+                          </span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-xs text-slate-700 font-medium">
+                        {ord.showroom?.name || 'Showroom Trung Tâm'}
                       </span>
                     </TableCell>
-
-                    <TableCell>
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
-                        style={{ backgroundColor: statusInfo.bg, color: statusInfo.color }}
-                      >
-                        <span className={cn('w-1.5 h-1.5 rounded-full', statusInfo.dotColor)} />
-                        {statusInfo.label}
-                      </span>
+                    <TableCell className="font-bold text-xs text-slate-900">
+                      {formatVND(ord.total_amount)}
                     </TableCell>
-
                     <TableCell>
-                      <Badge
-                        variant={ord.deposit_status === 'paid' ? 'success' : 'warning'}
-                        size="sm"
-                      >
-                        {paymentInfo.label}
+                      <div className="flex flex-col">
+                        <span className="font-bold text-xs text-emerald-600">
+                          {formatVND(ord.deposit_amount)}
+                        </span>
+                        <Badge
+                          variant={
+                            ord.deposit_status === 'paid'
+                              ? 'success'
+                              : ord.deposit_status === 'refunded'
+                                ? 'neutral'
+                                : 'warning'
+                          }
+                          size="sm"
+                          className="w-fit mt-0.5"
+                        >
+                          {ord.deposit_status === 'paid'
+                            ? 'Đã thu cọc'
+                            : ord.deposit_status === 'refunded'
+                              ? 'Đã hoàn cọc'
+                              : 'Chưa thanh toán'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(ord.status)} size="sm">
+                        {statusConfig.label}
                       </Badge>
                     </TableCell>
-
                     <TableCell className="text-right">
                       <Button
-                        variant="outline"
+                        variant="secondary"
                         size="sm"
                         leftIcon={<Eye className="w-3.5 h-3.5" />}
                         onClick={() => openOrderDrawer(ord)}
@@ -329,49 +538,66 @@ export const OrdersManagement: React.FC = () => {
       >
         {selectedOrder && (
           <div className="space-y-6 text-left">
-            {/* Stepper Header */}
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                Tiến Trình Xử Lý Hợp Đồng
-              </span>
-              <div className="flex items-center justify-between relative">
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-slate-200 w-full z-0" />
-                {steps.map((step, idx) => {
-                  const currentIdx = getStepIndex(selectedOrder.status);
-                  const isDone = currentIdx >= idx;
-                  const isCurrent = currentIdx === idx;
+            {/* Stepper Header (Only shown if not cancelled) */}
+            {selectedOrder.status !== 'cancelled' ? (
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Tiến Trình Xử Lý Hợp Đồng
+                </span>
+                <div className="flex items-center justify-between relative">
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-slate-200 w-full z-0" />
+                  {steps.map((step, idx) => {
+                    const currentIdx = getStepIndex(selectedOrder.status);
+                    const isDone = currentIdx >= idx;
+                    const isCurrent = currentIdx === idx;
 
-                  return (
-                    <div key={step.key} className="relative z-10 flex flex-col items-center">
-                      <div
-                        className={cn(
-                          'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
-                          isCurrent
-                            ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md'
-                            : isDone
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-slate-200 text-slate-500'
-                        )}
-                      >
-                        {isDone ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
+                    return (
+                      <div key={step.key} className="relative z-10 flex flex-col items-center">
+                        <div
+                          className={cn(
+                            'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all',
+                            isCurrent
+                              ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md'
+                              : isDone
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-slate-200 text-slate-500'
+                          )}
+                        >
+                          {isDone ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
+                        </div>
+                        <span
+                          className={cn(
+                            'text-[10px] font-semibold mt-1.5 whitespace-nowrap',
+                            isCurrent
+                              ? 'text-blue-600 font-bold'
+                              : isDone
+                                ? 'text-slate-800'
+                                : 'text-slate-400'
+                          )}
+                        >
+                          {step.label}
+                        </span>
                       </div>
-                      <span
-                        className={cn(
-                          'text-[10px] font-semibold mt-1.5 whitespace-nowrap',
-                          isCurrent
-                            ? 'text-blue-600 font-bold'
-                            : isDone
-                              ? 'text-slate-800'
-                              : 'text-slate-400'
-                        )}
-                      >
-                        {step.label}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl space-y-1">
+                <div className="flex items-center gap-2 text-rose-700 font-bold text-sm">
+                  <Ban className="w-4 h-4" />
+                  <span>Hợp Đồng Này Đã Bị Hủy</span>
+                </div>
+                <p className="text-xs text-rose-600">
+                  Lý do: {selectedOrder.cancellation_reason || 'Quản trị viên hủy đơn hàng'}
+                </p>
+                {selectedOrder.cancelled_at && (
+                  <p className="text-[10px] text-rose-400">
+                    Thời điểm hủy: {formatDateTime(selectedOrder.cancelled_at)}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Customer & Showroom Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -390,32 +616,52 @@ export const OrdersManagement: React.FC = () => {
               </div>
 
               <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                  <Building2 className="w-4 h-4 text-indigo-600" />
-                  <span>Showroom Bàn Giao</span>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-indigo-600" />
+                    <span>Showroom Bàn Giao</span>
+                  </div>
                 </div>
-                <div className="space-y-1 text-xs">
+                <div className="space-y-1.5 text-xs">
                   <p className="font-bold text-slate-900">
                     {selectedOrder.showroom?.name || 'Showroom Trung Tâm'}
                   </p>
                   <p className="text-slate-500">{selectedOrder.showroom?.address}</p>
-                  <p className="text-slate-500">Hotline: {selectedOrder.showroom?.phone || '1900 8888'}</p>
+                  {/* Showroom Reassignment Selector */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Đổi Chi Nhánh Bàn Giao:
+                    </label>
+                    <Select
+                      value={selectedOrder.showroom_id || ''}
+                      onChange={(e) => handleShowroomChange(e.target.value)}
+                    >
+                      {showrooms.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name} ({s.city})
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Ordered Cars / Items List */}
-            {((selectedOrder.items && selectedOrder.items.length > 0) || ((selectedOrder as any).order_items && (selectedOrder as any).order_items.length > 0)) && (
+            {selectedOrder.items && selectedOrder.items.length > 0 && (
               <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
                   <Car className="w-4 h-4 text-blue-600" />
-                  <span>Danh Sách Xe Đặt Cọc ({((selectedOrder.items || (selectedOrder as any).order_items) as any[]).length})</span>
+                  <span>Danh Sách Xe Đặt Cọc ({selectedOrder.items.length})</span>
                 </div>
                 <div className="space-y-2">
-                  {((selectedOrder.items || (selectedOrder as any).order_items) as any[]).map((item: any) => {
-                    const car = item.car || item.cars;
+                  {selectedOrder.items.map((item) => {
+                    const car = item.car;
                     return (
-                      <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100"
+                      >
                         {car?.image_url ? (
                           <img
                             src={car.image_url}
@@ -453,113 +699,388 @@ export const OrdersManagement: React.FC = () => {
             )}
 
             {/* Financial Summary */}
-            <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Giá Niêm Yết Xe:</span>
-                <span className="text-xs font-bold text-slate-900">
-                  {formatVND(selectedOrder.total_amount + selectedOrder.discount_amount)}
-                </span>
-              </div>
-
-              {selectedOrder.discount_amount > 0 && (
-                <div className="flex items-center justify-between text-xs text-emerald-700">
-                  <span className="flex items-center gap-1 font-semibold">
-                    <Percent className="w-3.5 h-3.5" />
-                    Voucher Đã Giảm ({selectedOrder.voucher?.code || 'PROMO'}):
-                  </span>
-                  <span className="font-bold">-{formatVND(selectedOrder.discount_amount)}</span>
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Cơ Cấu Giá Trị Hợp Đồng & Thanh Toán
+              </span>
+              <div className="space-y-1.5 text-xs divide-y divide-slate-100">
+                <div className="flex justify-between text-slate-600 pb-1">
+                  <span>Tổng giá trị niêm yết xe:</span>
+                  <span className="font-semibold text-slate-900">{formatVND(selectedOrder.total_amount)}</span>
                 </div>
-              )}
-
-              <div className="flex items-center justify-between pt-2 border-t border-blue-200/60">
-                <span className="text-xs font-extrabold text-blue-900">Tiền Đặt Cọc Cần Thu (Online):</span>
-                <span className="text-sm font-extrabold text-blue-600">
-                  {formatVND(selectedOrder.deposit_amount)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-600">
-                <span>Còn Lại Thanh Toán Tại Showroom:</span>
-                <span className="font-semibold text-slate-800">
-                  {formatVND(selectedOrder.remaining_amount)}
-                </span>
+                {selectedOrder.discount_amount > 0 && (
+                  <div className="flex justify-between text-emerald-600 py-1">
+                    <span className="flex items-center gap-1">
+                      <Percent className="w-3.5 h-3.5" />
+                      Ưu đãi Voucher giảm:
+                    </span>
+                    <span className="font-bold">-{formatVND(selectedOrder.discount_amount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-blue-700 font-bold py-1">
+                  <span>Tiền đặt cọc trực tuyến:</span>
+                  <span>{formatVND(selectedOrder.deposit_amount)}</span>
+                </div>
+                <div className="flex justify-between text-slate-700 font-semibold pt-1">
+                  <span>Khoản còn lại tất toán tại Showroom:</span>
+                  <span>{formatVND(selectedOrder.remaining_amount)}</span>
+                </div>
+                {selectedOrder.refund_amount ? (
+                  <div className="flex justify-between text-amber-600 font-bold pt-1">
+                    <span>Đã hoàn cọc lại:</span>
+                    <span>{formatVND(selectedOrder.refund_amount)}</span>
+                  </div>
+                ) : null}
               </div>
             </div>
 
-            {/* Action Bar & Status Controllers */}
-            <div className="space-y-3 pt-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
-                Cập Nhật Trạng Thái & Quản Trị Đơn
-              </span>
-
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleUpdateStatus('deposit_paid', 'paid')}
-                  disabled={selectedOrder.status === 'deposit_paid'}
-                >
-                  Xác Nhận Đã Nhận Cọc
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleUpdateStatus('preparing_car')}
-                  disabled={selectedOrder.status === 'preparing_car'}
-                >
-                  Bắt Đầu Chuẩn Bị Xe
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleUpdateStatus('ready_for_pickup')}
-                  disabled={selectedOrder.status === 'ready_for_pickup'}
-                >
-                  Sẵn Sàng Bàn Giao
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => handleUpdateStatus('completed')}
-                  disabled={selectedOrder.status === 'completed'}
-                >
-                  Hoàn Tất Giao Xe
-                </Button>
-              </div>
-
-              {/* ZaloPay Direct Check Button */}
-              <div className="pt-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isCheckingZalo ? 'animate-spin' : ''}`} />}
-                  onClick={handleCheckZaloPay}
-                  isLoading={isCheckingZalo}
-                >
-                  Đối Soát Cổng Thanh Toán ZaloPay
-                </Button>
-              </div>
-
-              {/* Owner Only Delete Order Action */}
-              {isOwner && (
-                <div className="pt-4 border-t border-slate-200">
+            {/* Electronic Contract & Documents Section */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <FileText className="w-4 h-4 text-blue-600" />
+                  <span>Hồ Sơ Hợp Đồng & Biên Bản Điện Tử</span>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <Button
-                    variant="danger"
+                    variant="outline"
                     size="sm"
-                    leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                    onClick={() => handleDeleteOrder(selectedOrder.id)}
+                    leftIcon={<Printer className="w-3.5 h-3.5" />}
+                    onClick={() => setIsHandoverModalOpen(true)}
                   >
-                    Xóa Hợp Đồng (Owner Only)
+                    Biên Bản Bàn Giao
                   </Button>
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                <div>
+                  <p className="font-bold text-slate-800">Hợp Đồng Mua Xe Đã Ký</p>
+                  <p className="text-[11px] text-slate-500">
+                    {selectedOrder.contract_url ? 'Đã đính kèm tệp hợp đồng PDF' : 'Chưa cập nhật tài liệu hợp đồng'}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {selectedOrder.contract_url ? (
+                    <a
+                      href={selectedOrder.contract_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Xem PDF
+                    </a>
+                  ) : null}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setContractUrlInput(selectedOrder.contract_url || '');
+                      setIsContractModalOpen(true);
+                    }}
+                  >
+                    {selectedOrder.contract_url ? 'Đổi Link' : 'Gắn Link HĐ'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Gateway Reconciliation Box */}
+            <div className="p-4 rounded-2xl bg-linear-to-br from-blue-50/70 to-indigo-50/70 border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-blue-900">Đối Soát Cổng ZaloPay</span>
+                  {selectedOrder.app_trans_id && (
+                    <span className="font-mono text-[11px] text-blue-600 bg-blue-100/70 px-1.5 py-0.5 rounded">
+                      {selectedOrder.app_trans_id}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-blue-700/80">
+                  {selectedOrder.app_trans_id
+                    ? 'Kiểm tra trạng thái đối soát trực tiếp với ZaloPay Gateway Server.'
+                    : 'Đơn hàng này chưa có mã app_trans_id.'}
+                </p>
+              </div>
+
+              <Button
+                variant="primary"
+                size="sm"
+                leftIcon={<RefreshCw className={cn('w-3.5 h-3.5', isCheckingZalo && 'animate-spin')} />}
+                isLoading={isCheckingZalo}
+                onClick={handleCheckZaloPay}
+              >
+                Đối Soát Ngay
+              </Button>
+            </div>
+
+            {/* Status Workflow Action Buttons */}
+            <div className="space-y-2 pt-2 border-t border-slate-100">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                Chuyển Bước Xử Lý Hợp Đồng:
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={selectedOrder.status === 'deposit_paid' || selectedOrder.status === 'cancelled'}
+                  onClick={() => handleUpdateStatus('deposit_paid', 'paid')}
+                >
+                  1. Đã Nhận Đặt Cọc
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={selectedOrder.status === 'preparing_car' || selectedOrder.status === 'cancelled'}
+                  onClick={() => handleUpdateStatus('preparing_car')}
+                >
+                  2. Đang Chuẩn Bị Xe
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={selectedOrder.status === 'ready_for_pickup' || selectedOrder.status === 'cancelled'}
+                  onClick={() => handleUpdateStatus('ready_for_pickup')}
+                >
+                  3. Xe Sẵn Sàng Giao
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={selectedOrder.status === 'completed' || selectedOrder.status === 'cancelled'}
+                  onClick={() => handleUpdateStatus('completed', 'paid')}
+                >
+                  4. Đã Bàn Giao Xe
+                </Button>
+              </div>
+            </div>
+
+            {/* Advanced Actions: Cancel, Refund, Delete */}
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                {selectedOrder.status !== 'cancelled' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-rose-600 border-rose-200 hover:bg-rose-50"
+                    leftIcon={<Ban className="w-3.5 h-3.5" />}
+                    onClick={() => {
+                      setCancelReason('');
+                      setIsCancelModalOpen(true);
+                    }}
+                  >
+                    Hủy Hợp Đồng
+                  </Button>
+                )}
+
+                {selectedOrder.deposit_status === 'paid' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-amber-600 border-amber-200 hover:bg-amber-50"
+                    leftIcon={<RotateCcw className="w-3.5 h-3.5" />}
+                    onClick={() => {
+                      setRefundAmount(selectedOrder.deposit_amount);
+                      setRefundReason('Khách hàng yêu cầu rút cọc theo chính sách');
+                      setIsRefundModalOpen(true);
+                    }}
+                  >
+                    Hoàn Cọc
+                  </Button>
+                )}
+              </div>
+
+              {isOwner && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                  leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+                  onClick={() => handleDeleteOrder(selectedOrder.id)}
+                >
+                  Xóa HĐ
+                </Button>
               )}
             </div>
           </div>
         )}
       </Drawer>
+
+      {/* Cancel Order Modal */}
+      <Modal
+        isOpen={isCancelModalOpen}
+        onClose={() => setIsCancelModalOpen(false)}
+        title="Xác Nhận Hủy Hợp Đồng & Đặt Cọc"
+      >
+        <form onSubmit={handleConfirmCancel} className="space-y-4 text-left">
+          <p className="text-xs text-slate-600">
+            Khi hủy hợp đồng, hệ thống sẽ <strong>tự động phục hồi tồn kho xe</strong> và <strong>hoàn trả lượt sử dụng voucher</strong> vào cơ sở dữ liệu.
+          </p>
+
+          <Textarea
+            label="Lý Do Hủy Hợp Đồng *"
+            required
+            rows={3}
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            placeholder="VD: Khách hàng đổi sang dòng xe khác, hoặc quá thời hạn đến showroom ký hợp đồng chính thức..."
+          />
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button variant="secondary" size="md" onClick={() => setIsCancelModalOpen(false)} type="button">
+              Đóng
+            </Button>
+            <Button variant="danger" size="md" type="submit" isLoading={isSubmittingCancel}>
+              Xác Nhận Hủy Hợp Đồng
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Refund Modal */}
+      <Modal
+        isOpen={isRefundModalOpen}
+        onClose={() => setIsRefundModalOpen(false)}
+        title="Xử Lý Hoàn Tiền Đặt Cọc"
+      >
+        <form onSubmit={handleConfirmRefund} className="space-y-4 text-left">
+          <p className="text-xs text-slate-600">
+            Xác nhận hoàn lại số tiền cọc cho khách hàng qua cổng thanh toán ZaloPay hoặc chuyển khoản ngân hàng.
+          </p>
+
+          <Input
+            label="Số Tiền Hoàn (VNĐ) *"
+            type="number"
+            required
+            min={1000}
+            value={refundAmount}
+            onChange={(e) => setRefundAmount(Number(e.target.value))}
+          />
+
+          <Textarea
+            label="Lý Do Hoàn Tiền Cọc *"
+            required
+            rows={2}
+            value={refundReason}
+            onChange={(e) => setRefundReason(e.target.value)}
+            placeholder="VD: Hoàn cọc do showroom hết màu xe yêu cầu hoặc thỏa thuận chấm dứt hợp đồng..."
+          />
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button variant="secondary" size="md" onClick={() => setIsRefundModalOpen(false)} type="button">
+              Hủy Bỏ
+            </Button>
+            <Button variant="primary" size="md" type="submit" isLoading={isSubmittingRefund}>
+              Xác Nhận Hoàn Tiền Cọc
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Contract URL Modal */}
+      <Modal
+        isOpen={isContractModalOpen}
+        onClose={() => setIsContractModalOpen(false)}
+        title="Cập Nhật Tài Liệu Hợp Đồng Điện Tử"
+      >
+        <form onSubmit={handleSaveContract} className="space-y-4 text-left">
+          <Input
+            label="Đường Dẫn Tài Liệu Hợp Đồng (PDF / Cloud Link) *"
+            required
+            placeholder="https://storage.automatch.vn/contracts/HD_2026_0903.pdf"
+            value={contractUrlInput}
+            onChange={(e) => setContractUrlInput(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button variant="secondary" size="md" onClick={() => setIsContractModalOpen(false)} type="button">
+              Hủy
+            </Button>
+            <Button variant="primary" size="md" type="submit">
+              Lưu Đường Dẫn
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Vehicle Handover Minutes Modal */}
+      <Modal
+        isOpen={isHandoverModalOpen}
+        onClose={() => setIsHandoverModalOpen(false)}
+        title="Biên Bản Bàn Giao Xe Điện Tử"
+        maxWidth="3xl"
+      >
+        {selectedOrder && (
+          <div className="space-y-4 text-left p-2">
+            <div className="border border-slate-300 rounded-2xl p-6 bg-white space-y-4 font-sans text-xs text-slate-800">
+              <div className="text-center border-b pb-4 space-y-1">
+                <h3 className="font-extrabold text-sm uppercase tracking-wide text-slate-900">
+                  Cộng Hòa Xã Hội Chủ Nghĩa Việt Nam
+                </h3>
+                <p className="text-[11px] text-slate-500">Độc lập - Tự do - Hạnh phúc</p>
+                <div className="w-20 h-0.5 bg-slate-300 mx-auto my-1" />
+                <h4 className="font-bold text-base text-blue-900 pt-2">
+                  BIÊN BẢN BÀN GIAO XE Ô TÔ & GIẤY TỜ PHÁP LÝ
+                </h4>
+                <p className="text-[10px] text-slate-400">Mã hợp đồng: #{selectedOrder.id}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h5 className="font-bold text-slate-900 mb-1">BÊN GIAO (AUTOMATCH AI):</h5>
+                  <p>Đại diện Showroom: {selectedOrder.showroom?.name || 'Showroom AutoMatch Flagship'}</p>
+                  <p>Địa chỉ: {selectedOrder.showroom?.address || 'Hà Nội & TP.HCM'}</p>
+                  <p>Hotline: {selectedOrder.showroom?.phone || '1900 8888'}</p>
+                </div>
+                <div>
+                  <h5 className="font-bold text-slate-900 mb-1">BÊN NHẬN (KHÁCH HÀNG):</h5>
+                  <p>Họ và tên: {selectedOrder.profile?.full_name || 'Khách Hàng'}</p>
+                  <p>Email: {selectedOrder.profile?.email}</p>
+                  <p>Điện thoại: {selectedOrder.profile?.phone || 'Chưa cập nhật'}</p>
+                </div>
+              </div>
+
+              <div className="border rounded-xl p-3 bg-slate-50 space-y-2">
+                <h5 className="font-bold text-slate-900">THÔNG TIN XE BÀN GIAO:</h5>
+                <p>Mẫu xe: {selectedOrder.items?.[0]?.car ? `${selectedOrder.items[0].car.make} ${selectedOrder.items[0].car.model} (${selectedOrder.items[0].car.year})` : 'Mẫu xe sang AutoMatch'}</p>
+                <p>Tổng giá trị hợp đồng: {formatVND(selectedOrder.total_amount)}</p>
+                <p>Đã thanh toán cọc online: {formatVND(selectedOrder.deposit_amount)}</p>
+                <p>Tất toán tại showroom: {formatVND(selectedOrder.remaining_amount)}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-6 text-center">
+                <div>
+                  <p className="font-bold">ĐẠI DIỆN SHOWROOM</p>
+                  <p className="text-[10px] text-slate-400 italic mt-1">(Ký, ghi rõ họ tên)</p>
+                  <div className="h-16" />
+                  <p className="font-semibold text-slate-700">AutoMatch Executive</p>
+                </div>
+                <div>
+                  <p className="font-bold">KHÁCH HÀNG NHẬN XE</p>
+                  <p className="text-[10px] text-slate-400 italic mt-1">(Ký, ghi rõ họ tên)</p>
+                  <div className="h-16" />
+                  <p className="font-semibold text-slate-700">{selectedOrder.profile?.full_name || 'Khách hàng'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" size="md" onClick={() => setIsHandoverModalOpen(false)}>
+                Đóng
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                leftIcon={<Printer className="w-4 h-4" />}
+                onClick={() => window.print()}
+              >
+                In Biên Bản Bàn Giao
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

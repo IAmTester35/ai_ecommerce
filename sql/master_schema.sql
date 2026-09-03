@@ -40,6 +40,8 @@ CREATE TABLE profiles (
     phone TEXT,
     avatar_url TEXT,
     role TEXT DEFAULT 'user' CHECK (role IN ('user', 'manager', 'owner')),
+    showroom_id UUID,                            -- Showroom trực thuộc cho Manager
+    is_active BOOLEAN DEFAULT TRUE,              -- Trạng thái kích hoạt tài khoản
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -60,6 +62,9 @@ CREATE TABLE showrooms (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Liên kết showroom cho profile manager
+ALTER TABLE profiles ADD CONSTRAINT fk_profiles_showroom FOREIGN KEY (showroom_id) REFERENCES showrooms(id) ON DELETE SET NULL;
+
 -- 3.3 Vouchers (Mã khuyến mãi & Ưu đãi đặt cọc / mua xe)
 CREATE TABLE vouchers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -73,10 +78,12 @@ CREATE TABLE vouchers (
     applies_to TEXT DEFAULT 'deposit' CHECK (applies_to IN ('deposit', 'total')),
     usage_limit INT DEFAULT 100,                 -- Giới hạn tổng số lượt sử dụng
     used_count INT DEFAULT 0,                    -- Số lượt đã dùng
+    max_uses_per_user INT DEFAULT 1,             -- Giới hạn lượt dùng tối đa trên mỗi tài khoản
     start_date TIMESTAMPTZ DEFAULT NOW(),
     end_date TIMESTAMPTZ,
     is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT check_voucher_percentage CHECK (discount_type = 'fixed' OR (discount_type = 'percentage' AND discount_value BETWEEN 1 AND 100))
 );
 
 -- 3.4 Cars (Golden Dataset & Inventory)
@@ -117,6 +124,7 @@ CREATE TABLE test_drives (
     scheduled_date TIMESTAMPTZ NOT NULL,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'confirmed', 'completed', 'cancelled')),
     notes TEXT,
+    assigned_staff_id UUID REFERENCES profiles(id) ON DELETE SET NULL, -- Cố vấn bán hàng phụ trách
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -135,6 +143,14 @@ CREATE TABLE orders (
     payment_status TEXT DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'refunded')), -- Trạng thái chung
     deposit_status TEXT DEFAULT 'unpaid' CHECK (deposit_status IN ('unpaid', 'paid', 'refunded')), -- Trạng thái tiền cọc
     contract_url TEXT,
+    app_trans_id TEXT,                                            -- Mã giao dịch đối soát ZaloPay (YYMMDD_XXXXXX)
+    cancellation_reason TEXT,                                     -- Lý do hủy đơn hàng
+    cancelled_by UUID REFERENCES profiles(id) ON DELETE SET NULL, -- Người thực hiện hủy
+    cancelled_at TIMESTAMPTZ,                                     -- Thời điểm hủy
+    refund_amount BIGINT DEFAULT 0,                               -- Số tiền đã hoàn (VNĐ)
+    refund_reason TEXT,                                           -- Lý do hoàn tiền cọc
+    refund_trans_id TEXT,                                         -- Mã giao dịch hoàn tiền ZaloPay
+    refunded_at TIMESTAMPTZ,                                      -- Thời điểm hoàn cọc
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -157,6 +173,7 @@ CREATE TABLE reviews (
     rating FLOAT,
     comment TEXT,
     source TEXT DEFAULT 'user',
+    is_approved BOOLEAN DEFAULT TRUE,
     embedding VECTOR(768),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -337,6 +354,13 @@ BEGIN
 
         IF NOT FOUND THEN
             RAISE EXCEPTION 'Voucher invalid, expired, or out of usages: %', p_voucher_code;
+        END IF;
+
+        -- Kiểm tra giới hạn số lần sử dụng của mỗi tài khoản khách hàng
+        IF v_voucher.max_uses_per_user IS NOT NULL THEN
+            IF (SELECT COUNT(*) FROM orders WHERE user_id = p_user_id AND voucher_id = v_voucher.id AND status != 'cancelled') >= v_voucher.max_uses_per_user THEN
+                RAISE EXCEPTION 'Mã voucher % đã vượt quá giới hạn % lần sử dụng cho mỗi khách hàng', p_voucher_code, v_voucher.max_uses_per_user;
+            END IF;
         END IF;
 
         v_voucher_id := v_voucher.id;
@@ -578,9 +602,34 @@ LANGUAGE plpgsql
 SECURITY DEFINER 
 SET search_path = public AS $$
 BEGIN
-    IF NEW.role IS DISTINCT FROM OLD.role THEN
+    -- Cho phép superuser hoặc service_role bypass trigger kiểm tra
+    IF current_user IN ('postgres', 'supabase_admin') 
+       OR (NULLIF(current_setting('request.jwt.claim.role', true), '') = 'service_role') THEN
+        RETURN NEW;
+    END IF;
+
+    IF TG_OP = 'INSERT' THEN
+        -- Nếu caller không phải owner thì ép buộc role phải là 'user', is_active = TRUE, showroom_id = NULL
         IF get_my_role() != 'owner' THEN
-            NEW.role := OLD.role;
+            NEW.role := 'user';
+            NEW.is_active := TRUE;
+            NEW.showroom_id := NULL;
+        END IF;
+    ELSIF TG_OP = 'UPDATE' THEN
+        IF NEW.role IS DISTINCT FROM OLD.role THEN
+            IF get_my_role() != 'owner' THEN
+                NEW.role := OLD.role;
+            END IF;
+        END IF;
+        IF NEW.is_active IS DISTINCT FROM OLD.is_active THEN
+            IF get_my_role() != 'owner' THEN
+                NEW.is_active := OLD.is_active;
+            END IF;
+        END IF;
+        IF NEW.showroom_id IS DISTINCT FROM OLD.showroom_id THEN
+            IF get_my_role() != 'owner' THEN
+                NEW.showroom_id := OLD.showroom_id;
+            END IF;
         END IF;
     END IF;
     RETURN NEW;
@@ -589,7 +638,7 @@ $$;
 
 DROP TRIGGER IF EXISTS protect_profile_role ON profiles;
 CREATE TRIGGER protect_profile_role
-BEFORE UPDATE ON profiles
+BEFORE INSERT OR UPDATE ON profiles
 FOR EACH ROW
 EXECUTE FUNCTION prevent_profile_role_escalation();
 
@@ -615,7 +664,7 @@ CREATE POLICY "Profiles read access" ON profiles
   FOR SELECT USING (id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
 CREATE POLICY "Profiles self insert" ON profiles 
-  FOR INSERT WITH CHECK (id = auth.uid());
+  FOR INSERT WITH CHECK (id = auth.uid() AND (role IS NULL OR role = 'user'));
 
 CREATE POLICY "Profiles update access" ON profiles 
   FOR UPDATE USING (id = auth.uid() OR get_my_role() = 'owner');
@@ -687,13 +736,13 @@ CREATE POLICY "Test drives delete policy" ON test_drives
 
 -- 5.9 REVIEWS POLICIES
 CREATE POLICY "Reviews public read" ON reviews 
-  FOR SELECT USING (TRUE);
+  FOR SELECT USING (is_approved = TRUE OR user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
 CREATE POLICY "Reviews user insert" ON reviews 
   FOR INSERT WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Reviews user update" ON reviews 
-  FOR UPDATE USING (user_id = auth.uid());
+CREATE POLICY "Reviews update policy" ON reviews 
+  FOR UPDATE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
 CREATE POLICY "Reviews delete policy" ON reviews 
   FOR DELETE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
@@ -712,30 +761,127 @@ CREATE POLICY "Car QA delete policy" ON car_qa
   FOR DELETE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
 -- 5.11 SAVED CARS POLICIES
-CREATE POLICY "Saved cars user policy" ON saved_cars 
+CREATE POLICY "Saved cars select policy" ON saved_cars 
+  FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Saved cars user manage" ON saved_cars 
   FOR ALL USING (user_id = auth.uid());
 
 -- 5.12 VIEWED CARS POLICIES
-CREATE POLICY "Viewed cars user policy" ON viewed_cars 
+CREATE POLICY "Viewed cars select policy" ON viewed_cars 
+  FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Viewed cars user manage" ON viewed_cars 
   FOR ALL USING (user_id = auth.uid());
 
 -- 5.13 SEARCH HISTORY POLICIES
-CREATE POLICY "Search history user policy" ON search_history 
-  FOR ALL USING (user_id = auth.uid());
+CREATE POLICY "Search history select policy" ON search_history 
+  FOR SELECT USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Search history insert policy" ON search_history 
+  FOR INSERT WITH CHECK (user_id = auth.uid());
 
 -- 5.14 NOTIFICATIONS POLICIES
 CREATE POLICY "Notifications select policy" ON notifications 
-  FOR SELECT USING (user_id = auth.uid());
+  FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR get_my_role() IN ('manager', 'owner'));
 
 CREATE POLICY "Notifications update policy" ON notifications 
-  FOR UPDATE USING (user_id = auth.uid());
+  FOR UPDATE USING (user_id = auth.uid() OR get_my_role() IN ('manager', 'owner'));
 
 CREATE POLICY "Notifications insert policy" ON notifications 
   FOR INSERT WITH CHECK (get_my_role() IN ('manager', 'owner'));
 
 -- 5.15 CHAT SESSIONS POLICIES
-CREATE POLICY "Chat sessions user policy" ON chat_sessions 
-  FOR ALL USING (user_id = auth.uid() OR user_id IS NULL);
+CREATE POLICY "Chat sessions select policy" ON chat_sessions 
+  FOR SELECT USING (user_id = auth.uid() OR user_id IS NULL OR get_my_role() IN ('manager', 'owner'));
+
+CREATE POLICY "Chat sessions insert policy" ON chat_sessions 
+  FOR INSERT WITH CHECK (user_id = auth.uid() OR user_id IS NULL OR get_my_role() IN ('manager', 'owner'));
+
+-- 5.16 INVENTORY & VOUCHER RESTORATION TRIGGERS ON ORDERS
+CREATE OR REPLACE FUNCTION restore_order_inventory_and_voucher()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+    item RECORD;
+BEGIN
+    -- Khi đơn hàng chuyển sang cancelled từ trạng thái khác
+    IF NEW.status = 'cancelled' AND OLD.status != 'cancelled' THEN
+        FOR item IN SELECT car_id, quantity FROM order_items WHERE order_id = NEW.id LOOP
+            IF item.car_id IS NOT NULL THEN
+                UPDATE cars 
+                SET stock_quantity = stock_quantity + item.quantity,
+                    is_active = TRUE
+                WHERE id = item.car_id;
+            END IF;
+        END LOOP;
+
+        IF NEW.voucher_id IS NOT NULL THEN
+            UPDATE vouchers 
+            SET used_count = GREATEST(0, used_count - 1) 
+            WHERE id = NEW.voucher_id;
+        END IF;
+
+    -- Khi đơn hàng được phục hồi từ cancelled
+    ELSIF OLD.status = 'cancelled' AND NEW.status != 'cancelled' THEN
+        FOR item IN SELECT car_id, quantity FROM order_items WHERE order_id = NEW.id LOOP
+            IF item.car_id IS NOT NULL THEN
+                UPDATE cars 
+                SET stock_quantity = GREATEST(0, stock_quantity - item.quantity),
+                    is_active = CASE WHEN (stock_quantity - item.quantity) <= 0 THEN FALSE ELSE is_active END
+                WHERE id = item.car_id;
+            END IF;
+        END LOOP;
+
+        IF NEW.voucher_id IS NOT NULL THEN
+            UPDATE vouchers SET used_count = used_count + 1 WHERE id = NEW.voucher_id;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_restore_inventory_on_cancel ON orders;
+CREATE TRIGGER trg_restore_inventory_on_cancel
+AFTER UPDATE OF status ON orders
+FOR EACH ROW
+EXECUTE FUNCTION restore_order_inventory_and_voucher();
+
+CREATE OR REPLACE FUNCTION restore_order_on_delete()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public AS $$
+DECLARE
+    item RECORD;
+BEGIN
+    IF OLD.status != 'cancelled' THEN
+        FOR item IN SELECT car_id, quantity FROM order_items WHERE order_id = OLD.id LOOP
+            IF item.car_id IS NOT NULL THEN
+                UPDATE cars 
+                SET stock_quantity = stock_quantity + item.quantity,
+                    is_active = TRUE
+                WHERE id = item.car_id;
+            END IF;
+        END LOOP;
+
+        IF OLD.voucher_id IS NOT NULL THEN
+            UPDATE vouchers 
+            SET used_count = GREATEST(0, used_count - 1) 
+            WHERE id = OLD.voucher_id;
+        END IF;
+    END IF;
+    RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_restore_inventory_on_delete ON orders;
+CREATE TRIGGER trg_restore_inventory_on_delete
+BEFORE DELETE ON orders
+FOR EACH ROW
+EXECUTE FUNCTION restore_order_on_delete();
 
 
 -- ==============================================================================

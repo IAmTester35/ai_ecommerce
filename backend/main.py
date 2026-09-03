@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
-from routers import ai_search, payment, notifications
+from routers import ai_search, payment, notifications, reviews
 
 # Cấu hình logging chuẩn xuất ra stdout cho Docker logs
 logging.basicConfig(
@@ -72,6 +72,7 @@ app.add_middleware(
 app.include_router(ai_search.router)
 app.include_router(payment.router)
 app.include_router(notifications.router)
+app.include_router(reviews.router)
 
 if __name__ == "__main__":
     import uvicorn

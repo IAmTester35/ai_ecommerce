@@ -7,8 +7,11 @@ export interface Profile {
   phone?: string | null;
   avatar_url?: string | null;
   role: UserRole;
+  showroom_id?: string | null;
+  is_active?: boolean;
   created_at: string;
   updated_at: string;
+  showroom?: Showroom | null;
 }
 
 export interface Showroom {
@@ -42,6 +45,7 @@ export interface Voucher {
   applies_to: VoucherAppliesTo;
   usage_limit: number;
   used_count: number;
+  max_uses_per_user?: number;
   start_date?: string | null;
   end_date?: string | null;
   is_active: boolean;
@@ -68,6 +72,8 @@ export interface CarMetadata {
   top_speed?: string;
   battery_capacity_kwh?: number;
   range_km?: number;
+  gallery?: string[];
+  view_360_url?: string;
 }
 
 export interface Car {
@@ -120,6 +126,14 @@ export interface Order {
   payment_status: PaymentStatus;
   deposit_status: PaymentStatus;
   contract_url?: string | null;
+  app_trans_id?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_by?: string | null;
+  cancelled_at?: string | null;
+  refund_amount?: number;
+  refund_reason?: string | null;
+  refund_trans_id?: string | null;
+  refunded_at?: string | null;
   created_at: string;
   updated_at: string;
   profile?: Profile | null;
@@ -138,10 +152,12 @@ export interface TestDrive {
   scheduled_date: string;
   status: TestDriveStatus;
   notes?: string | null;
+  assigned_staff_id?: string | null;
   created_at: string;
   car?: Car | null;
   showroom?: Showroom | null;
   profile?: Profile | null;
+  assigned_staff?: Profile | null;
 }
 
 export interface Review {
@@ -151,6 +167,7 @@ export interface Review {
   rating?: number | null;
   comment?: string | null;
   source: string;
+  is_approved?: boolean;
   embedding?: number[] | null;
   created_at: string;
   profile?: Profile | null;
@@ -228,6 +245,8 @@ export interface AISearchResponse {
 export interface DashboardMetrics {
   totalRevenue: number;
   totalDeposit: number;
+  totalContractValue: number;
+  remainingDue: number;
   activeCars: number;
   totalOrders: number;
   pendingOrders: number;
@@ -235,4 +254,5 @@ export interface DashboardMetrics {
   completedDeliveries: number;
   averageRating: number;
   totalCustomers: number;
+  conversionRate: number;
 }

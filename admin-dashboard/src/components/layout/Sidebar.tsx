@@ -9,6 +9,7 @@ import {
   Users,
   MessageSquare,
   Sparkles,
+  Bot,
   Bell,
   Settings,
   ShieldCheck,
@@ -30,6 +31,7 @@ export type NavView =
   | 'customers'
   | 'reviews_qa'
   | 'ai_inspector'
+  | 'ai_chat'
   | 'notifications'
   | 'settings';
 
@@ -59,7 +61,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectView,
   isCollapsed = false,
 }) => {
-  const { metrics, notifications } = useData();
+  const { metrics, notifications, chatSessions } = useData();
   const { currentUser, signOut, role } = useAuth();
 
   const unreadNotifs = notifications.filter((n) => !n.is_read).length;
@@ -79,6 +81,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: 'AI Vector & Conflict Hub',
           icon: <Sparkles className="w-4 h-4 text-indigo-600" />,
           isSpecial: true,
+        },
+        {
+          id: 'ai_chat',
+          label: 'AI Chat Sessions Audit',
+          icon: <Bot className="w-4 h-4 text-indigo-600" />,
+          isSpecial: true,
+          badge: chatSessions.length > 0 ? chatSessions.length : undefined,
         },
       ],
     },

@@ -10,6 +10,7 @@ import type {
   CarQA,
   AppNotification,
   SearchHistoryItem,
+  ChatSessionMessage,
   OrderStatus,
   PaymentStatus,
   TestDriveStatus,
@@ -31,6 +32,7 @@ interface DataContextType {
   notifications: AppNotification[];
   customers: Profile[];
   searchHistory: SearchHistoryItem[];
+  chatSessions: ChatSessionMessage[];
   metrics: DashboardMetrics;
   isLoading: boolean;
   isLiveSupabase: boolean;
@@ -40,6 +42,8 @@ interface DataContextType {
   updateCar: (id: string, car: Partial<Car>) => Promise<boolean>;
   deleteCar: (id: string) => Promise<boolean>;
   toggleCarActive: (id: string) => Promise<boolean>;
+  quickAdjustStock: (id: string, delta: number) => Promise<boolean>;
+  transferCarShowroom: (carId: string, targetShowroomId: string) => Promise<boolean>;
 
   // Order Actions
   updateOrderStatus: (
@@ -48,6 +52,10 @@ interface DataContextType {
     paymentStatus?: PaymentStatus,
     depositStatus?: PaymentStatus
   ) => Promise<boolean>;
+  cancelOrder: (orderId: string, reason: string) => Promise<boolean>;
+  refundOrder: (orderId: string, amount: number, reason: string) => Promise<boolean>;
+  updateOrderShowroom: (orderId: string, showroomId: string) => Promise<boolean>;
+  updateOrderContract: (orderId: string, contractUrl: string) => Promise<boolean>;
   deleteOrder: (orderId: string) => Promise<boolean>;
 
   // Showroom Actions
@@ -62,8 +70,10 @@ interface DataContextType {
 
   // Test Drive Actions
   updateTestDriveStatus: (id: string, status: TestDriveStatus, notes?: string) => Promise<boolean>;
+  assignTestDriveStaff: (id: string, staffId: string | null) => Promise<boolean>;
 
   // Review & QA Actions
+  toggleReviewApproval: (id: string, isApproved: boolean) => Promise<boolean>;
   deleteReview: (id: string) => Promise<boolean>;
   answerCarQA: (id: string, answer: string) => Promise<boolean>;
 
@@ -73,6 +83,8 @@ interface DataContextType {
 
   // Customer Actions
   updateCustomerRole: (id: string, role: UserRole) => Promise<boolean>;
+  toggleProfileActive: (id: string, isActive: boolean) => Promise<boolean>;
+  updateProfileShowroom: (id: string, showroomId: string | null) => Promise<boolean>;
 
   // System Refresh
   refreshData: () => Promise<void>;
@@ -95,18 +107,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [customers, setCustomers] = useState<Profile[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [chatSessions, setChatSessions] = useState<ChatSessionMessage[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLiveSupabase, setIsLiveSupabase] = useState<boolean>(true);
 
-  // Dynamic Live Metrics computed directly from database tables
-  const totalRevenue = orders
-    .filter((o) => o.payment_status === 'paid' || o.deposit_status === 'paid')
-    .reduce((sum, o) => sum + (o.deposit_amount || 0), 0);
-
+  // Standardized Metrics
+  const activeOrders = orders.filter((o) => o.status !== 'cancelled');
+  const totalContractValue = activeOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
   const totalDeposit = orders
     .filter((o) => o.deposit_status === 'paid')
-    .reduce((sum, o) => sum + (o.deposit_amount || 0), 0);
+    .reduce((sum, o) => sum + (Number(o.deposit_amount) || 0), 0);
+  const remainingDue = activeOrders
+    .filter((o) => o.status !== 'completed')
+    .reduce((sum, o) => sum + (Number(o.remaining_amount) || 0), 0);
 
   const activeCars = cars.filter((c) => c.is_active).length;
   const pendingOrders = orders.filter((o) => o.status === 'pending').length;
@@ -114,13 +128,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     (td) => td.status === 'confirmed' || td.status === 'pending'
   ).length;
   const completedDeliveries = orders.filter((o) => o.status === 'completed').length;
-  const averageRating = reviews.length
-    ? Number((reviews.reduce((sum, r) => sum + (r.rating || 0), 0) / reviews.length).toFixed(1))
+  const approvedReviews = reviews.filter((r) => r.is_approved !== false);
+  const averageRating = approvedReviews.length
+    ? Number((approvedReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / approvedReviews.length).toFixed(1))
     : 5.0;
 
+  const conversionRate = testDrives.length > 0
+    ? Number(((orders.length / testDrives.length) * 100).toFixed(1))
+    : 0;
+
   const metrics: DashboardMetrics = {
-    totalRevenue,
+    totalRevenue: totalDeposit, // Tiền cọc thực thu online
     totalDeposit,
+    totalContractValue,
+    remainingDue,
     activeCars,
     totalOrders: orders.length,
     pendingOrders,
@@ -128,6 +149,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     completedDeliveries,
     averageRating,
     totalCustomers: customers.length,
+    conversionRate,
   };
 
   // Load all real data from Supabase
@@ -145,6 +167,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dbProfiles,
         dbNotifications,
         dbHistory,
+        dbChat,
       ] = await Promise.all([
         dataServices.fetchCars(2000),
         dataServices.fetchShowrooms(),
@@ -156,6 +179,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dataServices.fetchProfiles(),
         dataServices.fetchNotifications(),
         dataServices.fetchSearchHistory(),
+        dataServices.fetchChatSessions(),
       ]);
 
       setCars(dbCars);
@@ -168,6 +192,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCustomers(dbProfiles);
       setNotifications(dbNotifications);
       setSearchHistory(dbHistory);
+      setChatSessions(dbChat);
       setIsLiveSupabase(true);
     } catch (e) {
       console.error('[DataContext] Error fetching live Supabase data:', e);
@@ -240,6 +265,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return updateCar(id, { is_active: newStatus });
   };
 
+  const quickAdjustStock = async (id: string, delta: number): Promise<boolean> => {
+    try {
+      const updated = await dataServices.quickAdjustStock(id, delta);
+      setCars((prev) => prev.map((c) => (c.id === id ? updated : c)));
+      info('Cập nhật tồn kho', `Tồn kho mới: ${updated.stock_quantity} xe`);
+      return true;
+    } catch (err) {
+      error('Lỗi điều chỉnh tồn kho', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
+  const transferCarShowroom = async (carId: string, targetShowroomId: string): Promise<boolean> => {
+    try {
+      const updated = await dataServices.transferCarShowroom(carId, targetShowroomId);
+      setCars((prev) => prev.map((c) => (c.id === carId ? updated : c)));
+      success('Điều chuyển Showroom thành công!');
+      return true;
+    } catch (err) {
+      error('Lỗi điều chuyển xe', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
   // ==========================================
   // Order Actions
   // ==========================================
@@ -260,15 +309,66 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const cancelOrder = async (orderId: string, reason: string): Promise<boolean> => {
+    try {
+      const updated = await dataServices.cancelOrder(orderId, reason, currentUser?.id);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      // Re-sync cars and vouchers because trigger restored them
+      await loadData();
+      success('Hủy đơn hàng thành công', 'Tồn kho xe và lượt dùng voucher đã được tự động hoàn trả.');
+      return true;
+    } catch (err) {
+      error('Lỗi hủy đơn', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
+  const refundOrder = async (orderId: string, amount: number, reason: string): Promise<boolean> => {
+    try {
+      const updated = await dataServices.refundOrder(orderId, amount, reason);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      success('Xử lý hoàn cọc thành công', `Đã ghi nhận hoàn ${amount.toLocaleString('vi-VN')} VNĐ.`);
+      return true;
+    } catch (err) {
+      error('Lỗi hoàn tiền cọc', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
+  const updateOrderShowroom = async (orderId: string, showroomId: string): Promise<boolean> => {
+    try {
+      const updated = await dataServices.updateOrderShowroom(orderId, showroomId);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      success('Đổi showroom nhận xe thành công!');
+      return true;
+    } catch (err) {
+      error('Lỗi điều phối Showroom', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
+  const updateOrderContract = async (orderId: string, contractUrl: string): Promise<boolean> => {
+    try {
+      const updated = await dataServices.updateOrderContract(orderId, contractUrl);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
+      success('Cập nhật hợp đồng điện tử thành công!');
+      return true;
+    } catch (err) {
+      error('Lỗi lưu hợp đồng', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
   const deleteOrder = async (orderId: string): Promise<boolean> => {
     if (!isOwner) {
-      error('Quyền hạn bị từ chối', 'Chỉ tài khoản Owner mới có quyền hủy hợp đồng đơn hàng.');
+      error('Quyền hạn bị từ chối', 'Chỉ tài khoản Owner mới có quyền xóa đơn hàng.');
       return false;
     }
     try {
       await dataServices.deleteOrder(orderId);
       setOrders((prev) => prev.filter((o) => o.id !== orderId));
-      success('Đã xóa đơn đặt cọc');
+      await loadData();
+      success('Đã xóa đơn hàng và phục hồi tài nguyên liên quan.');
       return true;
     } catch (err) {
       error('Lỗi xóa đơn hàng', err instanceof Error ? err.message : 'Lỗi không xác định');
@@ -376,6 +476,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updated = await dataServices.updateTestDriveStatus(id, status, notes);
       setTestDrives((prev) => prev.map((t) => (t.id === id ? updated : t)));
+
+      // Send automated notification to the user if assigned
+      if (updated.user_id) {
+        const title = status === 'confirmed' ? 'Lịch hẹn lái thử đã được duyệt!' : status === 'cancelled' ? 'Lịch hẹn lái thử đã bị hủy' : 'Cập nhật lịch lái thử';
+        const content = `Lịch hẹn lái thử xe tại showroom của bạn đã chuyển sang trạng thái: ${status.toUpperCase()}.`;
+        await dataServices.createNotification(title, content, updated.user_id, 'test_drive');
+      }
+
       success('Cập nhật lịch lái thử thành công', `Lịch hẹn chuyển sang: ${status}`);
       return true;
     } catch (err) {
@@ -384,14 +492,38 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const assignTestDriveStaff = async (id: string, staffId: string | null): Promise<boolean> => {
+    try {
+      const updated = await dataServices.assignTestDriveStaff(id, staffId);
+      setTestDrives((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      success('Đã chỉ định cố vấn bán hàng phụ trách lái thử!');
+      return true;
+    } catch (err) {
+      error('Lỗi chỉ định nhân viên', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
   // ==========================================
   // Review & QA Actions
   // ==========================================
+  const toggleReviewApproval = async (id: string, isApproved: boolean): Promise<boolean> => {
+    try {
+      const updated = await dataServices.updateReviewApproval(id, isApproved);
+      setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, is_approved: updated.is_approved } : r)));
+      info('Cập nhật kiểm duyệt', isApproved ? 'Đã duyệt hiển thị bài đánh giá' : 'Đã chuyển về chờ duyệt');
+      return true;
+    } catch (err) {
+      error('Lỗi kiểm duyệt', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
   const deleteReview = async (id: string): Promise<boolean> => {
     try {
       await dataServices.deleteReview(id);
       setReviews((prev) => prev.filter((r) => r.id !== id));
-      success('Đã xóa đánh giá vi phạm');
+      success('Đã xóa đánh giá');
       return true;
     } catch (err) {
       error('Lỗi xóa đánh giá', err instanceof Error ? err.message : 'Lỗi không xác định');
@@ -404,6 +536,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updated = await dataServices.answerCarQA(id, answer, currentUser.id);
       setCarQAs((prev) => prev.map((q) => (q.id === id ? updated : q)));
+
+      // Auto notify customer
+      if (updated.user_id) {
+        await dataServices.createNotification(
+          'Chuyên viên đã phản hồi câu hỏi của bạn',
+          `Câu hỏi về xe đã được chuyên viên AutoMatch giải đáp: "${answer.slice(0, 100)}..."`,
+          updated.user_id,
+          'qa'
+        );
+      }
+
       success('Đã gửi phản hồi Q&A thành công!');
       return true;
     } catch (err) {
@@ -444,7 +587,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // ==========================================
-  // Customer & Staff Actions (Role Management)
+  // Customer & Staff Actions (CRM)
   // ==========================================
   const updateCustomerRole = async (id: string, role: UserRole): Promise<boolean> => {
     if (!isOwner) {
@@ -452,7 +595,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return false;
     }
 
-    // Đảm bảo chỉ có DUY NHẤT 01 tài khoản Owner
     if (role === 'owner') {
       const existingOwner = customers.find((c) => c.role === 'owner' && c.id !== id);
       if (existingOwner) {
@@ -464,29 +606,46 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    // Không cho phép hạ cấp tài khoản Owner duy nhất
     const target = customers.find((c) => c.id === id);
     if (target?.role === 'owner' && role !== 'owner') {
       const ownerCount = customers.filter((c) => c.role === 'owner').length;
       if (ownerCount <= 1) {
-        error(
-          'Thao tác bị từ chối',
-          'Không thể hạ cấp tài khoản Chủ Sở Hữu (Owner) duy nhất của hệ thống.'
-        );
+        error('Thao tác bị từ chối', 'Không thể hạ cấp tài khoản Chủ Sở Hữu (Owner) duy nhất của hệ thống.');
         return false;
       }
     }
 
     try {
       const updatedProfile = await dataServices.updateProfileRole(id, role);
-      setCustomers((prev) => prev.map((c) => (c.id === id ? updatedProfile : c)));
-      success(
-        'Cập nhật phân quyền thành công',
-        `Tài khoản ${updatedProfile.email} được gán vai trò: ${role.toUpperCase()}`
-      );
+      setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, role: updatedProfile.role } : c)));
+      success('Cập nhật phân quyền thành công', `Tài khoản ${updatedProfile.email} gán vai trò: ${role.toUpperCase()}`);
       return true;
     } catch (err) {
       error('Lỗi phân quyền', err instanceof Error ? err.message : 'Lỗi không xác định');
+      return false;
+    }
+  };
+
+  const toggleProfileActive = async (id: string, isActive: boolean): Promise<boolean> => {
+    try {
+      const updated = await dataServices.toggleProfileActive(id, isActive);
+      setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, is_active: updated.is_active } : c)));
+      success(isActive ? 'Đã kích hoạt lại tài khoản' : 'Đã khóa/tạm ngừng tài khoản');
+      return true;
+    } catch (err) {
+      error('Lỗi cập nhật trạng thái', err instanceof Error ? err.message : 'Thao tác thất bại');
+      return false;
+    }
+  };
+
+  const updateProfileShowroom = async (id: string, showroomId: string | null): Promise<boolean> => {
+    try {
+      const updated = await dataServices.updateProfileShowroom(id, showroomId);
+      setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, showroom_id: updated.showroom_id } : c)));
+      success('Gán Showroom trực thuộc cho Quản lý thành công!');
+      return true;
+    } catch (err) {
+      error('Lỗi gán Showroom', err instanceof Error ? err.message : 'Thao tác thất bại');
       return false;
     }
   };
@@ -504,6 +663,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         notifications,
         customers,
         searchHistory,
+        chatSessions,
         metrics,
         isLoading,
         isLiveSupabase,
@@ -511,7 +671,13 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateCar,
         deleteCar,
         toggleCarActive,
+        quickAdjustStock,
+        transferCarShowroom,
         updateOrderStatus,
+        cancelOrder,
+        refundOrder,
+        updateOrderShowroom,
+        updateOrderContract,
         deleteOrder,
         addShowroom,
         updateShowroom,
@@ -520,11 +686,15 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateVoucher,
         deleteVoucher,
         updateTestDriveStatus,
+        assignTestDriveStaff,
+        toggleReviewApproval,
         deleteReview,
         answerCarQA,
         createNotification,
         markNotificationRead,
         updateCustomerRole,
+        toggleProfileActive,
+        updateProfileShowroom,
         refreshData: loadData,
       }}
     >

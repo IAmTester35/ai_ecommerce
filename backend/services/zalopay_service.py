@@ -27,7 +27,7 @@ class ZaloPayService:
     def _hmac_sha256(self, data: str, key: str) -> str:
         return hmac.new(key.encode('utf-8'), data.encode('utf-8'), hashlib.sha256).hexdigest()
 
-    async def create_payment(self, req: CreatePaymentRequest) -> Dict[str, Any]:
+    async def create_payment(self, req: CreatePaymentRequest, db: Client = None) -> Dict[str, Any]:
         """
         Tạo đơn hàng thanh toán ZaloPay bất đồng bộ.
         """
@@ -70,6 +70,16 @@ class ZaloPayService:
             result = response.json()
 
         result["app_trans_id"] = app_trans_id
+
+        # Lưu app_trans_id vào bảng orders ngay khi khởi tạo thành công
+        if db and req.order_id:
+            try:
+                await asyncio.to_thread(
+                    db.table("orders").update({"app_trans_id": app_trans_id}).eq("id", req.order_id).execute
+                )
+            except Exception as save_err:
+                logger.warning(f"Could not link app_trans_id to order {req.order_id}: {save_err}")
+
         return result
 
     async def process_callback(self, data_str: str, req_mac: str, db: Client) -> Dict[str, Any]:
@@ -98,7 +108,8 @@ class ZaloPayService:
                     db.table("orders").update({
                         "payment_status": "paid",
                         "deposit_status": "paid",
-                        "status": "deposit_paid"
+                        "status": "deposit_paid",
+                        "app_trans_id": app_trans_id
                     }).eq("id", order_id).execute
                 )
 

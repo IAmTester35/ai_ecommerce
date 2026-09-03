@@ -10,6 +10,7 @@ import type {
   CarQA,
   AppNotification,
   SearchHistoryItem,
+  ChatSessionMessage,
   OrderStatus,
   PaymentStatus,
   TestDriveStatus,
@@ -18,7 +19,7 @@ import type {
 
 export const dataServices = {
   // ==========================================
-  // CARS INVENTORY (1,800+ Cars in DB)
+  // CARS INVENTORY
   // ==========================================
   async fetchCars(limit: number = 2000): Promise<Car[]> {
     const { data, error } = await supabase
@@ -61,6 +62,63 @@ export const dataServices = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  async quickAdjustStock(id: string, delta: number): Promise<Car> {
+    const { data: current, error: getErr } = await supabase
+      .from('cars')
+      .select('stock_quantity, is_active')
+      .eq('id', id)
+      .single();
+
+    if (getErr) throw getErr;
+
+    const newStock = Math.max(0, (current?.stock_quantity || 0) + delta);
+    const isActive = newStock > 0;
+
+    const { data, error } = await supabase
+      .from('cars')
+      .update({ stock_quantity: newStock, is_active: isActive })
+      .eq('id', id)
+      .select('*, showrooms(*)')
+      .single();
+
+    if (error) throw error;
+    return data as Car;
+  },
+
+  async transferCarShowroom(carId: string, targetShowroomId: string): Promise<Car> {
+    const { data, error } = await supabase
+      .from('cars')
+      .update({ showroom_id: targetShowroomId })
+      .eq('id', carId)
+      .select('*, showrooms(*)')
+      .single();
+
+    if (error) throw error;
+    return data as Car;
+  },
+
+  async uploadCarImage(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+    const filePath = `cars/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('car-images')
+        .upload(filePath, file, { cacheControl: '3600', upsert: true });
+
+      if (uploadError) {
+        console.warn('Storage upload error, falling back to local object URL:', uploadError);
+        return URL.createObjectURL(file);
+      }
+
+      const { data } = supabase.storage.from('car-images').getPublicUrl(filePath);
+      return data.publicUrl;
+    } catch {
+      return URL.createObjectURL(file);
+    }
   },
 
   // ==========================================
@@ -107,7 +165,7 @@ export const dataServices = {
 
   // ==========================================
   // VOUCHERS & PROMOTIONS
-  // ==========================
+  // ==========================================
   async fetchVouchers(): Promise<Voucher[]> {
     const { data, error } = await supabase
       .from('vouchers')
@@ -187,6 +245,77 @@ export const dataServices = {
     return data as Order;
   },
 
+  async cancelOrder(orderId: string, reason: string, cancelledBy?: string): Promise<Order> {
+    const updates: Record<string, unknown> = {
+      status: 'cancelled',
+      cancellation_reason: reason,
+      cancelled_by: cancelledBy || null,
+      cancelled_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', orderId)
+      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .single();
+
+    if (error) throw error;
+    return data as Order;
+  },
+
+  async refundOrder(
+    orderId: string,
+    refundAmount: number,
+    reason: string,
+    refundTransId?: string
+  ): Promise<Order> {
+    const updates: Record<string, unknown> = {
+      payment_status: 'refunded',
+      deposit_status: 'refunded',
+      refund_amount: refundAmount,
+      refund_reason: reason,
+      refund_trans_id: refundTransId || `REF_${Date.now()}`,
+      refunded_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', orderId)
+      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .single();
+
+    if (error) throw error;
+    return data as Order;
+  },
+
+  async updateOrderShowroom(orderId: string, showroomId: string): Promise<Order> {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ showroom_id: showroomId, updated_at: new Date().toISOString() })
+      .eq('id', orderId)
+      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .single();
+
+    if (error) throw error;
+    return data as Order;
+  },
+
+  async updateOrderContract(orderId: string, contractUrl: string): Promise<Order> {
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ contract_url: contractUrl, updated_at: new Date().toISOString() })
+      .eq('id', orderId)
+      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .single();
+
+    if (error) throw error;
+    return data as Order;
+  },
+
   async deleteOrder(orderId: string): Promise<void> {
     const { error } = await supabase
       .from('orders')
@@ -202,10 +331,18 @@ export const dataServices = {
   async fetchTestDrives(): Promise<TestDrive[]> {
     const { data, error } = await supabase
       .from('test_drives')
-      .select('*, cars(*), showrooms(*), profiles(*)')
+      .select('*, cars(*), showrooms(*), profiles(*), assigned_staff:profiles!test_drives_assigned_staff_id_fkey(*)')
       .order('scheduled_date', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      // Fallback query if alias relationship not found
+      const { data: fallback, error: fbErr } = await supabase
+        .from('test_drives')
+        .select('*, cars(*), showrooms(*), profiles(*)')
+        .order('scheduled_date', { ascending: true });
+      if (fbErr) throw fbErr;
+      return (fallback || []) as TestDrive[];
+    }
     return (data || []) as TestDrive[];
   },
 
@@ -224,10 +361,22 @@ export const dataServices = {
     return data as TestDrive;
   },
 
+  async assignTestDriveStaff(id: string, staffId: string | null): Promise<TestDrive> {
+    const { data, error } = await supabase
+      .from('test_drives')
+      .update({ assigned_staff_id: staffId })
+      .eq('id', id)
+      .select('*, cars(*), showrooms(*), profiles(*)')
+      .single();
+
+    if (error) throw error;
+    return data as TestDrive;
+  },
+
   // ==========================================
   // REVIEWS & Q&A
   // ==========================================
-  async fetchReviews(limit: number = 200): Promise<Review[]> {
+  async fetchReviews(limit: number = 500): Promise<Review[]> {
     const { data, error } = await supabase
       .from('reviews')
       .select('*, profiles(*), cars(*)')
@@ -236,6 +385,18 @@ export const dataServices = {
 
     if (error) throw error;
     return (data || []) as Review[];
+  },
+
+  async updateReviewApproval(id: string, isApproved: boolean): Promise<Review> {
+    const { data, error } = await supabase
+      .from('reviews')
+      .update({ is_approved: isApproved })
+      .eq('id', id)
+      .select('*, profiles(*), cars(*)')
+      .single();
+
+    if (error) throw error;
+    return data as Review;
   },
 
   async deleteReview(id: string): Promise<void> {
@@ -254,7 +415,6 @@ export const dataServices = {
       .order('created_at', { ascending: false });
 
     if (error) {
-      // Fallback query if foreign key alias fails
       const { data: fallbackData, error: fallbackErr } = await supabase
         .from('car_qa')
         .select('*, profiles(*), cars(*)')
@@ -293,15 +453,22 @@ export const dataServices = {
   },
 
   // ==========================================
-  // CUSTOMERS / PROFILES & ROLES
+  // CUSTOMERS / PROFILES & CRM
   // ==========================================
   async fetchProfiles(): Promise<Profile[]> {
     const { data, error } = await supabase
       .from('profiles')
-      .select('*')
+      .select('*, showroom:showrooms(*)')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      const { data: fb, error: fbErr } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (fbErr) throw fbErr;
+      return (fb || []) as Profile[];
+    }
     return (data || []) as Profile[];
   },
 
@@ -315,6 +482,59 @@ export const dataServices = {
 
     if (error) throw error;
     return data as Profile;
+  },
+
+  async toggleProfileActive(id: string, isActive: boolean): Promise<Profile> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ is_active: isActive, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    return data as Profile;
+  },
+
+  async updateProfileShowroom(id: string, showroomId: string | null): Promise<Profile> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ showroom_id: showroomId, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select('*, showroom:showrooms(*)')
+      .single();
+
+    if (error) throw error;
+    return data as Profile;
+  },
+
+  async fetchCustomer360(userId: string): Promise<{
+    orders: Order[];
+    testDrives: TestDrive[];
+    savedCars: Car[];
+  }> {
+    const [ordersRes, tdRes, savedRes] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('*, order_items(*, cars(*))')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('test_drives')
+        .select('*, cars(*), showrooms(*)')
+        .eq('user_id', userId)
+        .order('scheduled_date', { ascending: false }),
+      supabase
+        .from('saved_cars')
+        .select('*, cars(*)')
+        .eq('user_id', userId),
+    ]);
+
+    return {
+      orders: (ordersRes.data || []) as Order[],
+      testDrives: (tdRes.data || []) as TestDrive[],
+      savedCars: (savedRes.data || []).map((s: any) => s.cars).filter(Boolean) as Car[],
+    };
   },
 
   // ==========================================
@@ -372,9 +592,32 @@ export const dataServices = {
       .from('search_history')
       .select('*, profiles(*)')
       .order('created_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error) throw error;
     return (data || []) as SearchHistoryItem[];
+  },
+
+  // ==========================================
+  // AI CHAT SESSIONS INSPECTOR
+  // ==========================================
+  async fetchChatSessions(): Promise<ChatSessionMessage[]> {
+    const { data, error } = await supabase
+      .from('chat_sessions')
+      .select('*, profile:profiles(*)')
+      .order('created_at', { ascending: false })
+      .limit(300);
+
+    if (error) {
+      // Fallback without alias
+      const { data: fb, error: fbErr } = await supabase
+        .from('chat_sessions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(300);
+      if (fbErr) throw fbErr;
+      return (fb || []) as ChatSessionMessage[];
+    }
+    return (data || []) as ChatSessionMessage[];
   },
 };

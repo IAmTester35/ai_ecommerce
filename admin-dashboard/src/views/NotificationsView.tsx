@@ -10,7 +10,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
-import { sendBroadcastNotification } from '../lib/api';
+import { sendBroadcastNotification, sendUserNotification } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 import { formatDateTime } from '../lib/utils';
 
@@ -33,13 +33,17 @@ export const NotificationsView: React.FC = () => {
     const userId = targetType === 'user' ? selectedUserId : null;
 
     // Call FastAPI push notification endpoint
-    await sendBroadcastNotification(title, content);
+    if (targetType === 'user' && selectedUserId) {
+      await sendUserNotification(selectedUserId, title, content);
+    } else {
+      await sendBroadcastNotification(title, content);
+    }
 
     // Save to Supabase & Context state
     await createNotification(title, content, userId, notifType);
 
     setIsSending(false);
-    success('Đã phát thông báo thành công!', 'Thông báo đã được lưu và gửi đến thiết bị người dùng.');
+    success('Đã gửi thông báo thành công!', targetType === 'user' ? 'Thông báo đã gửi tới khách hàng được chọn.' : 'Thông báo đã phát tới toàn bộ người dùng.');
     setTitle('');
     setContent('');
   };

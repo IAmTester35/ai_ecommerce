@@ -17,6 +17,7 @@ import { VouchersView } from './views/VouchersView';
 import { CustomersView } from './views/CustomersView';
 import { ReviewsQAView } from './views/ReviewsQAView';
 import { AiSearchInspector } from './views/AiSearchInspector';
+import { AiChatInspector } from './views/AiChatInspector';
 import { NotificationsView } from './views/NotificationsView';
 import { SystemSettings } from './views/SystemSettings';
 
@@ -76,6 +77,7 @@ const AppContent: React.FC = () => {
         {currentView === 'customers' && <CustomersView />}
         {currentView === 'reviews_qa' && <ReviewsQAView />}
         {currentView === 'ai_inspector' && <AiSearchInspector />}
+        {currentView === 'ai_chat' && <AiChatInspector />}
         {currentView === 'notifications' && <NotificationsView />}
         {currentView === 'settings' && <SystemSettings />}
       </AdminLayout>

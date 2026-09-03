@@ -5,14 +5,16 @@ import {
   AlertTriangle,
   CheckCircle2,
   Play,
+  Terminal,
+  Activity,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { Button } from '../components/ui/Button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { searchWithAI } from '../lib/api';
 import type { AISearchResponse } from '../types';
-import { formatVND, formatDateTime } from '../lib/utils';
+import { formatVND, formatDateTime, cn } from '../lib/utils';
 
 export const AiSearchInspector: React.FC = () => {
   const { searchHistory } = useData();
@@ -20,6 +22,10 @@ export const AiSearchInspector: React.FC = () => {
   const [query, setQuery] = useState('Tìm xe thể thao coupe V12 giá dưới 1 tỷ để đi dạo phố');
   const [isLoading, setIsLoading] = useState(false);
   const [searchResult, setSearchResult] = useState<AISearchResponse | null>(null);
+
+  // Live SSE Stream progress & text
+  const [progressSteps, setProgressSteps] = useState<{ step: string; message: string }[]>([]);
+  const [streamingText, setStreamingText] = useState('');
 
   const sampleQueries = [
     {
@@ -47,10 +53,27 @@ export const AiSearchInspector: React.FC = () => {
   const handleRunSearch = async (textToSearch?: string) => {
     const q = textToSearch || query;
     if (!q.trim()) return;
+
     setIsLoading(true);
-    const res = await searchWithAI(q);
-    setSearchResult(res);
-    setIsLoading(false);
+    setProgressSteps([]);
+    setStreamingText('');
+    setSearchResult(null);
+
+    try {
+      const res = await searchWithAI(q, {
+        onProgress: (step, message) => {
+          setProgressSteps((prev) => [...prev, { step, message }]);
+        },
+        onChunk: (token) => {
+          setStreamingText((prev) => prev + token);
+        },
+      });
+      setSearchResult(res);
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -118,10 +141,12 @@ export const AiSearchInspector: React.FC = () => {
                     setQuery(s.text);
                     handleRunSearch(s.text);
                   }}
-                  className={`text-xs px-3 py-1.5 rounded-xl border transition-all cursor-pointer font-medium flex items-center gap-1.5 ${s.isConflict
-                    ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
-                    : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                    }`}
+                  className={cn(
+                    'text-xs px-3 py-1.5 rounded-xl border transition-all cursor-pointer font-medium flex items-center gap-1.5',
+                    s.isConflict
+                      ? 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                      : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                  )}
                 >
                   {s.isConflict ? (
                     <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -135,6 +160,39 @@ export const AiSearchInspector: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Live SSE Stream Progress Box */}
+      {(isLoading || progressSteps.length > 0) && (
+        <Card className="border-indigo-200 bg-slate-900 text-slate-100 font-mono text-xs overflow-hidden">
+          <div className="p-3 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-emerald-400" />
+              <span className="font-bold text-slate-200">
+                Tiến Trình SSE Streaming (FastAPI /api/search)
+              </span>
+            </div>
+            {isLoading && (
+              <Badge variant="primary" size="sm" className="bg-indigo-900 text-indigo-200 animate-pulse font-mono">
+                <Activity className="w-3 h-3 mr-1 animate-spin" />
+                Live Stream
+              </Badge>
+            )}
+          </div>
+          <div className="p-4 space-y-2 max-h-56 overflow-y-auto">
+            {progressSteps.map((p, idx) => (
+              <div key={idx} className="flex items-start gap-2">
+                <span className="text-blue-400 font-bold shrink-0">[{p.step}]</span>
+                <span className="text-slate-300">{p.message}</span>
+              </div>
+            ))}
+            {streamingText && (
+              <div className="pt-2 border-t border-slate-800 text-emerald-400 whitespace-pre-wrap leading-relaxed">
+                {streamingText}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       {/* 5-Layer Inspection Pipeline Visualization */}
       {searchResult && (
@@ -172,8 +230,10 @@ export const AiSearchInspector: React.FC = () => {
               <CardHeader className="bg-white/80">
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-6 h-6 rounded-lg text-white flex items-center justify-center font-bold text-xs ${searchResult.conflict_detected ? 'bg-amber-500' : 'bg-emerald-600'
-                      }`}
+                    className={cn(
+                      'w-6 h-6 rounded-lg text-white flex items-center justify-center font-bold text-xs',
+                      searchResult.conflict_detected ? 'bg-amber-500' : 'bg-emerald-600'
+                    )}
                   >
                     2
                   </div>
@@ -203,10 +263,10 @@ export const AiSearchInspector: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 text-emerald-900 font-bold">
                       <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      Yêu cầu logic hợp lệ hoàn toàn
+                      Không phát hiện mâu thuẫn vật lý hoặc giá cả
                     </div>
                     <p className="text-slate-600 leading-relaxed">
-                      Thông số kỹ thuật và tầm ngân sách khớp với các dòng xe hiện có trong kho hàng.
+                      Các tiêu chí truy vấn hoàn toàn khả thi và khớp chính xác với dải sản phẩm thực tế trong kho xe.
                     </p>
                   </div>
                 )}
@@ -214,120 +274,102 @@ export const AiSearchInspector: React.FC = () => {
             </Card>
           </div>
 
-          {/* Layer 3 & 4: Vector Retrieval Results & Re-ranking */}
+          {/* Layer 3: Ranked Cars */}
           <Card>
-            <CardHeader className="bg-slate-50/60">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
-                  3 & 4
+            <CardHeader className="bg-slate-50/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+                    3
+                  </div>
+                  <CardTitle className="text-sm">
+                    Mẫu Xe Đề Xuất (Hybrid Reranked - {searchResult.results.length} xe)
+                  </CardTitle>
                 </div>
-                <div>
-                  <CardTitle className="text-sm">Kết Quả Truy Xuất Vector (Hybrid Vector Retrieval & Re-ranking)</CardTitle>
-                  <CardDescription>RPC match_cars() trên bảng reviews kèm độ tương đồng Cosine</CardDescription>
-                </div>
+                <Badge variant="primary" size="sm">
+                  Vector HNSW Similarity + Metadata Filter
+                </Badge>
               </div>
-              <Badge variant="secondary" size="sm">
-                Top {searchResult.results.length} Candidates
-              </Badge>
             </CardHeader>
-
-            <CardContent className="p-5">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {searchResult.results.map((car, idx) => (
                   <div
                     key={car.id}
-                    className="p-4 bg-white rounded-2xl border border-slate-200 shadow-xs hover:border-indigo-300 hover:shadow-md transition-all space-y-3"
+                    className="p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition-all space-y-3"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="w-6 h-6 rounded-full bg-indigo-50 text-indigo-700 font-extrabold text-xs flex items-center justify-center border border-indigo-100">
-                        #{idx + 1}
-                      </span>
-                      <div className="flex items-center gap-1 font-mono text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                        <span>Sim:</span>
-                        <span>{(car.similarity * 100).toFixed(1)}%</span>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                          Hạng #{idx + 1}
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm mt-1">
+                          {car.make} {car.model}
+                        </h4>
+                        <span className="text-xs text-slate-500">Năm {car.year}</span>
                       </div>
+                      <Badge variant="success" size="sm" className="font-mono">
+                        Tương đồng {(car.similarity * 100).toFixed(0)}%
+                      </Badge>
                     </div>
 
-                    {car.image_url && (
-                      <img
-                        src={car.image_url}
-                        alt=""
-                        className="w-full h-32 rounded-xl object-cover border border-slate-100"
-                      />
-                    )}
+                    <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-100">
+                      <span className="font-extrabold text-blue-600">{formatVND(car.price)}</span>
+                    </div>
 
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">
-                        {car.make} {car.model}
-                      </h4>
-                      <p className="text-xs font-extrabold text-blue-600 mt-0.5">
-                        {formatVND(car.price)}
+                    {car.review && (
+                      <p className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg italic line-clamp-3">
+                        "{car.review}"
                       </p>
-                    </div>
-
-                    <p className="text-xs text-slate-500 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 line-clamp-3">
-                      "{car.review}"
-                    </p>
+                    )}
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Layer 5: Generative Synthesis Output */}
-          <Card className="border-indigo-200 bg-linear-to-r from-blue-50/60 via-indigo-50/40 to-white">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-indigo-700 text-white flex items-center justify-center font-bold text-xs">
-                  5
-                </div>
-                <CardTitle className="text-sm text-indigo-950">Phản Hồi Trợ Lý AI Sinh Ra (Generative Response)</CardTitle>
-              </div>
-              <Badge variant="secondary" size="sm">
-                LLM Synthesis
-              </Badge>
-            </CardHeader>
-            <CardContent className="p-5">
-              <div className="p-4 bg-white rounded-xl border border-indigo-100 shadow-xs text-sm text-slate-800 leading-relaxed font-medium">
-                {searchResult.ai_message}
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
-      {/* Search History Feed */}
+      {/* Search History from Real Database */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Search className="w-4 h-4 text-slate-600" />
-            Lịch Sử Tìm Kiếm Thực Tế Từ Khách Hàng (search_history)
-          </CardTitle>
-          <CardDescription>Các câu truy vấn tự nhiên đã ghi nhận trên hệ thống</CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="divide-y divide-slate-100">
-            {searchHistory.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => {
-                  setQuery(item.query_text);
-                  handleRunSearch(item.query_text);
-                }}
-                className="p-3.5 px-5 hover:bg-slate-50 flex items-center justify-between transition-colors cursor-pointer text-xs"
-              >
-                <div className="flex items-center gap-3">
-                  <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="font-semibold text-slate-800">{item.query_text}</span>
-                </div>
-                <div className="flex items-center gap-2 text-slate-400 text-[11px]">
-                  <span>{item.profile?.full_name || 'Khách hàng'}</span>
-                  <span>•</span>
-                  <span>{formatDateTime(item.created_at)}</span>
-                </div>
-              </div>
-            ))}
+        <CardHeader className="bg-slate-50/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-slate-500" />
+              <CardTitle className="text-sm">Lịch Sử Tìm Kiếm Thực Tế (search_history Supabase Table)</CardTitle>
+            </div>
+            <Badge variant="neutral" size="sm">
+              {searchHistory.length} lượt tìm
+            </Badge>
           </div>
+        </CardHeader>
+        <CardContent className="p-4">
+          {searchHistory.length === 0 ? (
+            <div className="text-center py-6 text-xs text-slate-400">Chưa có lịch sử tìm kiếm nào được lưu</div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {searchHistory.slice(0, 8).map((item) => (
+                <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-semibold text-slate-800">"{item.query_text}"</span>
+                    <span className="text-[11px] text-slate-400 block mt-0.5">
+                      {formatDateTime(item.created_at)}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setQuery(item.query_text);
+                      handleRunSearch(item.query_text);
+                    }}
+                  >
+                    Kiểm Tra Lại
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

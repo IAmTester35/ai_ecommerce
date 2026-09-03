@@ -75,6 +75,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       title: 'AI Vector Search & Conflict Resolution Hub',
       subtitle: 'Giám sát suy luận Gemini, trích xuất thực thể và xử lý mâu thuẫn yêu cầu xe',
     },
+    ai_chat: {
+      title: 'AI Chat Sessions Audit',
+      subtitle: 'Giám sát lịch sử đàm thoại giữa khách hàng và Trợ lý AI AutoMatch',
+    },
     notifications: {
       title: 'Trung Tâm Thông Báo & Push Broadcast',
       subtitle: 'Soạn thảo và gửi thông báo toàn hệ thống hoặc từng khách hàng cụ thể',
