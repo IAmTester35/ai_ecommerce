@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Percent,
   Trash2,
+  Car,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -53,12 +54,12 @@ export const OrdersManagement: React.FC = () => {
     setSelectedOrder((prev) =>
       prev
         ? {
-            ...prev,
-            status,
-            ...(paymentStatus
-              ? { deposit_status: paymentStatus, payment_status: paymentStatus }
-              : {}),
-          }
+          ...prev,
+          status,
+          ...(paymentStatus
+            ? { deposit_status: paymentStatus, payment_status: paymentStatus }
+            : {}),
+        }
         : null
     );
   };
@@ -348,8 +349,8 @@ export const OrdersManagement: React.FC = () => {
                           isCurrent
                             ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md'
                             : isDone
-                            ? 'bg-emerald-600 text-white'
-                            : 'bg-slate-200 text-slate-500'
+                              ? 'bg-emerald-600 text-white'
+                              : 'bg-slate-200 text-slate-500'
                         )}
                       >
                         {isDone ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
@@ -360,8 +361,8 @@ export const OrdersManagement: React.FC = () => {
                           isCurrent
                             ? 'text-blue-600 font-bold'
                             : isDone
-                            ? 'text-slate-800'
-                            : 'text-slate-400'
+                              ? 'text-slate-800'
+                              : 'text-slate-400'
                         )}
                       >
                         {step.label}
@@ -402,6 +403,54 @@ export const OrdersManagement: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Ordered Cars / Items List */}
+            {((selectedOrder.items && selectedOrder.items.length > 0) || ((selectedOrder as any).order_items && (selectedOrder as any).order_items.length > 0)) && (
+              <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <Car className="w-4 h-4 text-blue-600" />
+                  <span>Danh Sách Xe Đặt Cọc ({((selectedOrder.items || (selectedOrder as any).order_items) as any[]).length})</span>
+                </div>
+                <div className="space-y-2">
+                  {((selectedOrder.items || (selectedOrder as any).order_items) as any[]).map((item: any) => {
+                    const car = item.car || item.cars;
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                        {car?.image_url ? (
+                          <img
+                            src={car.image_url}
+                            alt={car.model || 'Car'}
+                            className="w-14 h-10 object-cover rounded-lg bg-slate-200 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-14 h-10 rounded-lg bg-slate-200 flex items-center justify-center shrink-0">
+                            <Car className="w-5 h-5 text-slate-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">
+                            {car ? `${car.make} ${car.model}` : 'Mẫu xe AutoMatch'}
+                          </p>
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+                            <span>Năm {car?.year || 2024}</span>
+                            <span>•</span>
+                            <span>Số lượng: x{item.quantity}</span>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs font-bold text-blue-600 block">
+                            {formatVND(item.price * item.quantity)}
+                          </span>
+                          <span className="text-[10px] text-slate-400">
+                            ({formatVND(item.price)} / xe)
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Financial Summary */}
             <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-3">
