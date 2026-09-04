@@ -13,7 +13,7 @@ class Settings:
     # Google Gemini
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL_EXTRACT: str = os.getenv("GEMINI_MODEL_EXTRACT", "gemini-3.1-flash-lite")
-    GEMINI_MODEL_GEN: str = os.getenv("GEMINI_MODEL_GEN", "gemini-3.6-flash")
+    GEMINI_MODEL_GEN: str = os.getenv("GEMINI_MODEL_GEN", "gemini-3.5-flash-lite")
     GEMINI_MODEL_EMBED: str = os.getenv("GEMINI_MODEL_EMBED", "gemini-embedding-2")
 
     # Jina AI
