@@ -11,6 +11,7 @@ import {
   ArrowRightLeft,
   AlertTriangle,
   Image as ImageIcon,
+  Download,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -64,6 +65,17 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(isAddModalOpen);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+
+  React.useEffect(() => {
+    if (isAddModalOpen) {
+      setEditingCar(null);
+      setFormData(initialForm);
+      setFeaturesText('Màn hình giải trí cảm ứng, Hệ thống treo khí nén, Hỗ trợ lái thông minh ADAS');
+      setGalleryText('');
+      setView360Input('');
+      setIsModalOpen(true);
+    }
+  }, [isAddModalOpen]);
 
   // Storage Uploading State
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -257,6 +269,32 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   const lowStockCount = cars.filter((c) => c.stock_quantity <= 2 && c.stock_quantity > 0).length;
   const outOfStockCount = cars.filter((c) => c.stock_quantity === 0).length;
 
+  const handleExportCSV = () => {
+    const headers = ['ID', 'Hãng Xe', 'Dòng Xe', 'Năm', 'Công Suất (HP)', 'Giá Niêm Yết (VNĐ)', 'Tồn Kho', 'Trạng Thái', 'Showroom'];
+    const rows = filteredCars.map((c) => [
+      `"${c.id}"`,
+      `"${c.make || ''}"`,
+      `"${c.model || ''}"`,
+      c.year || '',
+      c.engine_hp || 0,
+      c.price || 0,
+      c.stock_quantity,
+      c.is_active ? '"Đang mở bán"' : '"Tạm ẩn / Hết hàng"',
+      `"${c.showroom?.name || 'Chưa phân bổ'}"`,
+    ]);
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `automatch_cars_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    success('Xuất file thành công', `Đã tải về danh sách ${filteredCars.length} mẫu xe.`);
+  };
+
   return (
     <div className="space-y-6 text-left">
       {/* Header Info */}
@@ -292,6 +330,17 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
               <LayoutGrid className="w-4 h-4" />
             </button>
           </div>
+
+          <Button
+            variant="outline"
+            size="md"
+            leftIcon={<Download className="w-4 h-4 text-slate-600" />}
+            onClick={handleExportCSV}
+            className="hidden sm:inline-flex"
+            title="Xuất dữ liệu xe sang file Excel CSV"
+          >
+            Xuất CSV
+          </Button>
 
           {can('CARS_CREATE') && (
             <Button

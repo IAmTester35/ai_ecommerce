@@ -69,6 +69,14 @@ interface DataContextType {
   deleteVoucher: (id: string) => Promise<boolean>;
 
   // Test Drive Actions
+  addTestDrive: (tdData: {
+    user_id?: string | null;
+    car_id: string;
+    showroom_id?: string | null;
+    scheduled_date: string;
+    notes?: string | null;
+    assigned_staff_id?: string | null;
+  }) => Promise<boolean>;
   updateTestDriveStatus: (id: string, status: TestDriveStatus, notes?: string) => Promise<boolean>;
   assignTestDriveStaff: (id: string, staffId: string | null) => Promise<boolean>;
 
@@ -82,6 +90,13 @@ interface DataContextType {
   markNotificationRead: (id: string) => Promise<boolean>;
 
   // Customer Actions
+  addCustomer: (customerData: {
+    email: string;
+    full_name: string;
+    phone?: string | null;
+    role?: UserRole;
+    showroom_id?: string | null;
+  }) => Promise<boolean>;
   updateCustomerRole: (id: string, role: UserRole) => Promise<boolean>;
   toggleProfileActive: (id: string, isActive: boolean) => Promise<boolean>;
   updateProfileShowroom: (id: string, showroomId: string | null) => Promise<boolean>;
@@ -152,23 +167,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     conversionRate,
   };
 
-  // Load all real data from Supabase
+  // Load all real data from Supabase using Promise.allSettled for fault tolerance
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [
-        dbCars,
-        dbShowrooms,
-        dbOrders,
-        dbVouchers,
-        dbTestDrives,
-        dbReviews,
-        dbQA,
-        dbProfiles,
-        dbNotifications,
-        dbHistory,
-        dbChat,
-      ] = await Promise.all([
+      const results = await Promise.allSettled([
         dataServices.fetchCars(2000),
         dataServices.fetchShowrooms(),
         dataServices.fetchOrders(),
@@ -182,20 +185,27 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dataServices.fetchChatSessions(),
       ]);
 
-      setCars(dbCars);
-      setShowrooms(dbShowrooms);
-      setOrders(dbOrders);
-      setVouchers(dbVouchers);
-      setTestDrives(dbTestDrives);
-      setReviews(dbReviews);
-      setCarQAs(dbQA);
-      setCustomers(dbProfiles);
-      setNotifications(dbNotifications);
-      setSearchHistory(dbHistory);
-      setChatSessions(dbChat);
-      setIsLiveSupabase(true);
+      if (results[0].status === 'fulfilled') setCars(results[0].value);
+      if (results[1].status === 'fulfilled') setShowrooms(results[1].value);
+      if (results[2].status === 'fulfilled') setOrders(results[2].value);
+      if (results[3].status === 'fulfilled') setVouchers(results[3].value);
+      if (results[4].status === 'fulfilled') setTestDrives(results[4].value);
+      if (results[5].status === 'fulfilled') setReviews(results[5].value);
+      if (results[6].status === 'fulfilled') setCarQAs(results[6].value);
+      if (results[7].status === 'fulfilled') setCustomers(results[7].value);
+      if (results[8].status === 'fulfilled') setNotifications(results[8].value);
+      if (results[9].status === 'fulfilled') setSearchHistory(results[9].value);
+      if (results[10].status === 'fulfilled') setChatSessions(results[10].value);
+
+      const failedQueries = results.filter((r) => r.status === 'rejected');
+      if (failedQueries.length === 0) {
+        setIsLiveSupabase(true);
+      } else {
+        console.warn(`[DataContext] ${failedQueries.length} query failed:`, failedQueries);
+        setIsLiveSupabase(failedQueries.length < results.length);
+      }
     } catch (e) {
-      console.error('[DataContext] Error fetching live Supabase data:', e);
+      console.error('[DataContext] Critical error fetching Supabase data:', e);
       setIsLiveSupabase(false);
       error('Lỗi tải dữ liệu Supabase', e instanceof Error ? e.message : 'Không thể đồng bộ dữ liệu từ máy chủ.');
     } finally {
@@ -468,6 +478,25 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ==========================================
   // Test Drive Actions
   // ==========================================
+  const addTestDrive = async (tdData: {
+    user_id?: string | null;
+    car_id: string;
+    showroom_id?: string | null;
+    scheduled_date: string;
+    notes?: string | null;
+    assigned_staff_id?: string | null;
+  }): Promise<boolean> => {
+    try {
+      const created = await dataServices.addTestDrive(tdData);
+      setTestDrives((prev) => [created, ...prev]);
+      success('Đặt lịch lái thử thành công', `Đã lên lịch lái thử ngày ${new Date(created.scheduled_date).toLocaleDateString('vi-VN')}`);
+      return true;
+    } catch (err) {
+      error('Lỗi đặt lịch lái thử', err instanceof Error ? err.message : 'Không thể lưu lịch hẹn');
+      return false;
+    }
+  };
+
   const updateTestDriveStatus = async (
     id: string,
     status: TestDriveStatus,
@@ -650,6 +679,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const addCustomer = async (customerData: {
+    email: string;
+    full_name: string;
+    phone?: string | null;
+    role?: UserRole;
+    showroom_id?: string | null;
+  }): Promise<boolean> => {
+    try {
+      const created = await dataServices.addCustomer(customerData);
+      setCustomers((prev) => [created, ...prev]);
+      success('Thêm khách hàng thành công', `${created.full_name || created.email} đã được thêm vào CRM.`);
+      return true;
+    } catch (err) {
+      error('Lỗi thêm khách hàng', err instanceof Error ? err.message : 'Không thể tạo hồ sơ khách hàng');
+      return false;
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -685,6 +732,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addVoucher,
         updateVoucher,
         deleteVoucher,
+        addTestDrive,
         updateTestDriveStatus,
         assignTestDriveStaff,
         toggleReviewApproval,
@@ -692,6 +740,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         answerCarQA,
         createNotification,
         markNotificationRead,
+        addCustomer,
         updateCustomerRole,
         toggleProfileActive,
         updateProfileShowroom,

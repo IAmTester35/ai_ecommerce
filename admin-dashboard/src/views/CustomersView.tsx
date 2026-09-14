@@ -18,12 +18,13 @@ import {
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
 import { dataServices } from '../services/dataServices';
-import type { Profile, Order, TestDrive, Car as CarType } from '../types';
+import type { Profile, Order, TestDrive, Car as CarType, UserRole } from '../types';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
 import { Modal } from '../components/ui/Modal';
+import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -35,12 +36,22 @@ export const CustomersView: React.FC = () => {
   const {
     customers,
     showrooms,
+    addCustomer,
     updateCustomerRole,
     toggleProfileActive,
     updateProfileShowroom,
   } = useData();
   const { isOwner } = useAuth();
   const { error } = useToast();
+
+  // Add Customer Modal State
+  const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
+  const [newCustomerEmail, setNewCustomerEmail] = useState('');
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newCustomerPhone, setNewCustomerPhone] = useState('');
+  const [newCustomerRole, setNewCustomerRole] = useState<UserRole>('user');
+  const [newCustomerShowroomId, setNewCustomerShowroomId] = useState('');
+  const [isSubmittingCustomer, setIsSubmittingCustomer] = useState(false);
 
   // Active Tab: 'customers' (CRM) or 'staff' (Internal Admin & Managers)
   const [activeTab, setActiveTab] = useState<'customers' | 'staff'>('customers');
@@ -168,6 +179,26 @@ export const CustomersView: React.FC = () => {
     }
   };
 
+  const handleCreateCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustomerEmail.trim() || !newCustomerName.trim()) return;
+    setIsSubmittingCustomer(true);
+    await addCustomer({
+      email: newCustomerEmail.trim(),
+      full_name: newCustomerName.trim(),
+      phone: newCustomerPhone.trim() || null,
+      role: newCustomerRole,
+      showroom_id: newCustomerShowroomId || null,
+    });
+    setIsSubmittingCustomer(false);
+    setIsAddCustomerModalOpen(false);
+    setNewCustomerEmail('');
+    setNewCustomerName('');
+    setNewCustomerPhone('');
+    setNewCustomerRole('user');
+    setNewCustomerShowroomId('');
+  };
+
   // Handle Manager Showroom Change in Table
   const handleManagerShowroomChange = async (staffId: string, newShowroomId: string) => {
     if (!isOwner) {
@@ -190,16 +221,27 @@ export const CustomersView: React.FC = () => {
           </p>
         </div>
 
-        {isOwner && (
+        <div className="flex items-center gap-2">
           <Button
-            variant="primary"
+            variant="outline"
             size="md"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => setIsAppointModalOpen(true)}
+            leftIcon={<Plus className="w-4 h-4 text-blue-600" />}
+            onClick={() => setIsAddCustomerModalOpen(true)}
           >
-            Bổ Nhiệm Quản Lý Mới
+            Thêm Khách Hàng
           </Button>
-        )}
+
+          {isOwner && (
+            <Button
+              variant="primary"
+              size="md"
+              leftIcon={<ShieldCheck className="w-4 h-4" />}
+              onClick={() => setIsAppointModalOpen(true)}
+            >
+              Bổ Nhiệm Quản Lý Mới
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Navigation Tabs */}
@@ -713,6 +755,77 @@ export const CustomersView: React.FC = () => {
           </div>
         </Modal>
       )}
+
+      {/* Add Customer Modal */}
+      <Modal
+        isOpen={isAddCustomerModalOpen}
+        onClose={() => setIsAddCustomerModalOpen(false)}
+        title="Thêm Khách Hàng Mới Vào CRM"
+        description="Khởi tạo hồ sơ khách hàng hoặc nhân sự Showroom trong hệ thống cơ sở dữ liệu."
+        maxWidth="md"
+      >
+        <form onSubmit={handleCreateCustomer} className="space-y-4 text-left">
+          <Input
+            label="Họ & Tên *"
+            value={newCustomerName}
+            onChange={(e) => setNewCustomerName(e.target.value)}
+            placeholder="VD: Nguyễn Thành Nam"
+            required
+          />
+
+          <Input
+            label="Địa Chỉ Email *"
+            type="email"
+            value={newCustomerEmail}
+            onChange={(e) => setNewCustomerEmail(e.target.value)}
+            placeholder="khachhang@gmail.com"
+            required
+          />
+
+          <Input
+            label="Số Điện Thoại Liên Hệ"
+            type="tel"
+            value={newCustomerPhone}
+            onChange={(e) => setNewCustomerPhone(e.target.value)}
+            placeholder="0912 345 678"
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Vai Trò Tài Khoản"
+              value={newCustomerRole}
+              onChange={(e) => setNewCustomerRole(e.target.value as UserRole)}
+            >
+              <option value="user">Khách Hàng (User)</option>
+              {isOwner && <option value="manager">Quản Lý Showroom (Manager)</option>}
+            </Select>
+
+            {newCustomerRole === 'manager' && (
+              <Select
+                label="Showroom Trực Thuộc"
+                value={newCustomerShowroomId}
+                onChange={(e) => setNewCustomerShowroomId(e.target.value)}
+              >
+                <option value="">-- Chưa phân bổ --</option>
+                {showrooms.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button variant="outline" type="button" onClick={() => setIsAddCustomerModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="primary" type="submit" isLoading={isSubmittingCustomer}>
+              Lưu Hồ Sơ
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

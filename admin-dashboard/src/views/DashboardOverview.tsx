@@ -95,25 +95,42 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
   // Dynamic Monthly Revenue & Deposit Trend from Real Orders
   const monthlyRevenueData = useMemo(() => {
-    if (!filteredOrders.length) {
-      const months = ['T3', 'T4', 'T5', 'T6', 'T7', 'T8'];
-      return months.map((m) => ({ month: m, revenue: 0, deposit: 0, orders: 0 }));
+    const now = new Date();
+    // Continuous timeline of the last 6 calendar months
+    const monthKeys: { key: string; label: string }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      monthKeys.push({
+        key: `${d.getFullYear()}-${d.getMonth() + 1}`,
+        label: `T${d.getMonth() + 1}`,
+      });
     }
 
     const monthMap: Record<string, { month: string; revenue: number; deposit: number; orders: number }> = {};
-    filteredOrders.forEach((ord) => {
-      const d = ord.created_at ? new Date(ord.created_at) : new Date(2026, 0, 1);
-      const mKey = `T${d.getMonth() + 1}`;
-      if (!monthMap[mKey]) {
-        monthMap[mKey] = { month: mKey, revenue: 0, deposit: 0, orders: 0 };
-      }
-      monthMap[mKey].revenue += Number(ord.total_amount || 0);
-      monthMap[mKey].deposit += Number(ord.deposit_amount || 0);
-      monthMap[mKey].orders += 1;
+    monthKeys.forEach((m) => {
+      monthMap[m.key] = { month: m.label, revenue: 0, deposit: 0, orders: 0 };
     });
 
-    const data = Object.values(monthMap);
-    return data.length > 0 ? data : [{ month: 'T1', revenue: 0, deposit: 0, orders: 0 }];
+    filteredOrders.forEach((ord) => {
+      const d = ord.created_at ? new Date(ord.created_at) : null;
+      if (d) {
+        const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+        if (monthMap[key]) {
+          monthMap[key].revenue += Number(ord.total_amount || 0);
+          monthMap[key].deposit += Number(ord.deposit_amount || 0);
+          monthMap[key].orders += 1;
+        } else {
+          monthMap[key] = {
+            month: `T${d.getMonth() + 1}/${d.getFullYear().toString().slice(2)}`,
+            revenue: Number(ord.total_amount || 0),
+            deposit: Number(ord.deposit_amount || 0),
+            orders: 1,
+          };
+        }
+      }
+    });
+
+    return Object.values(monthMap);
   }, [filteredOrders]);
 
   // Dynamic Brand Distribution from Real Cars in Supabase

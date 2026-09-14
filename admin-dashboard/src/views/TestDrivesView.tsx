@@ -3,10 +3,12 @@ import {
   Calendar,
   Clock,
   Phone,
+  Plus,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import type { TestDrive, TestDriveStatus } from '../types';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardContent } from '../components/ui/Card';
@@ -20,7 +22,7 @@ import { formatDateTime, cn } from '../lib/utils';
 import { statusMap } from '../design-system/tokens';
 
 export const TestDrivesView: React.FC = () => {
-  const { testDrives, showrooms, customers, updateTestDriveStatus, assignTestDriveStaff } = useData();
+  const { cars, testDrives, showrooms, customers, addTestDrive, updateTestDriveStatus, assignTestDriveStaff } = useData();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterShowroom, setFilterShowroom] = useState<string>('all');
@@ -34,9 +36,38 @@ export const TestDrivesView: React.FC = () => {
   const [targetStatus, setTargetStatus] = useState<TestDriveStatus>('confirmed');
   const [notes, setNotes] = useState('');
 
+  // Create Test Drive Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [createCarId, setCreateCarId] = useState('');
+  const [createShowroomId, setCreateShowroomId] = useState('');
+  const [createUserId, setCreateUserId] = useState('');
+  const [createDate, setCreateDate] = useState('');
+  const [createNotes, setCreateNotes] = useState('');
+  const [createStaffId, setCreateStaffId] = useState('');
+  const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
+
   const staffMembers = useMemo(() => {
     return customers.filter((c) => c.role === 'owner' || c.role === 'manager');
   }, [customers]);
+
+  const handleCreateTestDrive = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createCarId || !createDate) return;
+    setIsSubmittingCreate(true);
+    await addTestDrive({
+      car_id: createCarId,
+      showroom_id: createShowroomId || null,
+      user_id: createUserId || null,
+      scheduled_date: new Date(createDate).toISOString(),
+      notes: createNotes.trim() || null,
+      assigned_staff_id: createStaffId || null,
+    });
+    setIsSubmittingCreate(false);
+    setIsCreateModalOpen(false);
+    setCreateCarId('');
+    setCreateDate('');
+    setCreateNotes('');
+  };
 
   const openActionModal = (td: TestDrive, status: TestDriveStatus) => {
     setSelectedTD(td);
@@ -88,6 +119,19 @@ export const TestDrivesView: React.FC = () => {
           <Badge variant="warning" size="md">
             {testDrives.filter((t) => t.status === 'pending').length} chờ duyệt
           </Badge>
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            onClick={() => {
+              setCreateCarId(cars[0]?.id || '');
+              setCreateShowroomId(showrooms[0]?.id || '');
+              setCreateDate(new Date(Date.now() + 86400000).toISOString().slice(0, 16));
+              setIsCreateModalOpen(true);
+            }}
+          >
+            Đặt Lịch Mới
+          </Button>
         </div>
       </div>
 
@@ -333,6 +377,100 @@ export const TestDrivesView: React.FC = () => {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Create Test Drive Modal */}
+      <Modal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        title="Đặt Lịch Hẹn Lái Thử Cho Khách Hàng"
+        description="Ghi nhận lịch hẹn trải nghiệm xe thể thao, chọn chi nhánh Showroom và chỉ định nhân viên tư vấn."
+        maxWidth="lg"
+      >
+        <form onSubmit={handleCreateTestDrive} className="space-y-4 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Mẫu Xe Trải Nghiệm *"
+              value={createCarId}
+              onChange={(e) => setCreateCarId(e.target.value)}
+              required
+            >
+              <option value="">-- Chọn xe --</option>
+              {cars.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.make} {c.model} ({c.year}) - {c.stock_quantity > 0 ? `Còn ${c.stock_quantity} xe` : 'Hết xe'}
+                </option>
+              ))}
+            </Select>
+
+            <Select
+              label="Chi Nhánh Showroom *"
+              value={createShowroomId}
+              onChange={(e) => setCreateShowroomId(e.target.value)}
+              required
+            >
+              <option value="">-- Chọn Showroom --</option>
+              {showrooms.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} ({s.city})
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Select
+              label="Khách Hàng (CRM)"
+              value={createUserId}
+              onChange={(e) => setCreateUserId(e.target.value)}
+            >
+              <option value="">-- Khách vãng lai / Trực tiếp --</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.full_name || 'Khách hàng'} ({c.email}) {c.phone ? `- ${c.phone}` : ''}
+                </option>
+              ))}
+            </Select>
+
+            <Input
+              label="Ngày & Giờ Lái Thử *"
+              type="datetime-local"
+              value={createDate}
+              onChange={(e) => setCreateDate(e.target.value)}
+              required
+            />
+          </div>
+
+          <Select
+            label="Chỉ Định Cố Vấn Bán Hàng Phụ Trách"
+            value={createStaffId}
+            onChange={(e) => setCreateStaffId(e.target.value)}
+          >
+            <option value="">-- Chưa chỉ định (Phân công sau) --</option>
+            {staffMembers.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.full_name || s.email} ({s.role.toUpperCase()})
+              </option>
+            ))}
+          </Select>
+
+          <Textarea
+            label="Ghi Chú Yêu Cầu / Cung Đường Lái Thử"
+            rows={3}
+            value={createNotes}
+            onChange={(e) => setCreateNotes(e.target.value)}
+            placeholder="VD: Khách muốn thử khả năng tăng tốc trên cao tốc, cần chuẩn bị pin sạc 100%..."
+          />
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+            <Button variant="outline" type="button" onClick={() => setIsCreateModalOpen(false)}>
+              Hủy
+            </Button>
+            <Button variant="primary" type="submit" isLoading={isSubmittingCreate}>
+              Xác Nhận Đặt Lịch
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

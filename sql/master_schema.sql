@@ -8,6 +8,9 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- 2. DROP EVERYTHING (Reverse dependency order to avoid constraint errors)
 DROP FUNCTION IF EXISTS checkout_cart CASCADE;
+-- Xóa rõ ràng các phiên bản overload cũ của match_cars để tránh lỗi PostgreSQL ambiguous function (PGRST203)
+DROP FUNCTION IF EXISTS public.match_cars(vector, double precision, integer, text, bigint, integer, integer, text);
+DROP FUNCTION IF EXISTS public.match_cars(vector, double precision, integer, text, bigint, integer, integer, text, uuid);
 DROP FUNCTION IF EXISTS match_cars CASCADE;
 DROP FUNCTION IF EXISTS distribute_cars_to_showrooms CASCADE;
 DROP FUNCTION IF EXISTS update_modified_column CASCADE;
@@ -505,6 +508,8 @@ RETURNS TABLE (
   image_url TEXT
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
 AS $$
 BEGIN
   RETURN QUERY
@@ -577,6 +582,11 @@ BEGIN
 
 END;
 $$;
+
+-- Cấp quyền gọi hàm cho các roles PostgREST
+GRANT EXECUTE ON FUNCTION public.match_cars(vector, double precision, integer, text, bigint, integer, integer, text, uuid) TO anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.checkout_cart(uuid, text, uuid, text, double precision) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.distribute_cars_to_showrooms() TO authenticated, service_role;
 
 
 -- ==============================================================================

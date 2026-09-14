@@ -24,7 +24,7 @@ export const dataServices = {
   async fetchCars(limit: number = 2000): Promise<Car[]> {
     const { data, error } = await supabase
       .from('cars')
-      .select('*, showrooms(*)')
+      .select('*, showroom:showrooms(*)')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -36,7 +36,7 @@ export const dataServices = {
     const { data, error } = await supabase
       .from('cars')
       .insert([carData])
-      .select('*, showrooms(*)')
+      .select('*, showroom:showrooms(*)')
       .single();
 
     if (error) throw error;
@@ -48,7 +48,7 @@ export const dataServices = {
       .from('cars')
       .update(carData)
       .eq('id', id)
-      .select('*, showrooms(*)')
+      .select('*, showroom:showrooms(*)')
       .single();
 
     if (error) throw error;
@@ -80,7 +80,7 @@ export const dataServices = {
       .from('cars')
       .update({ stock_quantity: newStock, is_active: isActive })
       .eq('id', id)
-      .select('*, showrooms(*)')
+      .select('*, showroom:showrooms(*)')
       .single();
 
     if (error) throw error;
@@ -92,7 +92,7 @@ export const dataServices = {
       .from('cars')
       .update({ showroom_id: targetShowroomId })
       .eq('id', carId)
-      .select('*, showrooms(*)')
+      .select('*, showroom:showrooms(*)')
       .single();
 
     if (error) throw error;
@@ -214,7 +214,7 @@ export const dataServices = {
   async fetchOrders(): Promise<Order[]> {
     const { data, error } = await supabase
       .from('orders')
-      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -238,7 +238,7 @@ export const dataServices = {
       .from('orders')
       .update(updates)
       .eq('id', orderId)
-      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
       .single();
 
     if (error) throw error;
@@ -258,7 +258,7 @@ export const dataServices = {
       .from('orders')
       .update(updates)
       .eq('id', orderId)
-      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
       .single();
 
     if (error) throw error;
@@ -285,7 +285,7 @@ export const dataServices = {
       .from('orders')
       .update(updates)
       .eq('id', orderId)
-      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
       .single();
 
     if (error) throw error;
@@ -297,7 +297,7 @@ export const dataServices = {
       .from('orders')
       .update({ showroom_id: showroomId, updated_at: new Date().toISOString() })
       .eq('id', orderId)
-      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
       .single();
 
     if (error) throw error;
@@ -309,7 +309,7 @@ export const dataServices = {
       .from('orders')
       .update({ contract_url: contractUrl, updated_at: new Date().toISOString() })
       .eq('id', orderId)
-      .select('*, profiles(*), showrooms(*), vouchers(*), order_items(*, cars(*))')
+      .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
       .single();
 
     if (error) throw error;
@@ -331,19 +331,45 @@ export const dataServices = {
   async fetchTestDrives(): Promise<TestDrive[]> {
     const { data, error } = await supabase
       .from('test_drives')
-      .select('*, cars(*), showrooms(*), profiles(*), assigned_staff:profiles!test_drives_assigned_staff_id_fkey(*)')
+      .select('*, car:cars(*), showroom:showrooms(*), profile:profiles!test_drives_user_id_fkey(*), assigned_staff:profiles!test_drives_assigned_staff_id_fkey(*)')
       .order('scheduled_date', { ascending: true });
 
     if (error) {
-      // Fallback query if alias relationship not found
+      // Fallback query if assigned_staff join fails
       const { data: fallback, error: fbErr } = await supabase
         .from('test_drives')
-        .select('*, cars(*), showrooms(*), profiles(*)')
+        .select('*, car:cars(*), showroom:showrooms(*), profile:profiles!test_drives_user_id_fkey(*)')
         .order('scheduled_date', { ascending: true });
       if (fbErr) throw fbErr;
       return (fallback || []) as TestDrive[];
     }
     return (data || []) as TestDrive[];
+  },
+
+  async addTestDrive(tdData: {
+    user_id?: string | null;
+    car_id: string;
+    showroom_id?: string | null;
+    scheduled_date: string;
+    notes?: string | null;
+    assigned_staff_id?: string | null;
+  }): Promise<TestDrive> {
+    const { data, error } = await supabase
+      .from('test_drives')
+      .insert([{
+        user_id: tdData.user_id || null,
+        car_id: tdData.car_id,
+        showroom_id: tdData.showroom_id || null,
+        scheduled_date: tdData.scheduled_date,
+        status: 'pending',
+        notes: tdData.notes || null,
+        assigned_staff_id: tdData.assigned_staff_id || null,
+      }])
+      .select('*, car:cars(*), showroom:showrooms(*), profile:profiles!test_drives_user_id_fkey(*), assigned_staff:profiles!test_drives_assigned_staff_id_fkey(*)')
+      .single();
+
+    if (error) throw error;
+    return data as TestDrive;
   },
 
   async updateTestDriveStatus(id: string, status: TestDriveStatus, notes?: string): Promise<TestDrive> {
@@ -354,7 +380,7 @@ export const dataServices = {
       .from('test_drives')
       .update(updates)
       .eq('id', id)
-      .select('*, cars(*), showrooms(*), profiles(*)')
+      .select('*, car:cars(*), showroom:showrooms(*), profile:profiles!test_drives_user_id_fkey(*), assigned_staff:profiles!test_drives_assigned_staff_id_fkey(*)')
       .single();
 
     if (error) throw error;
@@ -366,7 +392,7 @@ export const dataServices = {
       .from('test_drives')
       .update({ assigned_staff_id: staffId })
       .eq('id', id)
-      .select('*, cars(*), showrooms(*), profiles(*)')
+      .select('*, car:cars(*), showroom:showrooms(*), profile:profiles!test_drives_user_id_fkey(*), assigned_staff:profiles!test_drives_assigned_staff_id_fkey(*)')
       .single();
 
     if (error) throw error;
@@ -379,7 +405,7 @@ export const dataServices = {
   async fetchReviews(limit: number = 500): Promise<Review[]> {
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, profiles(*), cars(*)')
+      .select('*, car:cars(*), profile:profiles(*)')
       .order('created_at', { ascending: false })
       .limit(limit);
 
@@ -392,7 +418,7 @@ export const dataServices = {
       .from('reviews')
       .update({ is_approved: isApproved })
       .eq('id', id)
-      .select('*, profiles(*), cars(*)')
+      .select('*, car:cars(*), profile:profiles(*)')
       .single();
 
     if (error) throw error;
@@ -411,13 +437,13 @@ export const dataServices = {
   async fetchCarQAs(): Promise<CarQA[]> {
     const { data, error } = await supabase
       .from('car_qa')
-      .select('*, profiles(*), cars(*), answerer:profiles!car_qa_answered_by_fkey(*)')
+      .select('*, car:cars(*), profile:profiles!car_qa_user_id_fkey(*), answerer:profiles!car_qa_answered_by_fkey(*)')
       .order('created_at', { ascending: false });
 
     if (error) {
       const { data: fallbackData, error: fallbackErr } = await supabase
         .from('car_qa')
-        .select('*, profiles(*), cars(*)')
+        .select('*, car:cars(*), profile:profiles!car_qa_user_id_fkey(*)')
         .order('created_at', { ascending: false });
       if (fallbackErr) throw fallbackErr;
       return (fallbackData || []) as CarQA[];
@@ -436,7 +462,7 @@ export const dataServices = {
       .from('car_qa')
       .update(updates)
       .eq('id', id)
-      .select('*, profiles(*), cars(*)')
+      .select('*, car:cars(*), profile:profiles!car_qa_user_id_fkey(*), answerer:profiles!car_qa_answered_by_fkey(*)')
       .single();
 
     if (error) throw error;
@@ -508,6 +534,34 @@ export const dataServices = {
     return data as Profile;
   },
 
+  async addCustomer(customerData: {
+    email: string;
+    full_name: string;
+    phone?: string | null;
+    role?: UserRole;
+    showroom_id?: string | null;
+  }): Promise<Profile> {
+    const id = crypto.randomUUID();
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          id,
+          email: customerData.email.trim(),
+          full_name: customerData.full_name.trim(),
+          phone: customerData.phone?.trim() || null,
+          role: customerData.role || 'user',
+          showroom_id: customerData.showroom_id || null,
+          is_active: true,
+        },
+      ])
+      .select('*, showroom:showrooms(*)')
+      .single();
+
+    if (error) throw error;
+    return data as Profile;
+  },
+
   async fetchCustomer360(userId: string): Promise<{
     orders: Order[];
     testDrives: TestDrive[];
@@ -516,24 +570,24 @@ export const dataServices = {
     const [ordersRes, tdRes, savedRes] = await Promise.all([
       supabase
         .from('orders')
-        .select('*, order_items(*, cars(*))')
+        .select('*, profile:profiles!orders_user_id_fkey(*), showroom:showrooms(*), voucher:vouchers(*), items:order_items(*, car:cars(*))')
         .eq('user_id', userId)
         .order('created_at', { ascending: false }),
       supabase
         .from('test_drives')
-        .select('*, cars(*), showrooms(*)')
+        .select('*, car:cars(*), showroom:showrooms(*), profile:profiles!test_drives_user_id_fkey(*)')
         .eq('user_id', userId)
         .order('scheduled_date', { ascending: false }),
       supabase
         .from('saved_cars')
-        .select('*, cars(*)')
+        .select('*, car:cars(*, showroom:showrooms(*))')
         .eq('user_id', userId),
     ]);
 
     return {
       orders: (ordersRes.data || []) as Order[],
       testDrives: (tdRes.data || []) as TestDrive[],
-      savedCars: (savedRes.data || []).map((s: any) => s.cars).filter(Boolean) as Car[],
+      savedCars: (savedRes.data || []).map((s: any) => s.car || s.cars).filter(Boolean) as Car[],
     };
   },
 
