@@ -66,17 +66,6 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(isAddModalOpen);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
 
-  React.useEffect(() => {
-    if (isAddModalOpen) {
-      setEditingCar(null);
-      setFormData(initialForm);
-      setFeaturesText('Màn hình giải trí cảm ứng, Hệ thống treo khí nén, Hỗ trợ lái thông minh ADAS');
-      setGalleryText('');
-      setView360Input('');
-      setIsModalOpen(true);
-    }
-  }, [isAddModalOpen]);
-
   // Storage Uploading State
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
@@ -87,7 +76,7 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   const [isTransferring, setIsTransferring] = useState(false);
 
   // Form State
-  const initialForm: Omit<Car, 'id' | 'created_at'> = {
+  const initialForm = useMemo<Omit<Car, 'id' | 'created_at'>>(() => ({
     make: '',
     model: '',
     year: new Date().getFullYear(),
@@ -111,12 +100,23 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
       gallery: [],
       view_360_url: '',
     },
-  };
+  }), [showrooms]);
 
   const [formData, setFormData] = useState<Omit<Car, 'id' | 'created_at'>>(initialForm);
   const [featuresText, setFeaturesText] = useState('Màn hình giải trí cảm ứng, Hệ thống treo khí nén, Hỗ trợ lái thông minh ADAS');
   const [galleryText, setGalleryText] = useState('');
   const [view360Input, setView360Input] = useState('');
+
+  React.useEffect(() => {
+    if (isAddModalOpen) {
+      setEditingCar(null);
+      setFormData(initialForm);
+      setFeaturesText('Màn hình giải trí cảm ứng, Hệ thống treo khí nén, Hỗ trợ lái thông minh ADAS');
+      setGalleryText('');
+      setView360Input('');
+      setIsModalOpen(true);
+    }
+  }, [isAddModalOpen, initialForm]);
 
   const openCreateModal = () => {
     setEditingCar(null);
@@ -296,19 +296,19 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Kho Xe & Thông Số Kỹ Thuật</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý toàn bộ danh mục xe thể thao & xe sang, tồn kho chi nhánh, và hình ảnh đa góc
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Kho Xe & Thông Số</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Tổng hợp danh mục xe thể thao & xe sang, số lượng tồn kho theo chi nhánh
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/70">
             <button
               onClick={() => setViewMode('table')}
               className={cn(

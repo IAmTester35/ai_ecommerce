@@ -53,7 +53,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#F8FAFC]">
         <TopHeader
           currentView={currentView}
           onSelectView={onSelectView}
@@ -61,7 +61,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           onQuickAddCar={onQuickAddCar}
         />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+        <main className="flex-1 px-6 py-8 sm:px-10 sm:py-9 lg:px-12 lg:py-10 max-w-384 w-full mx-auto space-y-8 sm:space-y-10">
           {children}
         </main>
       </div>

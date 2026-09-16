@@ -36,7 +36,7 @@ export const VouchersView: React.FC = () => {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Form State
-  const initialForm: Omit<Voucher, 'id' | 'created_at' | 'used_count'> = {
+  const initialForm = useMemo<Omit<Voucher, 'id' | 'created_at' | 'used_count'>>(() => ({
     code: '',
     title: '',
     description: '',
@@ -50,7 +50,7 @@ export const VouchersView: React.FC = () => {
     start_date: new Date().toISOString().split('T')[0],
     end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     is_active: true,
-  };
+  }), []);
 
   const [formData, setFormData] = useState<Omit<Voucher, 'id' | 'created_at' | 'used_count'>>(initialForm);
 
@@ -140,13 +140,13 @@ export const VouchersView: React.FC = () => {
   }, [orders, vouchers]);
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Chiến Dịch Khuyến Mãi & Voucher</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Tạo mã ưu đãi giảm trực tiếp vào tiền cọc xe trực tuyến hoặc tổng giá trị hợp đồng
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Khuyến Mãi & Voucher</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Chính sách ưu đãi trừ tiền cọc trực tuyến và theo dõi tỷ lệ sử dụng
           </p>
         </div>
 
@@ -164,21 +164,21 @@ export const VouchersView: React.FC = () => {
       </div>
 
       {/* Campaign Effectiveness Analytics Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4 bg-linear-to-br from-blue-50/60 to-indigo-50/60 border-blue-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="p-6 bg-linear-to-br from-blue-50/40 to-indigo-50/40 border-blue-100/70">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-900">Chiến Dịch Đang Chạy</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Chiến Dịch Đang Chạy</span>
             <Ticket className="w-4 h-4 text-blue-600" />
           </div>
-          <p className="text-xl font-extrabold text-blue-700 mt-1">
+          <p className="text-2xl font-extrabold text-blue-700 mt-2">
             {campaignMetrics.activeCampaigns} / {vouchers.length} mã
           </p>
-          <span className="text-[11px] text-blue-600/80">Sẵn sàng áp dụng cho cọc</span>
+          <span className="text-xs text-blue-600/80 mt-1 block">Sẵn sàng áp dụng cho cọc</span>
         </Card>
 
-        <Card className="p-4 bg-linear-to-br from-emerald-50/60 to-teal-50/60 border-emerald-100">
+        <Card className="p-6 bg-linear-to-br from-emerald-50/40 to-teal-50/40 border-emerald-100/70">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-900">Đơn Hàng Áp Dụng</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đơn Hàng Áp Dụng</span>
             <Coins className="w-4 h-4 text-emerald-600" />
           </div>
           <p className="text-xl font-extrabold text-emerald-700 mt-1">

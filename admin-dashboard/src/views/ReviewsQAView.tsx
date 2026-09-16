@@ -100,13 +100,13 @@ export const ReviewsQAView: React.FC = () => {
   const unvectorizedCount = reviews.filter((r) => r.embedding === null || r.embedding === undefined).length;
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Đánh Giá Xe & Hỏi Đáp Khách Hàng</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Kiểm duyệt {reviews.length.toLocaleString('vi-VN')} bài đánh giá (Vector Index HNSW cho RAG) và phản hồi tư vấn trực tiếp cho người mua
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Đánh Giá & Hỏi Đáp</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Kiểm duyệt {reviews.length.toLocaleString('vi-VN')} đánh giá xe và giải đáp tư vấn khách hàng
           </p>
         </div>
 
@@ -114,8 +114,8 @@ export const ReviewsQAView: React.FC = () => {
           {activeTab === 'reviews' && (
             <Button
               variant="outline"
-              size="sm"
-              leftIcon={<Sparkles className={cn('w-3.5 h-3.5 text-indigo-600', isEmbedding && 'animate-spin')} />}
+              size="md"
+              leftIcon={<Sparkles className={cn('w-4 h-4 text-indigo-600', isEmbedding && 'animate-spin')} />}
               isLoading={isEmbedding}
               onClick={handleTriggerEmbedding}
             >

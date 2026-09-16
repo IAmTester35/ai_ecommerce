@@ -67,18 +67,18 @@ export const NotificationsView: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Trung Tâm Thông Báo & Push Broadcast</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Soạn thảo và phát đi thông báo đẩy tới toàn bộ khách hàng trên ứng dụng di động hoặc gửi cho cá nhân
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Trung Tâm Thông Báo</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Soạn thảo và phát thông báo push trực tiếp tới khách hàng trên nền tảng
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10">
         {/* Notification Composer (2 cols) */}
         <Card className="lg:col-span-2">
           <CardHeader>

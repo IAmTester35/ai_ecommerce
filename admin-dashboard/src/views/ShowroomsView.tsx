@@ -91,13 +91,13 @@ export const ShowroomsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Mạng Lưới Showroom & Đại Lý Toàn Quốc</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý {showrooms.length} trung tâm trải nghiệm, lưu kho và bàn giao xe trực tiếp cho khách hàng
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Mạng Lưới Showroom</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Hệ thống {showrooms.length} trung tâm trải nghiệm và kho xe trưng bày
           </p>
         </div>
 
@@ -111,7 +111,7 @@ export const ShowroomsView: React.FC = () => {
               isLoading={isDistributing}
               title="Kích hoạt hàm RPC phân bổ ngẫu nhiên và đồng đều toàn bộ xe vào các chi nhánh"
             >
-              Phân Bổ Xe Tự Động (RPC)
+              Phân Bổ Xe Tự Động
             </Button>
           ) : (
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-[11px] text-slate-500 border border-slate-200">
@@ -134,7 +134,7 @@ export const ShowroomsView: React.FC = () => {
       </div>
 
       {/* Grid of Showrooms */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-9">
         {showrooms.map((sr) => {
           const showroomCars = cars.filter((c) => c.showroom_id === sr.id);
 

@@ -20,7 +20,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   change,
   changePeriod = 'so với tháng trước',
   icon,
-  iconBgColor = 'bg-blue-50 text-blue-600 border border-blue-100',
+  iconBgColor = 'bg-blue-50 text-blue-600 border border-blue-100/60',
   subtitle,
   className,
   onClick,
@@ -33,41 +33,46 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        'bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs transition-all duration-200 hover:border-slate-300 hover:shadow-sm',
+        'bg-white border border-slate-200/70 rounded-2xl sm:rounded-3xl p-6 sm:p-7 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:border-slate-300/80 hover:shadow-[0_8px_24px_-4px_rgba(15,23,42,0.06)] flex flex-col justify-between',
         onClick ? 'cursor-pointer hover:-translate-y-0.5' : '',
         className
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{title}</p>
-          <div className="text-2xl font-bold tracking-tight text-slate-900">{value}</div>
-          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+      <div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 select-none">{title}</p>
+          <div className={cn('w-11 h-11 rounded-2xl shrink-0 flex items-center justify-center transition-transform group-hover:scale-105', iconBgColor)}>
+            {icon}
+          </div>
         </div>
 
-        <div className={cn('p-3 rounded-xl shrink-0 flex items-center justify-center', iconBgColor)}>
-          {icon}
+        <div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+          {value}
         </div>
+
+        {subtitle && (
+          <p className="text-xs text-slate-400 mt-1.5 font-normal leading-relaxed">{subtitle}</p>
+        )}
       </div>
 
       {change !== undefined && (
-        <div className="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-xs">
+        <div className="mt-5 pt-3.5 border-t border-slate-100/80 flex items-center gap-2 text-xs">
           {isPositive && (
-            <span className="inline-flex items-center font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md">
+            <span className="inline-flex items-center font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg text-[11px]">
               <ArrowUpRight className="w-3.5 h-3.5 mr-0.5" />+{change}%
             </span>
           )}
           {isNegative && (
-            <span className="inline-flex items-center font-semibold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-md">
+            <span className="inline-flex items-center font-semibold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg text-[11px]">
               <ArrowDownRight className="w-3.5 h-3.5 mr-0.5" />{change}%
             </span>
           )}
           {isZero && (
-            <span className="inline-flex items-center font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">
-              <Minus className="w-3 h-3 mr-0.5" />0%
+            <span className="inline-flex items-center font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg text-[11px]">
+              <Minus className="w-3.5 h-3.5 mr-0.5" />0%
             </span>
           )}
-          <span className="text-slate-400 truncate">{changePeriod}</span>
+          <span className="text-slate-400 text-xs truncate">{changePeriod}</span>
         </div>
       )}
     </div>

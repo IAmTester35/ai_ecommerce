@@ -75,38 +75,38 @@ export const AiChatInspector: React.FC = () => {
   }, [sessionsMap, selectedSessionId, filteredSessions]);
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              Kiểm Tra Lịch Sử Chat AI Trợ Lý Tư Vấn
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Lịch Sử Chat AI Trợ Lý
             </h2>
             <Badge variant="secondary" size="md">
               <Sparkles className="w-3.5 h-3.5 mr-1" />
               chat_sessions RLS Audit
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Giám sát thời gian thực toàn bộ các phiên hội thoại giữa khách hàng và Trợ lý AI AutoMatch
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Giám sát thời gian thực các phiên hội thoại khách hàng với Trợ lý AI
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Badge variant="primary" size="md">
             {sessionsMap.length} phiên hội thoại
           </Badge>
           <Badge variant="neutral" size="md">
-            {chatSessions.length} tin nhắn đã ghi nhận
+            {chatSessions.length} tin nhắn
           </Badge>
         </div>
       </div>
 
       {/* Main Split Layout: Session List on Left, Chat Transcript on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 items-start">
         {/* Left Column: Sessions List */}
-        <div className="lg:col-span-5 space-y-3">
+        <div className="lg:col-span-5 space-y-3.5">
           <SearchBar
             placeholder="Tìm theo mã phiên, tên khách, nội dung chat..."
             value={searchTerm}

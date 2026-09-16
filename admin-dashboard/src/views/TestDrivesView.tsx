@@ -102,27 +102,29 @@ export const TestDrivesView: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Lịch Hẹn Lái Thử Thực Tế</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý lịch hẹn trải nghiệm xe thể thao, chuẩn bị xe và phân công cố vấn bán hàng tại Showroom
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Lịch Hẹn Lái Thử</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Điều phối lịch hẹn trải nghiệm xe và phân công cố vấn tại Showroom
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Badge variant="primary" size="md">
-            {testDrives.filter((t) => t.status === 'confirmed').length} lịch đã duyệt
+            {testDrives.filter((t) => t.status === 'confirmed').length} đã duyệt
           </Badge>
-          <Badge variant="warning" size="md">
-            {testDrives.filter((t) => t.status === 'pending').length} chờ duyệt
-          </Badge>
+          {testDrives.filter((t) => t.status === 'pending').length > 0 && (
+            <Badge variant="warning" size="md">
+              {testDrives.filter((t) => t.status === 'pending').length} chờ duyệt
+            </Badge>
+          )}
           <Button
             variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            size="md"
+            leftIcon={<Plus className="w-4 h-4" />}
             onClick={() => {
               setCreateCarId(cars[0]?.id || '');
               setCreateShowroomId(showrooms[0]?.id || '');
@@ -137,7 +139,7 @@ export const TestDrivesView: React.FC = () => {
 
       {/* Filter Controls */}
       <Card>
-        <CardContent className="p-4 space-y-3">
+        <CardContent className="p-5 sm:p-6 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <SearchBar
               value={searchTerm}

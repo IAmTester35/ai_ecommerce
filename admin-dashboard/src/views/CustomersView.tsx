@@ -209,19 +209,19 @@ export const CustomersView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left select-none">
+    <div className="space-y-8 text-left select-none">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Khách Hàng & Phân Quyền CRM
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Khách Hàng & Quản Trị
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý hồ sơ 360 độ khách hàng, kiểm soát khóa tài khoản và phân quyền Quản lý trực thuộc Showroom
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Hồ sơ CRM khách hàng và phân quyền điều hành Showroom
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="md"
@@ -238,14 +238,14 @@ export const CustomersView: React.FC = () => {
               leftIcon={<ShieldCheck className="w-4 h-4" />}
               onClick={() => setIsAppointModalOpen(true)}
             >
-              Bổ Nhiệm Quản Lý Mới
+              Bổ Nhiệm Quản Lý
             </Button>
           )}
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
+      <div className="flex items-center gap-4 border-b border-slate-200/80">
         <button
           onClick={() => {
             setActiveTab('customers');

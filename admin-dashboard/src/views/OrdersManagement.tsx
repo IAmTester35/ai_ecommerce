@@ -326,76 +326,82 @@ export const OrdersManagement: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">Hợp Đồng & Đặt Cọc Xe</h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý quy trình xử lý đơn đặt cọc trực tuyến, đối soát ZaloPay, hủy hoàn cọc và hợp đồng điện tử
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Hợp Đồng & Đặt Cọc</h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Theo dõi tiến độ cọc online, đối soát thanh toán ZaloPay và hợp đồng điện tử
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            size="sm"
+            size="md"
             leftIcon={<Download className="w-4 h-4" />}
             onClick={handleExportCSV}
           >
-            Xuất Báo Cáo CSV
+            Xuất Báo Cáo
           </Button>
           <Badge variant="primary" size="md">
             {orders.length} hợp đồng
           </Badge>
-          <Badge variant="warning" size="md">
-            {orders.filter((o) => o.status === 'pending').length} chờ duyệt
-          </Badge>
+          {orders.filter((o) => o.status === 'pending').length > 0 && (
+            <Badge variant="warning" size="md">
+              {orders.filter((o) => o.status === 'pending').length} chờ duyệt
+            </Badge>
+          )}
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-        <div className="lg:col-span-2">
-          <SearchBar
-            placeholder="Tìm theo mã HĐ, mã ZaloPay, khách hàng, mẫu xe..."
-            value={searchTerm}
-            onChange={setSearchTerm}
-          />
+      <div className="bg-white border border-slate-200/70 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+          <div className="lg:col-span-4">
+            <SearchBar
+              placeholder="Tìm mã HĐ, ZaloPay, khách hàng, xe..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+          </div>
+
+          <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="all">Tiến độ (Tất cả)</option>
+              <option value="pending">Chờ xác nhận</option>
+              <option value="deposit_paid">Đã nhận cọc</option>
+              <option value="preparing_car">Chuẩn bị xe</option>
+              <option value="ready_for_pickup">Sẵn sàng giao</option>
+              <option value="completed">Đã giao xe</option>
+              <option value="cancelled">Đã hủy</option>
+            </Select>
+
+            <Select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)}>
+              <option value="all">Thanh toán (Tất cả)</option>
+              <option value="unpaid">Chưa thu cọc</option>
+              <option value="paid">Đã thu cọc</option>
+              <option value="refunded">Đã hoàn cọc</option>
+            </Select>
+
+            <Select value={filterShowroom} onChange={(e) => setFilterShowroom(e.target.value)}>
+              <option value="all">Showroom (Tất cả)</option>
+              {showrooms.map((sr) => (
+                <option key={sr.id} value={sr.id}>
+                  {sr.name}
+                </option>
+              ))}
+            </Select>
+
+            <Select value={filterDateRange} onChange={(e) => setFilterDateRange(e.target.value)}>
+              <option value="all">Thời gian (Tất cả)</option>
+              <option value="today">Hôm nay</option>
+              <option value="7_days">7 ngày qua</option>
+              <option value="this_month">Tháng này</option>
+            </Select>
+          </div>
         </div>
-
-        <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="all">Tất cả tiến độ</option>
-          <option value="pending">Chờ xác nhận</option>
-          <option value="deposit_paid">Đã nhận cọc</option>
-          <option value="preparing_car">Đang chuẩn bị xe</option>
-          <option value="ready_for_pickup">Sẵn sàng bàn giao</option>
-          <option value="completed">Đã hoàn tất giao xe</option>
-          <option value="cancelled">Đã hủy hợp đồng</option>
-        </Select>
-
-        <Select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)}>
-          <option value="all">Tất cả thanh toán</option>
-          <option value="unpaid">Chưa thu cọc</option>
-          <option value="paid">Đã thu cọc</option>
-          <option value="refunded">Đã hoàn cọc</option>
-        </Select>
-
-        <Select value={filterShowroom} onChange={(e) => setFilterShowroom(e.target.value)}>
-          <option value="all">Tất cả Showroom</option>
-          {showrooms.map((sr) => (
-            <option key={sr.id} value={sr.id}>
-              {sr.name}
-            </option>
-          ))}
-        </Select>
-
-        <Select value={filterDateRange} onChange={(e) => setFilterDateRange(e.target.value)}>
-          <option value="all">Mọi thời gian</option>
-          <option value="today">Hôm nay</option>
-          <option value="7_days">7 ngày qua</option>
-          <option value="this_month">Tháng này</option>
-        </Select>
       </div>
 
       {/* Orders List Table */}

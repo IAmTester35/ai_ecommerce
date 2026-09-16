@@ -163,15 +163,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       className={cn(
-        'h-screen sticky top-0 bg-white border-r border-slate-200/80 flex flex-col justify-between z-30 transition-all duration-200 select-none shrink-0',
-        isCollapsed ? 'w-20' : 'w-72'
+        'h-screen sticky top-0 bg-white border-r border-slate-200/60 flex flex-col justify-between z-30 transition-all duration-200 select-none shrink-0',
+        isCollapsed ? 'w-20' : 'w-64'
       )}
     >
       {/* Brand Header */}
-      <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+      <div className="p-5 border-b border-slate-100/80 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
-            <Zap className="w-5 h-5 fill-current" />
+          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+            <Zap className="w-4 h-4 fill-current" />
           </div>
 
           {!isCollapsed && (
@@ -182,18 +182,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   AI Admin
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 font-medium">Luxury Automotive Portal</p>
+              <p className="text-[11px] text-slate-400 font-medium">Executive Portal</p>
             </div>
           )}
         </div>
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+      <div className="flex-1 overflow-y-auto py-5 px-3 space-y-6">
         {navItems.map((group, gIdx) => (
           <div key={gIdx} className="space-y-1">
             {!isCollapsed && (
-              <p className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400/80 mb-2 select-none">
                 {group.group}
               </p>
             )}
@@ -206,10 +206,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectView(item.id)}
                   title={isCollapsed ? item.label : undefined}
                   className={cn(
-                    'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 text-left cursor-pointer group',
+                    'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 text-left cursor-pointer group',
                     isActive
-                      ? 'bg-blue-50/80 text-blue-700 font-bold border border-blue-100/80 shadow-2xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50',
+                      ? 'bg-blue-50/70 text-blue-700 font-bold border border-blue-100/60 shadow-[0_1px_3px_rgba(37,99,235,0.06)]'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50/80',
                     isCollapsed ? 'justify-center px-0 py-3' : ''
                   )}
                 >

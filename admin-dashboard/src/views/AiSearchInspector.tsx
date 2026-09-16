@@ -77,28 +77,28 @@ export const AiSearchInspector: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header Info */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-              AI Vector & Conflict Resolution Hub
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              AI Vector & Conflict Hub
             </h2>
             <Badge variant="secondary" size="md">
               <Sparkles className="w-3.5 h-3.5 mr-1" />
               Gemini 2.5 + HNSW RAG
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Môi trường kiểm thử & trực quan hóa 5 tầng kiến trúc suy luận, bóc tách thực thể và xử lý mâu thuẫn yêu cầu
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Kiểm thử 5 tầng suy luận thực thể và giải quyết mâu thuẫn nhu cầu xe
           </p>
         </div>
       </div>
 
       {/* Query Input Box with Quick Sample Chips */}
-      <Card className="border-indigo-100 shadow-sm">
-        <CardContent className="p-5 space-y-4">
+      <Card className="border-indigo-100/70 shadow-sm">
+        <CardContent className="p-6 sm:p-7 space-y-5">
           <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
               Nhập Câu Hỏi Khách Hàng (Natural Language Query)

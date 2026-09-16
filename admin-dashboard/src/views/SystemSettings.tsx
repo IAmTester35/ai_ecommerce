@@ -69,19 +69,19 @@ export const SystemSettings: React.FC = () => {
   const currentRoleInfo = role ? ROLE_INFO[role] : ROLE_INFO.manager;
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-8 text-left">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            Cấu Hình Hệ Thống & Kết Nối Cơ Sở Dữ Liệu
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            Cấu Hình & Kết Nối Hệ Thống
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Giám sát trạng thái kết nối Supabase PostgreSQL, FastAPI AI Vector Search và phân quyền RLS
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
+            Giám sát trạng thái Supabase PostgreSQL, FastAPI AI Core và phân quyền RLS
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="outline"
             size="md"
@@ -104,16 +104,16 @@ export const SystemSettings: React.FC = () => {
       </div>
 
       {/* Live Statistics Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Xe Trong Kho</span>
-          <p className="font-extrabold text-lg text-slate-900">{cars.length.toLocaleString('vi-VN')}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
+        <div className="p-5 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Xe Trong Kho</span>
+          <p className="font-extrabold text-xl text-slate-900 mt-1">{cars.length.toLocaleString('vi-VN')}</p>
           <span className="text-[10px] text-emerald-600 font-semibold">Live PostgreSQL</span>
         </div>
 
-        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Đánh Giá (RAG)</span>
-          <p className="font-extrabold text-lg text-indigo-600">{reviews.length.toLocaleString('vi-VN')}</p>
+        <div className="p-5 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1">
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Đánh Giá (RAG)</span>
+          <p className="font-extrabold text-xl text-indigo-600 mt-1">{reviews.length.toLocaleString('vi-VN')}</p>
           <span className="text-[10px] text-indigo-600 font-semibold">pgvector 768d</span>
         </div>
 

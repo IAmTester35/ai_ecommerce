@@ -6,14 +6,15 @@ export const colors = {
   // Backgrounds & Surfaces
   background: "#F8FAFC",       // Slate 50 - Base app canvas
   surface: "#FFFFFF",          // Pure White - Cards, table panels
-  surfaceSubtle: "#F1F5F9",    // Slate 100 - Secondary containers, tag backgrounds
+  surfaceSubtle: "#F8FAFC",    // Slate 50 - Secondary containers, tag backgrounds
   surfaceElevated: "#FFFFFF",  // Modals, Popovers, Drawers
-  surfaceMuted: "#E2E8F0",     // Slate 200 - Borders, Dividers
+  surfaceMuted: "#F1F5F9",     // Slate 100 - Light dividers
 
-  // Borders
+  // Borders (Soft, airy, low contrast to prevent boxed-in wireframe feel)
   border: "#E2E8F0",           // Slate 200
-  borderSubtle: "#F1F5F9",     // Slate 100
-  borderFocus: "rgba(37, 99, 235, 0.4)", // Sapphire Blue Focus Ring
+  borderSubtle: "#F1F5F9",     // Slate 100 - Ultra light borders
+  borderCard: "rgba(226, 232, 240, 0.7)", // Softer card outline
+  borderFocus: "rgba(37, 99, 235, 0.35)", // Sapphire Blue Focus Ring
 
   // Brand Accents
   primary: "#2563EB",          // Sapphire Blue (Main CTA, links)
@@ -49,19 +50,19 @@ export const colors = {
 } as const;
 
 export const radii = {
-  sm: "6px",
-  md: "10px",
-  lg: "14px",
-  xl: "20px",
+  sm: "8px",
+  md: "12px",
+  lg: "16px",
+  xl: "24px",
   full: "9999px",
 } as const;
 
 export const shadows = {
-  xs: "0 1px 2px 0 rgba(0, 0, 0, 0.04)",
-  sm: "0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04)",
-  md: "0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04)",
-  lg: "0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04)",
-  xl: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
+  xs: "0 1px 2px 0 rgba(0, 0, 0, 0.03)",
+  sm: "0 2px 4px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.03)",
+  md: "0 4px 12px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -2px rgba(15, 23, 42, 0.03)",
+  lg: "0 12px 24px -4px rgba(15, 23, 42, 0.06), 0 4px 10px -4px rgba(15, 23, 42, 0.02)",
+  xl: "0 20px 32px -6px rgba(15, 23, 42, 0.08), 0 8px 16px -6px rgba(15, 23, 42, 0.03)",
 } as const;
 
 export const statusMap = {
