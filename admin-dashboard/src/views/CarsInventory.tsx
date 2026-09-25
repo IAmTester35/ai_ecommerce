@@ -107,7 +107,9 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   const [galleryText, setGalleryText] = useState('');
   const [view360Input, setView360Input] = useState('');
 
-  React.useEffect(() => {
+  const [prevAddProp, setPrevAddProp] = useState(isAddModalOpen);
+  if (isAddModalOpen !== prevAddProp) {
+    setPrevAddProp(isAddModalOpen);
     if (isAddModalOpen) {
       setEditingCar(null);
       setFormData(initialForm);
@@ -116,7 +118,7 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
       setView360Input('');
       setIsModalOpen(true);
     }
-  }, [isAddModalOpen, initialForm]);
+  }
 
   const openCreateModal = () => {
     setEditingCar(null);

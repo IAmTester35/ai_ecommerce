@@ -15,7 +15,6 @@ interface AuthContextType {
   isManager: boolean;
   can: (permission: AppPermission) => boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signInAsDemo: (demoRole: 'owner' | 'manager') => void;
   signUpAdmin: (email: string, password: string, fullName: string, role: UserRole, phone?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -45,22 +44,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setCurrentUser(profile);
             }
           } else {
-            // Check if demo auth exists in localStorage
-            const cachedDemo = localStorage.getItem('automatch_demo_auth');
-            if (cachedDemo) {
-              try {
-                const parsed = JSON.parse(cachedDemo);
-                setCurrentUser(parsed.profile);
-                setUser({ id: parsed.profile.id, email: parsed.profile.email } as any);
-                setSession({ user: { id: parsed.profile.id } } as any);
-              } catch {
-                localStorage.removeItem('automatch_demo_auth');
-              }
-            } else {
-              setSession(null);
-              setUser(null);
-              setCurrentUser(null);
-            }
+            setSession(null);
+            setUser(null);
+            setCurrentUser(null);
           }
         }
       } catch (err) {
@@ -166,38 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInAsDemo = (demoRole: 'owner' | 'manager') => {
-    const isDemOwner = demoRole === 'owner';
-    const demoProfile: Profile = {
-      id: isDemOwner ? '571cac35-bbad-4b81-b9dc-9daf288c1b3a' : 'demo-manager-id',
-      email: isDemOwner ? 'owner@automatch.vn' : 'manager@automatch.vn',
-      full_name: isDemOwner ? 'Giám Đốc Điều Hành (Owner)' : 'Quản Lý Showroom (Manager)',
-      phone: isDemOwner ? '0901234567' : '0912345678',
-      role: demoRole,
-      showroom_id: isDemOwner ? null : '1484610b-0de8-4eaa-b40c-84f85d1beb3b',
-      avatar_url: isDemOwner
-        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    localStorage.setItem('automatch_demo_auth', JSON.stringify({ role: demoRole, profile: demoProfile }));
-    setCurrentUser(demoProfile);
-    setUser({ id: demoProfile.id, email: demoProfile.email } as any);
-    setSession({ user: { id: demoProfile.id } } as any);
-  };
-
   const signOut = async () => {
     try {
       setIsLoading(true);
-      localStorage.removeItem('automatch_demo_auth');
       await authService.signOut();
     } catch (err) {
       console.warn('[AuthProvider] SignOut error:', err);
     } finally {
-      localStorage.removeItem('automatch_demo_auth');
       setSession(null);
       setUser(null);
       setCurrentUser(null);
@@ -208,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const role = currentUser?.role || null;
   const isOwner = role === 'owner';
   const isManager = role === 'manager' || role === 'owner';
-  const isAuthenticated = (!!session || !!currentUser) && !!currentUser && (isOwner || role === 'manager');
+  const isAuthenticated = !!session?.user && !!currentUser && (isOwner || role === 'manager');
 
   const can = (permission: AppPermission): boolean => {
     return checkPermission(role, permission);
@@ -227,7 +188,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isManager,
         can,
         signIn,
-        signInAsDemo,
         signUpAdmin,
         signOut,
         refreshProfile,

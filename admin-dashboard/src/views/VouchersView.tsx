@@ -26,17 +26,10 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { formatVND, formatDate } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 
-export const VouchersView: React.FC = () => {
-  const { vouchers, orders, addVoucher, updateVoucher, deleteVoucher } = useData();
-  const { isOwner, can } = useAuth();
-  const { success, error } = useToast();
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  // Form State
-  const initialForm = useMemo<Omit<Voucher, 'id' | 'created_at' | 'used_count'>>(() => ({
+const getInitialVoucherForm = (): Omit<Voucher, 'id' | 'created_at' | 'used_count'> => {
+  const now = new Date();
+  const future = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  return {
     code: '',
     title: '',
     description: '',
@@ -47,16 +40,27 @@ export const VouchersView: React.FC = () => {
     applies_to: 'deposit',
     usage_limit: 50,
     max_uses_per_user: 1,
-    start_date: new Date().toISOString().split('T')[0],
-    end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    start_date: now.toISOString().split('T')[0],
+    end_date: future.toISOString().split('T')[0],
     is_active: true,
-  }), []);
+  };
+};
 
-  const [formData, setFormData] = useState<Omit<Voucher, 'id' | 'created_at' | 'used_count'>>(initialForm);
+export const VouchersView: React.FC = () => {
+  const { vouchers, orders, addVoucher, updateVoucher, deleteVoucher } = useData();
+  const { isOwner, can } = useAuth();
+  const { success, error } = useToast();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVoucher, setEditingVoucher] = useState<Voucher | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Form State
+  const [formData, setFormData] = useState<Omit<Voucher, 'id' | 'created_at' | 'used_count'>>(getInitialVoucherForm);
 
   const openCreateModal = () => {
     setEditingVoucher(null);
-    setFormData(initialForm);
+    setFormData(getInitialVoucherForm());
     setIsModalOpen(true);
   };
 

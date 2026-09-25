@@ -17,7 +17,7 @@ import { Badge } from '../components/ui/Badge';
 import { ROLE_INFO } from '../lib/permissions';
 
 export const LoginView: React.FC = () => {
-  const { signIn, signInAsDemo, isLoading } = useAuth();
+  const { signIn, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -209,36 +209,6 @@ export const LoginView: React.FC = () => {
                 Đăng Nhập Vào Hệ Thống
               </Button>
             </form>
-
-            {/* Quick Operator Access for Testing / Verification */}
-            <div className="pt-2 border-t border-slate-100 space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
-                <span>Truy cập nhanh cho kiểm thử vận hành:</span>
-                <span className="text-blue-600 text-[10px] font-bold uppercase">1-Click Demo</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => signInAsDemo('owner')}
-                  className="w-full text-xs font-bold border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 mr-1" />
-                  Owner Portal
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => signInAsDemo('manager')}
-                  className="w-full text-xs font-bold border-blue-200 text-blue-700 hover:bg-blue-50"
-                >
-                  <Shield className="w-3.5 h-3.5 text-blue-600 mr-1" />
-                  Manager Portal
-                </Button>
-              </div>
-            </div>
 
             {/* Security Notice Box */}
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">

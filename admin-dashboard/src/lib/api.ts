@@ -2,10 +2,37 @@ import type { AISearchResponse } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+interface RawSearchResult {
+  id?: string;
+  car_id?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  price?: number;
+  review?: string;
+  description?: string;
+  similarity?: number;
+  score?: number;
+  image_url?: string;
+}
+
+export interface RawSearchData {
+  extracted_criteria?: AISearchResponse['constraints'];
+  constraints?: AISearchResponse['constraints'];
+  results?: RawSearchResult[];
+  conflict_resolution?: {
+    conflict_detected?: boolean;
+    relaxed_terms?: string[];
+  };
+  conflict_detected?: boolean;
+  relaxed_terms?: string[];
+  ai_message?: string;
+}
+
 export interface SSECallbacks {
   onProgress?: (step: string, message: string) => void;
   onChunk?: (chunk: string) => void;
-  onSearchData?: (data: any) => void;
+  onSearchData?: (data: RawSearchData) => void;
 }
 
 export async function searchWithAI(
@@ -32,7 +59,7 @@ export async function searchWithAI(
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
       let fullAiMessage = '';
-      let searchData: any = null;
+      const searchHolder: { data: RawSearchData | null } = { data: null };
 
       const processBlock = (block: string) => {
         if (!block.trim()) return;
@@ -49,24 +76,24 @@ export async function searchWithAI(
         }
 
         if (!rawData) return;
-        let parsed: any;
+        let parsed: Record<string, unknown> | string;
         try {
           parsed = JSON.parse(rawData);
         } catch {
           parsed = rawData;
         }
 
-        if (eventType === 'progress') {
-          callbacks?.onProgress?.(parsed.step || '', parsed.message || '');
-        } else if (eventType === 'search_data') {
-          searchData = parsed;
-          callbacks?.onSearchData?.(parsed);
+        if (eventType === 'progress' && typeof parsed === 'object' && parsed !== null) {
+          callbacks?.onProgress?.(String(parsed.step || ''), String(parsed.message || ''));
+        } else if (eventType === 'search_data' && typeof parsed === 'object' && parsed !== null) {
+          searchHolder.data = parsed as RawSearchData;
+          callbacks?.onSearchData?.(searchHolder.data);
         } else if (eventType === 'message') {
-          const chunk = typeof parsed === 'string' ? parsed : parsed.text || '';
+          const chunk = typeof parsed === 'string' ? parsed : String(parsed.text || '');
           fullAiMessage += chunk;
           callbacks?.onChunk?.(chunk);
-        } else if (eventType === 'done') {
-          if (parsed.full_message) fullAiMessage = parsed.full_message;
+        } else if (eventType === 'done' && typeof parsed === 'object' && parsed !== null) {
+          if (parsed.full_message) fullAiMessage = String(parsed.full_message);
         }
       };
 
@@ -87,19 +114,20 @@ export async function searchWithAI(
         processBlock(buffer);
       }
 
-      if (searchData) {
+      if (searchHolder.data) {
+        const activeData = searchHolder.data;
         return {
           original_query: query,
-          constraints: searchData.extracted_criteria || {
-            max_price: searchData.constraints?.max_price,
-            min_hp: searchData.constraints?.min_hp,
-            make: searchData.constraints?.make,
-            target_year: searchData.constraints?.target_year,
-            fuel_type: searchData.constraints?.fuel_type,
-            is_out_of_scope: searchData.constraints?.is_out_of_scope || false,
-            soft_intent: searchData.constraints?.soft_intent,
+          constraints: activeData.extracted_criteria || {
+            max_price: activeData.constraints?.max_price,
+            min_hp: activeData.constraints?.min_hp,
+            make: activeData.constraints?.make,
+            target_year: activeData.constraints?.target_year,
+            fuel_type: activeData.constraints?.fuel_type,
+            is_out_of_scope: activeData.constraints?.is_out_of_scope || false,
+            soft_intent: activeData.constraints?.soft_intent,
           },
-          results: (searchData.results || []).map((r: any) => ({
+          results: (activeData.results || []).map((r: RawSearchResult) => ({
             id: r.id || `car-${r.car_id || Math.random()}`,
             make: r.make || 'Xe',
             model: r.model || '',
@@ -109,9 +137,9 @@ export async function searchWithAI(
             similarity: r.similarity || r.score || 0.9,
             image_url: r.image_url || 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=800&q=80',
           })),
-          conflict_detected: !!searchData.conflict_resolution?.conflict_detected || !!searchData.conflict_detected,
-          relaxed_terms: searchData.conflict_resolution?.relaxed_terms || searchData.relaxed_terms || [],
-          ai_message: fullAiMessage || searchData.ai_message || 'AutoMatch AI đã tìm thấy các mẫu xe tương thích nhất.',
+          conflict_detected: !!activeData.conflict_resolution?.conflict_detected || !!activeData.conflict_detected,
+          relaxed_terms: activeData.conflict_resolution?.relaxed_terms || activeData.relaxed_terms || [],
+          ai_message: fullAiMessage || activeData.ai_message || 'AutoMatch AI đã tìm thấy các mẫu xe tương thích nhất.',
         };
       }
     }

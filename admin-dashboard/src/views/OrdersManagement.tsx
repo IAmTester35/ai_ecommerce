@@ -215,6 +215,38 @@ export const OrdersManagement: React.FC = () => {
     }
   };
 
+  // Filtered Orders
+  const filteredOrders = useMemo(() => {
+    const now = new Date();
+    return orders.filter((ord) => {
+      const matchSearch =
+        `${ord.id} ${ord.app_trans_id || ''} ${ord.profile?.full_name || ''} ${ord.profile?.email || ''} ${ord.items?.[0]?.car?.model || ''}`
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      const matchStatus = filterStatus === 'all' || ord.status === filterStatus;
+      const matchPayment = filterPayment === 'all' || ord.deposit_status === filterPayment;
+      const matchShowroom = filterShowroom === 'all' || ord.showroom_id === filterShowroom;
+
+      let matchDate = true;
+      if (filterDateRange !== 'all' && ord.created_at) {
+        const ordDate = new Date(ord.created_at);
+        if (filterDateRange === 'today') {
+          matchDate = ordDate.toDateString() === now.toDateString();
+        } else if (filterDateRange === '7_days') {
+          const diffDays = (now.getTime() - ordDate.getTime()) / (1000 * 3600 * 24);
+          matchDate = diffDays <= 7;
+        } else if (filterDateRange === 'this_month') {
+          matchDate = ordDate.getMonth() === now.getMonth() && ordDate.getFullYear() === now.getFullYear();
+        }
+      }
+
+      return matchSearch && matchStatus && matchPayment && matchShowroom && matchDate;
+    });
+  }, [orders, searchTerm, filterStatus, filterPayment, filterShowroom, filterDateRange]);
+
+  const totalPages = Math.ceil(filteredOrders.length / pageSize) || 1;
+  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   // Export CSV
   const handleExportCSV = () => {
     if (!filteredOrders.length) {
@@ -267,38 +299,6 @@ export const OrdersManagement: React.FC = () => {
     document.body.removeChild(link);
     success('Xuất dữ liệu thành công!', `Đã xuất ${filteredOrders.length} đơn hàng ra file CSV.`);
   };
-
-  // Filtered Orders
-  const filteredOrders = useMemo(() => {
-    const now = new Date();
-    return orders.filter((ord) => {
-      const matchSearch =
-        `${ord.id} ${ord.app_trans_id || ''} ${ord.profile?.full_name || ''} ${ord.profile?.email || ''} ${ord.items?.[0]?.car?.model || ''}`
-          .toLowerCase()
-          .includes(searchTerm.toLowerCase());
-      const matchStatus = filterStatus === 'all' || ord.status === filterStatus;
-      const matchPayment = filterPayment === 'all' || ord.deposit_status === filterPayment;
-      const matchShowroom = filterShowroom === 'all' || ord.showroom_id === filterShowroom;
-
-      let matchDate = true;
-      if (filterDateRange !== 'all' && ord.created_at) {
-        const ordDate = new Date(ord.created_at);
-        if (filterDateRange === 'today') {
-          matchDate = ordDate.toDateString() === now.toDateString();
-        } else if (filterDateRange === '7_days') {
-          const diffDays = (now.getTime() - ordDate.getTime()) / (1000 * 3600 * 24);
-          matchDate = diffDays <= 7;
-        } else if (filterDateRange === 'this_month') {
-          matchDate = ordDate.getMonth() === now.getMonth() && ordDate.getFullYear() === now.getFullYear();
-        }
-      }
-
-      return matchSearch && matchStatus && matchPayment && matchShowroom && matchDate;
-    });
-  }, [orders, searchTerm, filterStatus, filterPayment, filterShowroom, filterDateRange]);
-
-  const totalPages = Math.ceil(filteredOrders.length / pageSize) || 1;
-  const paginatedOrders = filteredOrders.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Status Stepper list
   const steps: { key: OrderStatus; label: string }[] = [

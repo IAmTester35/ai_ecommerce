@@ -587,7 +587,7 @@ export const dataServices = {
     return {
       orders: (ordersRes.data || []) as Order[],
       testDrives: (tdRes.data || []) as TestDrive[],
-      savedCars: (savedRes.data || []).map((s: any) => s.car || s.cars).filter(Boolean) as Car[],
+      savedCars: (savedRes.data || []).map((s: { car?: Car; cars?: Car }) => s.car || s.cars).filter(Boolean) as Car[],
     };
   },
 

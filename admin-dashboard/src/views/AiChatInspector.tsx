@@ -7,7 +7,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
-import type { ChatSessionMessage } from '../types';
+import type { ChatSessionMessage, Profile } from '../types';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { SearchBar } from '../components/ui/SearchBar';
@@ -25,7 +25,7 @@ export const AiChatInspector: React.FC = () => {
     const map = new Map<string, {
       sessionId: string;
       userId: string | null;
-      profile: any;
+      profile: Profile | null;
       messages: ChatSessionMessage[];
       lastActive: string;
     }>();
