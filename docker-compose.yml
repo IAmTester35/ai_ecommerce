@@ -31,3 +31,20 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+  ecommerce-car:
+    build:
+      context: ./ecommerce-car
+      dockerfile: Dockerfile
+      args:
+        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
+        EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:8000}
+    container_name: automatch_ecommerce_car
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
