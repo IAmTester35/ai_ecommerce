@@ -6,32 +6,42 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format currency to Vietnamese Standard (VNĐ / Tỷ / Triệu)
+ * Format currency to USD Standard ($)
  */
-export function formatVND(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined || isNaN(amount)) return '0 ₫';
-  return new Intl.NumberFormat('vi-VN', {
+export function formatUSD(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined || isNaN(amount)) return '$0';
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'VND',
+    currency: 'USD',
     maximumFractionDigits: 0,
   }).format(amount);
 }
 
 /**
- * Compact Vietnamese currency notation (e.g., 2.5 tỷ, 850 triệu)
+ * Compact USD currency notation (e.g., $2.5M, $850K)
  */
-export function formatVNDCompact(amount: number | null | undefined): string {
-  if (!amount || isNaN(amount)) return '0 ₫';
-  if (amount >= 1_000_000_000) {
-    const ty = amount / 1_000_000_000;
-    return `${ty % 1 === 0 ? ty.toFixed(0) : ty.toFixed(2)} Tỷ ₫`;
+export function formatUSDCompact(amount: number | null | undefined): string {
+  if (!amount || isNaN(amount)) return '$0';
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) {
+    const b = abs / 1_000_000_000;
+    return `${sign}$${b % 1 === 0 ? b.toFixed(0) : b.toFixed(2)}B`;
   }
-  if (amount >= 1_000_000) {
-    const tr = amount / 1_000_000;
-    return `${tr % 1 === 0 ? tr.toFixed(0) : tr.toFixed(1)} Triệu ₫`;
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    return `${sign}$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(2)}M`;
   }
-  return formatVND(amount);
+  if (abs >= 1_000) {
+    const k = abs / 1_000;
+    return `${sign}$${k % 1 === 0 ? k.toFixed(0) : k.toFixed(1)}K`;
+  }
+  return formatUSD(amount);
 }
+
+// Aliases for backwards compatibility
+export const formatVND = formatUSD;
+export const formatVNDCompact = formatUSDCompact;
 
 /**
  * Format date time to Vietnamese locale

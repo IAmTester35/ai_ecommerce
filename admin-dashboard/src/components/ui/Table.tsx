@@ -1,9 +1,28 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 
-export const Table: React.FC<React.HTMLAttributes<HTMLTableElement>> = ({ className, children, ...props }) => {
+export interface TableProps extends React.HTMLAttributes<HTMLTableElement> {
+  containerClassName?: string;
+  bare?: boolean;
+}
+
+export const Table: React.FC<TableProps> = ({
+  className,
+  containerClassName,
+  bare = false,
+  children,
+  ...props
+}) => {
   return (
-    <div className="w-full overflow-x-auto rounded-2xl sm:rounded-3xl border border-slate-200/70 bg-white shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)]">
+    <div
+      className={cn(
+        'w-full overflow-x-auto',
+        bare
+          ? ''
+          : 'rounded-2xl sm:rounded-3xl border border-slate-200/70 bg-white shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)]',
+        containerClassName
+      )}
+    >
       <table className={cn('w-full text-left border-collapse text-sm', className)} {...props}>
         {children}
       </table>

@@ -4,7 +4,6 @@ import {
   Car,
   ShoppingBag,
   Calendar,
-  Sparkles,
   ChevronRight,
   TrendingUp,
   Award,
@@ -31,7 +30,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
-import { formatVND, formatVNDCompact, formatDateTime, cn } from '../lib/utils';
+import { formatUSD, formatUSDCompact, formatDateTime, cn } from '../lib/utils';
 import { statusMap } from '../design-system/tokens';
 import type { NavView } from '../components/layout/Sidebar';
 
@@ -175,7 +174,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
         {/* Date Filter & Quick Actions */}
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           {/* Date Filter Segmented Tabs */}
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 text-xs font-semibold">
+          <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 text-xs font-semibold h-10">
             {[
               { key: 'all', label: 'Tất cả' },
               { key: 'today', label: 'Hôm nay' },
@@ -187,7 +186,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                 key={tab.key}
                 onClick={() => setDateRange(tab.key as typeof dateRange)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg transition-all cursor-pointer',
+                  'h-8 px-3 rounded-lg transition-all cursor-pointer flex items-center justify-center',
                   dateRange === tab.key
                     ? 'bg-white text-blue-600 shadow-2xs font-bold'
                     : 'text-slate-500 hover:text-slate-800'
@@ -197,16 +196,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               </button>
             ))}
           </div>
-
-          <Button
-            variant="secondary"
-            size="md"
-            leftIcon={<Sparkles className="w-4 h-4 text-indigo-200" />}
-            onClick={() => onNavigate('ai_inspector')}
-            className="hidden sm:inline-flex"
-          >
-            AI Hub
-          </Button>
 
           {can('CARS_CREATE') && (
             <Button
@@ -226,7 +215,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
         <MetricCard
           title="Tổng Giá Trị Hợp Đồng"
-          value={formatVNDCompact(totalContractValue)}
+          value={formatUSDCompact(totalContractValue)}
           change={filteredOrders.length}
           changePeriod="hợp đồng ký kết"
           icon={<Receipt className="w-5 h-5" />}
@@ -236,7 +225,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
         <MetricCard
           title="Tiền Cọc Thực Thu"
-          value={formatVNDCompact(totalDepositCollected)}
+          value={formatUSDCompact(totalDepositCollected)}
           change={filteredOrders.filter((o) => o.deposit_status === 'paid').length}
           changePeriod="giao dịch đã cọc"
           icon={<Coins className="w-5 h-5" />}
@@ -246,7 +235,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
         <MetricCard
           title="Còn Lại Thu Tại Showroom"
-          value={formatVNDCompact(remainingDue)}
+          value={formatUSDCompact(remainingDue)}
           change={activeOrders.length}
           changePeriod="đơn đang tiến hành"
           icon={<DollarSign className="w-5 h-5" />}
@@ -261,22 +250,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           changePeriod={`${testDrives.length} lượt hẹn`}
           icon={<TrendingUp className="w-5 h-5" />}
           iconBgColor="bg-indigo-50 text-indigo-600 border border-indigo-100/60"
-          onClick={() => onNavigate('test_drives')}
+          onClick={() => onNavigate('orders')}
         />
       </div>
 
       {/* Sleek Operational Summary Strip */}
-      <div className="bg-white border border-slate-200/70 rounded-2xl sm:rounded-3xl p-6 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)]">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+      <div className="bg-white border border-slate-200/70 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <div
             onClick={() => onNavigate('cars')}
-            className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity pr-4"
+            className="flex items-center gap-3.5 p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <div className="w-11 h-11 rounded-2xl bg-sky-50 border border-sky-100/60 flex items-center justify-center text-sky-600 shrink-0">
               <Car className="w-5 h-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Xe Sẵn Sàng</p>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">Xe Sẵn Sàng</p>
               <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
                 {metrics.activeCars || cars.length} <span className="text-xs font-normal text-slate-400">mẫu xe</span>
               </p>
@@ -285,13 +274,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
           <div
             onClick={() => onNavigate('orders')}
-            className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity sm:pl-6 pr-4 pt-4 sm:pt-0"
+            className="flex items-center gap-3.5 p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <div className="w-11 h-11 rounded-2xl bg-purple-50 border border-purple-100/60 flex items-center justify-center text-purple-600 shrink-0">
               <ShoppingBag className="w-5 h-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Hợp Đồng Chờ</p>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">Hợp Đồng Chờ</p>
               <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
                 {filteredOrders.filter((o) => o.status === 'pending').length} <span className="text-xs font-normal text-slate-400">đơn</span>
               </p>
@@ -299,14 +288,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </div>
 
           <div
-            onClick={() => onNavigate('test_drives')}
-            className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity sm:pl-6 pr-4 pt-4 sm:pt-0"
+            onClick={() => onNavigate('orders')}
+            className="flex items-center gap-3.5 p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <div className="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-100/60 flex items-center justify-center text-indigo-600 shrink-0">
               <Calendar className="w-5 h-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lịch Lái Thử</p>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">Lịch Lái Thử</p>
               <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
                 {upcomingTestDrives.length} <span className="text-xs font-normal text-slate-400">cuộc hẹn</span>
               </p>
@@ -314,14 +303,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
           </div>
 
           <div
-            onClick={() => onNavigate('reviews_qa')}
-            className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity sm:pl-6 pt-4 sm:pt-0"
+            onClick={() => onNavigate('marketing')}
+            className="flex items-center gap-3.5 p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100/60 flex items-center justify-center text-amber-600 shrink-0">
               <Award className="w-5 h-5" />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Hài Lòng</p>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider truncate">Hài Lòng</p>
               <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5">
                 {metrics.averageRating} <span className="text-xs font-normal text-slate-400">/ 5.0 ⭐</span>
               </p>
@@ -371,7 +360,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(val) => formatVNDCompact(val)}
+                  tickFormatter={(val) => formatUSDCompact(val)}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -380,11 +369,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                         <div className="bg-slate-900/95 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-xl text-xs space-y-1">
                           <p className="font-bold text-slate-300">{payload[0].payload.month}</p>
                           <p className="text-blue-400 font-semibold">
-                            Tiền cọc: {formatVND(payload[0].value as number)}
+                            Tiền cọc: {formatUSD(payload[0].value as number)}
                           </p>
                           {payload[1] && (
                             <p className="text-indigo-300">
-                              Tổng hợp đồng: {formatVND(payload[1].value as number)}
+                              Tổng hợp đồng: {formatUSD(payload[1].value as number)}
                             </p>
                           )}
                           <p className="text-slate-400 text-[10px]">
@@ -492,7 +481,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               Xem tất cả
             </Button>
           </CardHeader>
-          <Table>
+          <Table bare>
             <TableHeader>
               <TableRow>
                 <TableHead>Mã Đơn</TableHead>
@@ -529,7 +518,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                         <div className="text-[11px] text-slate-500">{ord.profile?.email}</div>
                       </TableCell>
                       <TableCell className="font-bold text-xs text-emerald-600">
-                        {formatVND(ord.deposit_amount)}
+                        {formatUSD(ord.deposit_amount)}
                       </TableCell>
                       <TableCell>
                         <span
@@ -559,7 +548,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
               variant="ghost"
               size="sm"
               rightIcon={<ChevronRight className="w-4 h-4" />}
-              onClick={() => onNavigate('test_drives')}
+              onClick={() => onNavigate('orders')}
             >
               Xem tất cả
             </Button>

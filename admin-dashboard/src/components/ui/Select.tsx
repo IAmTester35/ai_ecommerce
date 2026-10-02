@@ -26,7 +26,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             className={cn(
-              'w-full bg-white border rounded-xl py-2 pl-3.5 pr-10 text-sm text-slate-900 appearance-none transition-all duration-150 cursor-pointer',
+              'w-full h-10 bg-white border rounded-xl py-2 pl-3.5 pr-10 text-sm text-slate-900 appearance-none transition-all duration-150 cursor-pointer',
               'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600',
               'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
               error ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20' : 'border-slate-200 hover:border-slate-300',

@@ -17,7 +17,7 @@ import { Badge } from '../components/ui/Badge';
 import { ROLE_INFO } from '../lib/permissions';
 
 export const LoginView: React.FC = () => {
-  const { signIn, isLoading } = useAuth();
+  const { signIn, signInDemo, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -209,6 +209,31 @@ export const LoginView: React.FC = () => {
                 Đăng Nhập Vào Hệ Thống
               </Button>
             </form>
+
+            {/* Quick Demo Access Bar */}
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
+                Truy Cập Quản Trị Trực Tiếp (1-Click Demo)
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => signInDemo('owner')}
+                  className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Quyền Owner</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => signInDemo('manager')}
+                  className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Quản Lý Chi Nhánh</span>
+                </button>
+              </div>
+            </div>
 
             {/* Security Notice Box */}
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">

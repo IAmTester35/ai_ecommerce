@@ -44,44 +44,20 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
       subtitle: 'Trung tâm chỉ huy & Báo cáo tổng thể hệ thống AutoMatch AI',
     },
     cars: {
-      title: 'Quản Lý Kho Xe & Thông Số',
-      subtitle: 'Danh mục xe sang, thông số kỹ thuật, giá niêm yết và tồn kho theo Showroom',
+      title: 'Kho Xe & Mạng Lưới Showroom',
+      subtitle: 'Danh mục xe sang, tồn kho chi nhánh và điều phối trưng bày',
     },
     orders: {
-      title: 'Hợp Đồng & Đặt Cọc Xe',
-      subtitle: 'Theo dõi tiến trình cọc xe online, thanh toán ZaloPay và lịch bàn giao',
-    },
-    test_drives: {
-      title: 'Lịch Hẹn Lái Thử Thực Tế',
-      subtitle: 'Quản lý lịch hẹn trải nghiệm xe, phân bổ cố vấn bán hàng tại Showroom',
-    },
-    showrooms: {
-      title: 'Mạng Lưới Chi Nhánh & Showroom',
-      subtitle: 'Hệ thống đại lý toàn quốc và công cụ điều phối kho xe thông minh',
-    },
-    vouchers: {
-      title: 'Khuyến Mãi & Voucher Đặt Cọc',
-      subtitle: 'Chiến dịch ưu đãi trừ tiền cọc trực tiếp, giới hạn và phân tích hiệu quả',
+      title: 'Đơn Hàng Đặt Cọc & Lịch Hẹn Lái Thử',
+      subtitle: 'Theo dõi tiến trình cọc xe online, thanh toán ZaloPay và lịch trải nghiệm',
     },
     customers: {
-      title: 'Khách Hàng & Ban Quản Trị Nội Bộ',
-      subtitle: 'Danh bạ khách hàng CRM và quản lý nhân sự điều hành (Owner, Manager)',
+      title: 'Khách Hàng CRM & Ban Điều Hành',
+      subtitle: 'Danh bạ khách hàng CRM, hồ sơ giao dịch và phân quyền nhân sự',
     },
-    reviews_qa: {
-      title: 'Đánh Giá Xe & Hỏi Đáp Khách Hàng',
-      subtitle: 'Kiểm duyệt phản hồi đánh giá và giải đáp thắc mắc xe từ người dùng',
-    },
-    ai_inspector: {
-      title: 'AI Vector Search & Conflict Resolution Hub',
-      subtitle: 'Giám sát suy luận Gemini, trích xuất thực thể và xử lý mâu thuẫn yêu cầu xe',
-    },
-    ai_chat: {
-      title: 'AI Chat Sessions Audit',
-      subtitle: 'Giám sát lịch sử đàm thoại giữa khách hàng và Trợ lý AI AutoMatch',
-    },
-    notifications: {
-      title: 'Trung Tâm Thông Báo & Push Broadcast',
-      subtitle: 'Soạn thảo và gửi thông báo toàn hệ thống hoặc từng khách hàng cụ thể',
+    marketing: {
+      title: 'Marketing & Chăm Sóc Khách Hàng',
+      subtitle: 'Chiến dịch voucher ưu đãi, đánh giá xe Vector AI và thông báo Push',
     },
     settings: {
       title: 'Cấu Hình Hệ Thống & Kết Nối Database',
@@ -95,8 +71,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 px-6 sm:px-10 lg:px-12 py-3.5 flex items-center justify-between gap-4">
-      {/* Left: Mobile Toggle & Breadcrumbs */}
+    <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 px-6 sm:px-10 lg:px-12 py-3.5">
+      <div className="max-w-384 w-full mx-auto flex items-center justify-between gap-4">
+        {/* Left: Mobile Toggle & Breadcrumbs */}
       <div className="flex items-center gap-4">
         {onOpenMobileMenu && (
           <button
@@ -209,7 +186,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
                 <button
                   onClick={() => {
                     setShowNotifications(false);
-                    onSelectView('notifications');
+                    onSelectView('marketing');
                   }}
                   className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center justify-center gap-1 w-full cursor-pointer"
                 >
@@ -273,6 +250,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({
             </div>
           )}
         </div>
+      </div>
       </div>
     </header>
   );

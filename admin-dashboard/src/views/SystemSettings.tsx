@@ -105,40 +105,52 @@ export const SystemSettings: React.FC = () => {
 
       {/* Live Statistics Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
-        <div className="p-5 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Xe Trong Kho</span>
-          <p className="font-extrabold text-xl text-slate-900 mt-1">{cars.length.toLocaleString('vi-VN')}</p>
-          <span className="text-[10px] text-emerald-600 font-semibold">Live PostgreSQL</span>
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">Xe Trong Kho</span>
+            <p className="font-extrabold text-xl text-slate-900 mt-1">{cars.length.toLocaleString('vi-VN')}</p>
+          </div>
+          <span className="text-[10px] text-emerald-600 font-semibold block pt-1">Live PostgreSQL</span>
         </div>
 
-        <div className="p-5 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Đánh Giá (RAG)</span>
-          <p className="font-extrabold text-xl text-indigo-600 mt-1">{reviews.length.toLocaleString('vi-VN')}</p>
-          <span className="text-[10px] text-indigo-600 font-semibold">pgvector 768d</span>
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">Đánh Giá (RAG)</span>
+            <p className="font-extrabold text-xl text-indigo-600 mt-1">{reviews.length.toLocaleString('vi-VN')}</p>
+          </div>
+          <span className="text-[10px] text-indigo-600 font-semibold block pt-1">pgvector 768d</span>
         </div>
 
-        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Showroom</span>
-          <p className="font-extrabold text-lg text-slate-900">{showrooms.length}</p>
-          <span className="text-[10px] text-slate-500 font-medium">Toàn quốc</span>
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">Showroom</span>
+            <p className="font-extrabold text-xl text-slate-900 mt-1">{showrooms.length}</p>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium block pt-1">Toàn quốc</span>
         </div>
 
-        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Voucher Đặt Cọc</span>
-          <p className="font-extrabold text-lg text-slate-900">{vouchers.length}</p>
-          <span className="text-[10px] text-slate-500 font-medium">Chiến dịch</span>
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">Voucher Đặt Cọc</span>
+            <p className="font-extrabold text-xl text-slate-900 mt-1">{vouchers.length}</p>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium block pt-1">Chiến dịch</span>
         </div>
 
-        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Hợp Đồng Cọc</span>
-          <p className="font-extrabold text-lg text-slate-900">{orders.length}</p>
-          <span className="text-[10px] text-slate-500 font-medium">Đơn hàng</span>
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">Hợp Đồng Cọc</span>
+            <p className="font-extrabold text-xl text-slate-900 mt-1">{orders.length}</p>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium block pt-1">Đơn hàng</span>
         </div>
 
-        <div className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tài Khoản</span>
-          <p className="font-extrabold text-lg text-slate-900">{customers.length}</p>
-          <span className="text-[10px] text-slate-500 font-medium">Profiles</span>
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] space-y-1 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block truncate">Tài Khoản</span>
+            <p className="font-extrabold text-xl text-slate-900 mt-1">{customers.length}</p>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium block pt-1">Profiles</span>
         </div>
       </div>
 

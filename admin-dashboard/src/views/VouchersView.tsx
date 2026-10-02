@@ -23,7 +23,7 @@ import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
-import { formatVND, formatDate } from '../lib/utils';
+import { formatUSD, formatDate } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 
 const getInitialVoucherForm = (): Omit<Voucher, 'id' | 'created_at' | 'used_count'> => {
@@ -34,9 +34,9 @@ const getInitialVoucherForm = (): Omit<Voucher, 'id' | 'created_at' | 'used_coun
     title: '',
     description: '',
     discount_type: 'fixed',
-    discount_value: 50000000,
+    discount_value: 2000,
     max_discount_amount: null,
-    min_order_value: 1000000000,
+    min_order_value: 30000,
     applies_to: 'deposit',
     usage_limit: 50,
     max_uses_per_user: 1,
@@ -169,48 +169,64 @@ export const VouchersView: React.FC = () => {
 
       {/* Campaign Effectiveness Analytics Card */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="p-6 bg-linear-to-br from-blue-50/40 to-indigo-50/40 border-blue-100/70">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Chiến Dịch Đang Chạy</span>
-            <Ticket className="w-4 h-4 text-blue-600" />
+        <Card className="p-5 sm:p-6 bg-linear-to-br from-blue-50/40 to-indigo-50/40 border-blue-100/70 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Chiến Dịch Đang Chạy</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <Ticket className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-blue-700 mt-2">
+              {campaignMetrics.activeCampaigns} / {vouchers.length} mã
+            </p>
           </div>
-          <p className="text-2xl font-extrabold text-blue-700 mt-2">
-            {campaignMetrics.activeCampaigns} / {vouchers.length} mã
-          </p>
-          <span className="text-xs text-blue-600/80 mt-1 block">Sẵn sàng áp dụng cho cọc</span>
+          <span className="text-xs text-blue-600/80 mt-2 block font-medium">Sẵn sàng áp dụng cho cọc</span>
         </Card>
 
-        <Card className="p-6 bg-linear-to-br from-emerald-50/40 to-teal-50/40 border-emerald-100/70">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đơn Hàng Áp Dụng</span>
-            <Coins className="w-4 h-4 text-emerald-600" />
+        <Card className="p-5 sm:p-6 bg-linear-to-br from-emerald-50/40 to-teal-50/40 border-emerald-100/70 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Đơn Hàng Áp Dụng</span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <Coins className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-emerald-700 mt-2">
+              {campaignMetrics.ordersWithVoucherCount} hợp đồng
+            </p>
           </div>
-          <p className="text-xl font-extrabold text-emerald-700 mt-1">
-            {campaignMetrics.ordersWithVoucherCount} hợp đồng
-          </p>
-          <span className="text-[11px] text-emerald-600/80">Người mua áp dụng khuyến mãi</span>
+          <span className="text-xs text-emerald-600/80 mt-2 block font-medium">Người mua áp dụng khuyến mãi</span>
         </Card>
 
-        <Card className="p-4 bg-linear-to-br from-rose-50/60 to-pink-50/60 border-rose-100">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-rose-900">Tổng Ưu Đãi Đã Giảm</span>
-            <Percent className="w-4 h-4 text-rose-600" />
+        <Card className="p-5 sm:p-6 bg-linear-to-br from-rose-50/40 to-pink-50/40 border-rose-100/70 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Tổng Ưu Đãi Đã Giảm</span>
+              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                <Percent className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-rose-700 mt-2">
+              {formatUSD(campaignMetrics.totalDiscountGiven)}
+            </p>
           </div>
-          <p className="text-xl font-extrabold text-rose-700 mt-1">
-            {formatVND(campaignMetrics.totalDiscountGiven)}
-          </p>
-          <span className="text-[11px] text-rose-600/80">Chiết khấu tài chính</span>
+          <span className="text-xs text-rose-600/80 mt-2 block font-medium">Chiết khấu tài chính</span>
         </Card>
 
-        <Card className="p-4 bg-linear-to-br from-amber-50/60 to-orange-50/60 border-amber-100">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-900">Doanh Thu Cọc Thu Về</span>
-            <TrendingUp className="w-4 h-4 text-amber-600" />
+        <Card className="p-5 sm:p-6 bg-linear-to-br from-amber-50/40 to-orange-50/40 border-amber-100/70 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Doanh Thu Cọc Thu Về</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-amber-700 mt-2">
+              {formatUSD(campaignMetrics.depositRevenueWithVoucher)}
+            </p>
           </div>
-          <p className="text-xl font-extrabold text-amber-700 mt-1">
-            {formatVND(campaignMetrics.depositRevenueWithVoucher)}
-          </p>
-          <span className="text-[11px] text-amber-600/80">Từ các đơn có voucher</span>
+          <span className="text-xs text-amber-600/80 mt-2 block font-medium">Từ các đơn có voucher</span>
         </Card>
       </div>
 
@@ -292,10 +308,10 @@ export const VouchersView: React.FC = () => {
                     <p className="text-lg font-black text-slate-900">
                       {vc.discount_type === 'percentage'
                         ? `Giảm ${vc.discount_value}%`
-                        : `Giảm ${formatVND(vc.discount_value)}`}
+                        : `Giảm ${formatUSD(vc.discount_value)}`}
                       {vc.discount_type === 'percentage' && vc.max_discount_amount && (
                         <span className="text-xs font-normal text-slate-500 block">
-                          (Tối đa {formatVND(vc.max_discount_amount)})
+                          (Tối đa {formatUSD(vc.max_discount_amount)})
                         </span>
                       )}
                     </p>
@@ -303,7 +319,7 @@ export const VouchersView: React.FC = () => {
 
                   {/* Conditions & Per User Limit */}
                   <div className="text-[11px] text-slate-600 space-y-1">
-                    <p>• Đơn hàng tối thiểu: <strong>{formatVND(vc.min_order_value)}</strong></p>
+                    <p>• Đơn hàng tối thiểu: <strong>{formatUSD(vc.min_order_value)}</strong></p>
                     <p>• Giới hạn mỗi người dùng: <strong>{vc.max_uses_per_user || 1} lần</strong></p>
                     {vc.start_date && vc.end_date && (
                       <p className="flex items-center gap-1 text-slate-500">
@@ -369,7 +385,7 @@ export const VouchersView: React.FC = () => {
             rows={2}
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Giảm ngay 50.000.000 VNĐ vào tiền đặt cọc giữ xe..."
+            placeholder="Giảm ngay 2,000 USD vào tiền đặt cọc giữ xe..."
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -378,7 +394,7 @@ export const VouchersView: React.FC = () => {
               value={formData.discount_type}
               onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as DiscountType })}
             >
-              <option value="fixed">Số tiền cố định (VNĐ)</option>
+              <option value="fixed">Số tiền cố định (USD)</option>
               <option value="percentage">Phần trăm (%)</option>
             </Select>
 
@@ -394,7 +410,7 @@ export const VouchersView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label={formData.discount_type === 'percentage' ? 'Phần Trăm Giảm (1-100%) *' : 'Số Tiền Giảm (VNĐ) *'}
+              label={formData.discount_type === 'percentage' ? 'Phần Trăm Giảm (1-100%) *' : 'Số Tiền Giảm (USD) *'}
               type="number"
               value={formData.discount_value}
               onChange={(e) => setFormData({ ...formData, discount_value: Number(e.target.value) })}
@@ -405,7 +421,7 @@ export const VouchersView: React.FC = () => {
 
             {formData.discount_type === 'percentage' ? (
               <Input
-                label="Giảm Tối Đa (VNĐ)"
+                label="Giảm Tối Đa (USD)"
                 type="number"
                 value={formData.max_discount_amount || ''}
                 onChange={(e) =>
@@ -414,15 +430,15 @@ export const VouchersView: React.FC = () => {
                     max_discount_amount: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                placeholder="VD: 50000000"
+                placeholder="VD: 2000"
               />
             ) : (
               <Input
-                label="Giá Trị Đơn Hàng Tối Thiểu (VNĐ)"
+                label="Giá Trị Đơn Hàng Tối Thiểu (USD)"
                 type="number"
                 value={formData.min_order_value}
                 onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
-                step={50000000}
+                step={500}
                 min={0}
               />
             )}

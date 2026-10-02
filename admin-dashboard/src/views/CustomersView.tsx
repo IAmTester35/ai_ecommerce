@@ -29,7 +29,7 @@ import { Select } from '../components/ui/Select';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pagination } from '../components/ui/Pagination';
-import { formatDateTime, formatVND, cn } from '../lib/utils';
+import { formatDateTime, formatUSD, cn } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 
 export const CustomersView: React.FC = () => {
@@ -280,8 +280,8 @@ export const CustomersView: React.FC = () => {
       </div>
 
       {/* Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="w-full sm:w-80">
+      <div className="bg-white border border-slate-200/70 rounded-2xl p-4 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="w-full sm:w-96">
           <SearchBar
             placeholder="Tìm theo tên, email, số điện thoại..."
             value={searchTerm}
@@ -290,6 +290,9 @@ export const CustomersView: React.FC = () => {
               setCurrentPage(1);
             }}
           />
+        </div>
+        <div className="text-xs text-slate-500 font-medium w-full sm:w-auto text-left sm:text-right">
+          Tìm thấy <strong className="text-slate-800 font-semibold">{filteredData.length}</strong> {activeTab === 'customers' ? 'khách hàng' : 'nhân sự quản lý'}
         </div>
       </div>
 
@@ -302,7 +305,7 @@ export const CustomersView: React.FC = () => {
         />
       ) : (
         <Card className="overflow-hidden">
-          <Table>
+          <Table bare>
             <TableHeader>
               <TableRow>
                 <TableHead>Tài Khoản / Người Dùng</TableHead>
@@ -658,7 +661,7 @@ export const CustomersView: React.FC = () => {
                             <p className="text-[10px] text-slate-400">{formatDateTime(o.created_at)}</p>
                           </div>
                           <div className="text-right">
-                            <span className="font-bold text-blue-600">{formatVND(o.deposit_amount)}</span>
+                            <span className="font-bold text-blue-600">{formatUSD(o.deposit_amount)}</span>
                             <Badge variant={o.deposit_status === 'paid' ? 'success' : 'warning'} size="sm" className="ml-2">
                               {o.status}
                             </Badge>
@@ -737,7 +740,7 @@ export const CustomersView: React.FC = () => {
                             <p className="font-bold text-slate-900 truncate">
                               {c.make} {c.model}
                             </p>
-                            <p className="text-[10px] text-blue-600 font-bold">{formatVND(c.price)}</p>
+                            <p className="text-[10px] text-blue-600 font-bold">{formatUSD(c.price)}</p>
                           </div>
                         </div>
                       ))

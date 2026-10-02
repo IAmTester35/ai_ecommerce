@@ -15,6 +15,7 @@ interface AuthContextType {
   isManager: boolean;
   can: (permission: AppPermission) => boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signInDemo: (role?: UserRole) => void;
   signUpAdmin: (email: string, password: string, fullName: string, role: UserRole, phone?: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -152,6 +153,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const signInDemo = (demoRole: UserRole = 'owner') => {
+    const demoProfile: Profile = {
+      id: demoRole === 'owner' ? '00000000-0000-0000-0000-000000000001' : '00000000-0000-0000-0000-000000000002',
+      email: demoRole === 'owner' ? 'executive.owner@automatch.vn' : 'hanoi.manager@automatch.vn',
+      full_name: demoRole === 'owner' ? 'Nguyễn Anh Tuấn (Executive Owner)' : 'Trần Minh Hoàng (Showroom Manager)',
+      role: demoRole,
+      avatar_url: demoRole === 'owner'
+        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    try {
+      localStorage.setItem('automatch_demo_role', demoRole);
+    } catch (e) {
+      console.warn('[AuthProvider] Demo role storage unavailable:', e);
+    }
+    setCurrentUser(demoProfile);
+    setUser({ id: demoProfile.id, email: demoProfile.email } as unknown as User);
+  };
+
   const signOut = async () => {
     try {
       setIsLoading(true);
@@ -159,6 +182,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err) {
       console.warn('[AuthProvider] SignOut error:', err);
     } finally {
+      try {
+        localStorage.removeItem('automatch_demo_role');
+      } catch (e) {
+        console.warn('[AuthProvider] Demo role cleanup error:', e);
+      }
       setSession(null);
       setUser(null);
       setCurrentUser(null);
@@ -169,7 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const role = currentUser?.role || null;
   const isOwner = role === 'owner';
   const isManager = role === 'manager' || role === 'owner';
-  const isAuthenticated = !!session?.user && !!currentUser && (isOwner || role === 'manager');
+  const isAuthenticated = !!currentUser && (isOwner || role === 'manager');
 
   const can = (permission: AppPermission): boolean => {
     return checkPermission(role, permission);
@@ -188,6 +216,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isManager,
         can,
         signIn,
+        signInDemo,
         signUpAdmin,
         signOut,
         refreshProfile,

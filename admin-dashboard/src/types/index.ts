@@ -198,50 +198,6 @@ export interface AppNotification {
   created_at: string;
 }
 
-export interface SearchHistoryItem {
-  id: string;
-  user_id?: string | null;
-  query_text: string;
-  created_at: string;
-  profile?: Profile | null;
-}
-
-export interface ChatSessionMessage {
-  id: string;
-  session_id: string;
-  user_id?: string | null;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  created_at: string;
-  profile?: Profile | null;
-}
-
-export interface AISearchResponse {
-  original_query: string;
-  constraints: {
-    max_price?: number | null;
-    min_hp?: number | null;
-    make?: string | null;
-    target_year?: number | null;
-    fuel_type?: string | null;
-    is_out_of_scope: boolean;
-    soft_intent?: string | null;
-  };
-  results: Array<{
-    id: string;
-    make: string;
-    model: string;
-    year: number;
-    price: number;
-    review: string;
-    similarity: number;
-    image_url?: string;
-  }>;
-  conflict_detected: boolean;
-  relaxed_terms: string[];
-  ai_message: string;
-}
-
 export interface DashboardMetrics {
   totalRevenue: number;
   totalDeposit: number;

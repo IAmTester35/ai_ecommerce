@@ -3,14 +3,8 @@ import {
   LayoutDashboard,
   Car as CarIcon,
   ShoppingBag,
-  Calendar,
-  Building2,
   Ticket,
   Users,
-  MessageSquare,
-  Sparkles,
-  Bot,
-  Bell,
   Settings,
   ShieldCheck,
   Zap,
@@ -25,14 +19,8 @@ export type NavView =
   | 'dashboard'
   | 'cars'
   | 'orders'
-  | 'test_drives'
-  | 'showrooms'
-  | 'vouchers'
   | 'customers'
-  | 'reviews_qa'
-  | 'ai_inspector'
-  | 'ai_chat'
-  | 'notifications'
+  | 'marketing'
   | 'settings';
 
 interface NavItem {
@@ -61,10 +49,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectView,
   isCollapsed = false,
 }) => {
-  const { metrics, notifications, chatSessions } = useData();
+  const { metrics, notifications, reviews, carQAs, customers } = useData();
   const { currentUser, signOut, role } = useAuth();
 
   const unreadNotifs = notifications.filter((n) => !n.is_read).length;
+  const pendingMarketingCount =
+    reviews.filter((r) => r.is_approved === false).length +
+    carQAs.filter((q) => !q.answer).length;
   const currentRoleInfo = role ? ROLE_INFO[role] : ROLE_INFO.manager;
 
   const navItems: NavGroup[] = [
@@ -76,84 +67,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
           label: 'Executive Dashboard',
           icon: <LayoutDashboard className="w-4 h-4" />,
         },
-        {
-          id: 'ai_inspector',
-          label: 'AI Vector & Conflict Hub',
-          icon: <Sparkles className="w-4 h-4 text-indigo-600" />,
-          isSpecial: true,
-        },
-        {
-          id: 'ai_chat',
-          label: 'AI Chat Sessions Audit',
-          icon: <Bot className="w-4 h-4 text-indigo-600" />,
-          isSpecial: true,
-          badge: chatSessions.length > 0 ? chatSessions.length : undefined,
-        },
       ],
     },
     {
-      group: 'Quản Lý Kho & Giao Dịch',
+      group: 'Quản Trị Bán Hàng',
       items: [
         {
           id: 'cars',
-          label: 'Kho Xe & Thông Số',
+          label: 'Kho Xe & Showroom',
           icon: <CarIcon className="w-4 h-4" />,
-          badge: metrics.activeCars > 0 ? metrics.activeCars : undefined,
+          badge: metrics.activeCars > 0 ? `${metrics.activeCars} xe` : undefined,
         },
         {
           id: 'orders',
-          label: 'Hợp Đồng & Đặt Cọc',
+          label: 'Đơn Hàng & Lịch Hẹn',
           icon: <ShoppingBag className="w-4 h-4" />,
           badge: metrics.pendingOrders > 0 ? `${metrics.pendingOrders} mới` : undefined,
           badgeColor: 'bg-amber-100 text-amber-800',
         },
         {
-          id: 'test_drives',
-          label: 'Lịch Hẹn Lái Thử',
-          icon: <Calendar className="w-4 h-4" />,
-          badge: metrics.testDrivesThisWeek > 0 ? metrics.testDrivesThisWeek : undefined,
-          badgeColor: 'bg-blue-100 text-blue-800',
-        },
-      ],
-    },
-    {
-      group: 'Hệ Thống Phân Phối',
-      items: [
-        {
-          id: 'showrooms',
-          label: 'Mạng Lưới Showroom',
-          icon: <Building2 className="w-4 h-4" />,
-        },
-        {
-          id: 'vouchers',
-          label: 'Khuyến Mãi & Voucher',
-          icon: <Ticket className="w-4 h-4" />,
-        },
-        {
           id: 'customers',
-          label: 'Khách Hàng & Ban Quản Trị',
+          label: 'Khách Hàng & Nhân Sự',
           icon: <Users className="w-4 h-4" />,
-        },
-        {
-          id: 'reviews_qa',
-          label: 'Đánh Giá & Q&A AI',
-          icon: <MessageSquare className="w-4 h-4" />,
+          badge: customers.length > 0 ? customers.length : undefined,
         },
       ],
     },
     {
-      group: 'Hệ Thống',
+      group: 'Tiếp Thị & Hệ Thống',
       items: [
         {
-          id: 'notifications',
-          label: 'Thông Báo Push',
-          icon: <Bell className="w-4 h-4" />,
-          badge: unreadNotifs > 0 ? unreadNotifs : undefined,
-          badgeColor: 'bg-rose-100 text-rose-800',
+          id: 'marketing',
+          label: 'Marketing & Tương Tác',
+          icon: <Ticket className="w-4 h-4" />,
+          badge:
+            pendingMarketingCount > 0
+              ? `${pendingMarketingCount} duyệt`
+              : unreadNotifs > 0
+              ? unreadNotifs
+              : undefined,
+          badgeColor:
+            pendingMarketingCount > 0
+              ? 'bg-amber-100 text-amber-800'
+              : 'bg-rose-100 text-rose-800',
         },
         {
           id: 'settings',
-          label: 'Cấu Hình & Kết Nối DB',
+          label: 'Cấu Hình & Hệ Thống',
           icon: <Settings className="w-4 h-4" />,
         },
       ],

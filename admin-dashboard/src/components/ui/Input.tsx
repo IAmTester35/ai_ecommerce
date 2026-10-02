@@ -32,7 +32,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full bg-white border rounded-xl py-2 px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-150',
+              'w-full h-10 bg-white border rounded-xl py-2 px-3.5 text-sm text-slate-900 placeholder:text-slate-400 transition-all duration-150',
               'focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600',
               'disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed',
               error ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20' : 'border-slate-200 hover:border-slate-300',

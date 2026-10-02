@@ -158,7 +158,7 @@ export const ReviewsQAView: React.FC = () => {
             />
           ) : (
             <>
-              <Table>
+              <Table bare>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Khách Hàng</TableHead>
@@ -302,7 +302,7 @@ export const ReviewsQAView: React.FC = () => {
             />
           ) : (
             <>
-              <Table>
+              <Table bare>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Khách Hàng Hỏi</TableHead>

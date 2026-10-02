@@ -48,24 +48,6 @@ export const NotificationsView: React.FC = () => {
     setContent('');
   };
 
-  const templates = [
-    {
-      title: 'Đặc Quyền Đặt Cọc Xe Sang Mùa Thu',
-      content: 'Giảm ngay 50.000.000 VNĐ vào tiền đặt cọc giữ xe Porsche và Mercedes-Benz khi áp dụng mã AUTOSUMMER50M.',
-      type: 'promotion',
-    },
-    {
-      title: 'Hệ Thống Trợ Lý AI Nâng Cấp Model 2.5',
-      content: 'Tìm kiếm xe thông minh giờ đây hiểu sâu hơn về cảm giác lái và hỗ trợ gợi ý xe thay thế khi mâu thuẫn ngân sách.',
-      type: 'system',
-    },
-    {
-      title: 'Nhắc Nhở Lịch Hẹn Lái Thử Tại Showroom',
-      content: 'Chuyên viên AutoMatch đã chuẩn bị sẵn xe và cung đường trải nghiệm cho bạn. Vui lòng đến đúng giờ hẹn.',
-      type: 'test_drive',
-    },
-  ];
-
   return (
     <div className="space-y-8 text-left">
       {/* Header Info */}
@@ -83,7 +65,7 @@ export const NotificationsView: React.FC = () => {
         <Card className="lg:col-span-2">
           <CardHeader>
             <div>
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
                 <Send className="w-4 h-4 text-blue-600" />
                 Soạn Thông Báo Mới
               </CardTitle>
@@ -148,30 +130,6 @@ export const NotificationsView: React.FC = () => {
                 required
               />
 
-              {/* Sample Quick Templates */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  Mẫu Soạn Sẵn:
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {templates.map((t, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setTitle(t.title);
-                        setContent(t.content);
-                        setNotifType(t.type);
-                      }}
-                      className="p-2.5 text-left bg-slate-50 hover:bg-blue-50/60 rounded-xl border border-slate-200/80 transition-all text-xs space-y-1 cursor-pointer"
-                    >
-                      <p className="font-bold text-slate-800 truncate">{t.title}</p>
-                      <p className="text-[11px] text-slate-500 line-clamp-2">{t.content}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               <div className="flex justify-end pt-3 border-t border-slate-100">
                 <Button
                   variant="primary"
@@ -191,7 +149,7 @@ export const NotificationsView: React.FC = () => {
         <Card>
           <CardHeader>
             <div>
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="text-base flex items-center gap-2">
                 <Clock className="w-4 h-4 text-slate-600" />
                 Lịch Sử Thông Báo
               </CardTitle>

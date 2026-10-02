@@ -192,7 +192,7 @@ export const TestDrivesView: React.FC = () => {
         />
       ) : (
         <Card className="overflow-hidden">
-          <Table>
+          <Table bare>
             <TableHeader>
               <TableRow>
                 <TableHead>Khách Hàng</TableHead>

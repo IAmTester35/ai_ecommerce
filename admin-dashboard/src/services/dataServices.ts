@@ -9,8 +9,6 @@ import type {
   Review,
   CarQA,
   AppNotification,
-  SearchHistoryItem,
-  ChatSessionMessage,
   OrderStatus,
   PaymentStatus,
   TestDriveStatus,
@@ -636,42 +634,5 @@ export const dataServices = {
       .eq('id', id);
 
     if (error) throw error;
-  },
-
-  // ==========================================
-  // SEARCH HISTORY
-  // ==========================================
-  async fetchSearchHistory(): Promise<SearchHistoryItem[]> {
-    const { data, error } = await supabase
-      .from('search_history')
-      .select('*, profiles(*)')
-      .order('created_at', { ascending: false })
-      .limit(100);
-
-    if (error) throw error;
-    return (data || []) as SearchHistoryItem[];
-  },
-
-  // ==========================================
-  // AI CHAT SESSIONS INSPECTOR
-  // ==========================================
-  async fetchChatSessions(): Promise<ChatSessionMessage[]> {
-    const { data, error } = await supabase
-      .from('chat_sessions')
-      .select('*, profile:profiles(*)')
-      .order('created_at', { ascending: false })
-      .limit(300);
-
-    if (error) {
-      // Fallback without alias
-      const { data: fb, error: fbErr } = await supabase
-        .from('chat_sessions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(300);
-      if (fbErr) throw fbErr;
-      return (fb || []) as ChatSessionMessage[];
-    }
-    return (data || []) as ChatSessionMessage[];
   },
 };

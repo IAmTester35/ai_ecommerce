@@ -9,8 +9,6 @@ import type {
   Review,
   CarQA,
   AppNotification,
-  SearchHistoryItem,
-  ChatSessionMessage,
   OrderStatus,
   PaymentStatus,
   TestDriveStatus,
@@ -20,6 +18,7 @@ import type {
 import { dataServices } from '../services/dataServices';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
+import { formatUSD } from '../lib/utils';
 
 interface DataContextType {
   cars: Car[];
@@ -31,8 +30,6 @@ interface DataContextType {
   carQAs: CarQA[];
   notifications: AppNotification[];
   customers: Profile[];
-  searchHistory: SearchHistoryItem[];
-  chatSessions: ChatSessionMessage[];
   metrics: DashboardMetrics;
   isLoading: boolean;
   isLiveSupabase: boolean;
@@ -121,8 +118,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [carQAs, setCarQAs] = useState<CarQA[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [customers, setCustomers] = useState<Profile[]>([]);
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
-  const [chatSessions, setChatSessions] = useState<ChatSessionMessage[]>([]);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLiveSupabase, setIsLiveSupabase] = useState<boolean>(true);
@@ -181,8 +176,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         dataServices.fetchCarQAs(),
         dataServices.fetchProfiles(),
         dataServices.fetchNotifications(),
-        dataServices.fetchSearchHistory(),
-        dataServices.fetchChatSessions(),
       ]);
 
       if (results[0].status === 'fulfilled') setCars(results[0].value);
@@ -194,8 +187,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (results[6].status === 'fulfilled') setCarQAs(results[6].value);
       if (results[7].status === 'fulfilled') setCustomers(results[7].value);
       if (results[8].status === 'fulfilled') setNotifications(results[8].value);
-      if (results[9].status === 'fulfilled') setSearchHistory(results[9].value);
-      if (results[10].status === 'fulfilled') setChatSessions(results[10].value);
 
       const failedQueries = results.filter((r) => r.status === 'rejected');
       if (failedQueries.length === 0) {
@@ -337,7 +328,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updated = await dataServices.refundOrder(orderId, amount, reason);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-      success('Xử lý hoàn cọc thành công', `Đã ghi nhận hoàn ${amount.toLocaleString('vi-VN')} VNĐ.`);
+      success('Xử lý hoàn cọc thành công', `Đã ghi nhận hoàn ${formatUSD(amount)}.`);
       return true;
     } catch (err) {
       error('Lỗi hoàn tiền cọc', err instanceof Error ? err.message : 'Thao tác thất bại');
@@ -709,8 +700,6 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         carQAs,
         notifications,
         customers,
-        searchHistory,
-        chatSessions,
         metrics,
         isLoading,
         isLiveSupabase,

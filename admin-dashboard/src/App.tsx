@@ -11,14 +11,8 @@ import { Zap, Loader2 } from 'lucide-react';
 const DashboardOverview = lazy(() => import('./views/DashboardOverview').then((m) => ({ default: m.DashboardOverview })));
 const CarsInventory = lazy(() => import('./views/CarsInventory').then((m) => ({ default: m.CarsInventory })));
 const OrdersManagement = lazy(() => import('./views/OrdersManagement').then((m) => ({ default: m.OrdersManagement })));
-const TestDrivesView = lazy(() => import('./views/TestDrivesView').then((m) => ({ default: m.TestDrivesView })));
-const ShowroomsView = lazy(() => import('./views/ShowroomsView').then((m) => ({ default: m.ShowroomsView })));
-const VouchersView = lazy(() => import('./views/VouchersView').then((m) => ({ default: m.VouchersView })));
 const CustomersView = lazy(() => import('./views/CustomersView').then((m) => ({ default: m.CustomersView })));
-const ReviewsQAView = lazy(() => import('./views/ReviewsQAView').then((m) => ({ default: m.ReviewsQAView })));
-const AiSearchInspector = lazy(() => import('./views/AiSearchInspector').then((m) => ({ default: m.AiSearchInspector })));
-const AiChatInspector = lazy(() => import('./views/AiChatInspector').then((m) => ({ default: m.AiChatInspector })));
-const NotificationsView = lazy(() => import('./views/NotificationsView').then((m) => ({ default: m.NotificationsView })));
+const MarketingView = lazy(() => import('./views/MarketingView').then((m) => ({ default: m.MarketingView })));
 const SystemSettings = lazy(() => import('./views/SystemSettings').then((m) => ({ default: m.SystemSettings })));
 
 const ViewLoadingFallback: React.FC = () => (
@@ -79,14 +73,8 @@ const AppContent: React.FC = () => {
             />
           )}
           {currentView === 'orders' && <OrdersManagement />}
-          {currentView === 'test_drives' && <TestDrivesView />}
-          {currentView === 'showrooms' && <ShowroomsView />}
-          {currentView === 'vouchers' && <VouchersView />}
           {currentView === 'customers' && <CustomersView />}
-          {currentView === 'reviews_qa' && <ReviewsQAView />}
-          {currentView === 'ai_inspector' && <AiSearchInspector />}
-          {currentView === 'ai_chat' && <AiChatInspector />}
-          {currentView === 'notifications' && <NotificationsView />}
+          {currentView === 'marketing' && <MarketingView />}
           {currentView === 'settings' && <SystemSettings />}
         </Suspense>
       </AdminLayout>
