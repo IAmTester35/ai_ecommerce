@@ -22,7 +22,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { Switch } from '../ui/Switch';
-import { formatUSD, cn } from '../../lib/utils';
+import { formatVND, cn } from '../../lib/utils';
 import { dataServices } from '../../services/dataServices';
 import { useToast } from '../../context/ToastContext';
 
@@ -105,7 +105,7 @@ const AddCarFormContent: React.FC<AddCarFormContentProps> = ({
   const [make, setMake] = useState(editingCar ? editingCar.make : 'Porsche');
   const [model, setModel] = useState(editingCar ? editingCar.model : '');
   const [year, setYear] = useState<number>(editingCar ? editingCar.year : new Date().getFullYear());
-  const [price, setPrice] = useState<number>(editingCar?.price ?? 125000);
+  const [price, setPrice] = useState<number>(editingCar?.price ?? 2500000000);
   const [stockQuantity, setStockQuantity] = useState<number>(editingCar?.stock_quantity ?? 2);
   const [showroomId, setShowroomId] = useState<string>(editingCar?.showroom_id || showrooms[0]?.id || '');
   const [isActive, setIsActive] = useState<boolean>(editingCar?.is_active ?? true);
@@ -330,10 +330,10 @@ const AddCarFormContent: React.FC<AddCarFormContentProps> = ({
                 />
 
                 <Input
-                  label="Giá Niêm Yết (USD) *"
+                  label="Giá Niêm Yết (VNĐ) *"
                   type="number"
-                  min={1000}
-                  step={1000}
+                  min={100000000}
+                  step={10000000}
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
                   required
@@ -746,7 +746,7 @@ const AddCarFormContent: React.FC<AddCarFormContentProps> = ({
                   {model || 'Tên Dòng Xe'}
                 </h4>
                 <p className="text-lg font-black text-slate-900 mt-0.5">
-                  {formatUSD(price || 0)}
+                  {formatVND(price || 0)}
                 </p>
               </div>
 

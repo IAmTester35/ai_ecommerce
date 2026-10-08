@@ -39,9 +39,48 @@ export function formatUSDCompact(amount: number | null | undefined): string {
   return formatUSD(amount);
 }
 
-// Aliases for backwards compatibility
-export const formatVND = formatUSD;
-export const formatVNDCompact = formatUSDCompact;
+/**
+ * Format currency to Vietnamese Dong (VNĐ)
+ */
+export function formatVND(amount: number | null | undefined): string {
+  if (amount === null || amount === undefined || isNaN(amount) || amount === 0) return '0 ₫';
+  
+  const valueInVnd = amount;
+
+  if (valueInVnd >= 1_000_000_000) {
+    const b = valueInVnd / 1_000_000_000;
+    return `${b % 1 === 0 ? b.toFixed(0) : b.toFixed(2)} tỷ VNĐ`;
+  }
+  if (valueInVnd >= 1_000_000) {
+    const m = valueInVnd / 1_000_000;
+    return `${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)} triệu VNĐ`;
+  }
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(valueInVnd);
+}
+
+/**
+ * Compact VNĐ currency notation (e.g., 2.5 tỷ ₫, 850 tr ₫)
+ */
+export function formatVNDCompact(amount: number | null | undefined): string {
+  if (!amount || isNaN(amount)) return '0 ₫';
+  const val = amount;
+  const abs = Math.abs(val);
+  const sign = val < 0 ? '-' : '';
+
+  if (abs >= 1_000_000_000) {
+    const b = abs / 1_000_000_000;
+    return `${sign}${b % 1 === 0 ? b.toFixed(0) : b.toFixed(2)} tỷ ₫`;
+  }
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    return `${sign}${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)} tr ₫`;
+  }
+  return `${sign}${abs.toLocaleString('vi-VN')} ₫`;
+}
 
 /**
  * Format date time to Vietnamese locale

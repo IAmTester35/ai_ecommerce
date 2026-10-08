@@ -29,7 +29,7 @@ import { Select } from '../components/ui/Select';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pagination } from '../components/ui/Pagination';
-import { formatDateTime, formatUSD, cn } from '../lib/utils';
+import { formatDateTime, formatVND, cn } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 
 export const CustomersView: React.FC = () => {
@@ -661,7 +661,7 @@ export const CustomersView: React.FC = () => {
                             <p className="text-[10px] text-slate-400">{formatDateTime(o.created_at)}</p>
                           </div>
                           <div className="text-right">
-                            <span className="font-bold text-blue-600">{formatUSD(o.deposit_amount)}</span>
+                            <span className="font-bold text-blue-600">{formatVND(o.deposit_amount)}</span>
                             <Badge variant={o.deposit_status === 'paid' ? 'success' : 'warning'} size="sm" className="ml-2">
                               {o.status}
                             </Badge>
@@ -740,7 +740,7 @@ export const CustomersView: React.FC = () => {
                             <p className="font-bold text-slate-900 truncate">
                               {c.make} {c.model}
                             </p>
-                            <p className="text-[10px] text-blue-600 font-bold">{formatUSD(c.price)}</p>
+                            <p className="text-[10px] text-blue-600 font-bold">{formatVND(c.price)}</p>
                           </div>
                         </div>
                       ))

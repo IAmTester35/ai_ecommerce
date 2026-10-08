@@ -18,7 +18,7 @@ import type {
 import { dataServices } from '../services/dataServices';
 import { useToast } from './ToastContext';
 import { useAuth } from './AuthContext';
-import { formatUSD } from '../lib/utils';
+import { formatVND } from '../lib/utils';
 
 interface DataContextType {
   cars: Car[];
@@ -328,7 +328,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const updated = await dataServices.refundOrder(orderId, amount, reason);
       setOrders((prev) => prev.map((o) => (o.id === orderId ? updated : o)));
-      success('Xử lý hoàn cọc thành công', `Đã ghi nhận hoàn ${formatUSD(amount)}.`);
+      success('Xử lý hoàn cọc thành công', `Đã ghi nhận hoàn ${formatVND(amount)}.`);
       return true;
     } catch (err) {
       error('Lỗi hoàn tiền cọc', err instanceof Error ? err.message : 'Thao tác thất bại');

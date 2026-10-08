@@ -32,7 +32,7 @@ import { Textarea } from '../components/ui/Textarea';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pagination } from '../components/ui/Pagination';
-import { formatUSD, formatDateTime, cn } from '../lib/utils';
+import { formatVND, formatDateTime, cn } from '../lib/utils';
 import { statusMap } from '../design-system/tokens';
 import { checkZaloPayStatus } from '../lib/api';
 import { useToast } from '../context/ToastContext';
@@ -156,7 +156,7 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
     if (res.return_code === 1) {
       success(
         'Khớp lệnh thành công',
-        `Mã giao dịch ${transId} (${formatUSD(selectedOrder.deposit_amount)}) đã được xác nhận thanh toán trên cổng ZaloPay.`
+        `Mã giao dịch ${transId} (${formatVND(selectedOrder.deposit_amount)}) đã được xác nhận thanh toán trên cổng ZaloPay.`
       );
       if (selectedOrder.deposit_status === 'unpaid') {
         handleUpdateStatus('deposit_paid', 'paid');
@@ -275,10 +275,10 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
       'SĐT',
       'Showroom Bàn Giao',
       'Mã ZaloPay',
-      'Tổng Giá Trị Xe (USD)',
-      'Tiền Cọc (USD)',
-      'Tiền Còn Lại (USD)',
-      'Giảm Giá (USD)',
+      'Tổng Giá Trị Xe (VNĐ)',
+      'Tiền Cọc (VNĐ)',
+      'Tiền Còn Lại (VNĐ)',
+      'Giảm Giá (VNĐ)',
       'Trạng Thái Hợp Đồng',
       'Trạng Thái Cọc',
       'Ngày Khởi Tạo',
@@ -547,12 +547,12 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
                           </span>
                         </TableCell>
                         <TableCell className="font-bold text-xs text-slate-900">
-                          {formatUSD(ord.total_amount)}
+                          {formatVND(ord.total_amount)}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-bold text-xs text-emerald-600">
-                              {formatUSD(ord.deposit_amount)}
+                              {formatVND(ord.deposit_amount)}
                             </span>
                             <Badge
                               variant={
@@ -762,10 +762,10 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
                         </div>
                         <div className="text-right shrink-0">
                           <span className="text-xs font-bold text-blue-600 block">
-                            {formatUSD(item.price * item.quantity)}
+                            {formatVND(item.price * item.quantity)}
                           </span>
                           <span className="text-[10px] text-slate-400">
-                            ({formatUSD(item.price)} / xe)
+                            ({formatVND(item.price)} / xe)
                           </span>
                         </div>
                       </div>
@@ -783,7 +783,7 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
               <div className="space-y-1.5 text-xs divide-y divide-slate-100">
                 <div className="flex justify-between text-slate-600 pb-1">
                   <span>Tổng giá trị niêm yết xe:</span>
-                  <span className="font-semibold text-slate-900">{formatUSD(selectedOrder.total_amount)}</span>
+                  <span className="font-semibold text-slate-900">{formatVND(selectedOrder.total_amount)}</span>
                 </div>
                 {selectedOrder.discount_amount > 0 && (
                   <div className="flex justify-between text-emerald-600 py-1">
@@ -791,21 +791,21 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
                       <Percent className="w-3.5 h-3.5" />
                       Ưu đãi Voucher giảm:
                     </span>
-                    <span className="font-bold">-{formatUSD(selectedOrder.discount_amount)}</span>
+                    <span className="font-bold">-{formatVND(selectedOrder.discount_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-blue-700 font-bold py-1">
                   <span>Tiền đặt cọc trực tuyến:</span>
-                  <span>{formatUSD(selectedOrder.deposit_amount)}</span>
+                  <span>{formatVND(selectedOrder.deposit_amount)}</span>
                 </div>
                 <div className="flex justify-between text-slate-700 font-semibold pt-1">
                   <span>Khoản còn lại tất toán tại Showroom:</span>
-                  <span>{formatUSD(selectedOrder.remaining_amount)}</span>
+                  <span>{formatVND(selectedOrder.remaining_amount)}</span>
                 </div>
                 {selectedOrder.refund_amount ? (
                   <div className="flex justify-between text-amber-600 font-bold pt-1">
                     <span>Đã hoàn cọc lại:</span>
-                    <span>{formatUSD(selectedOrder.refund_amount)}</span>
+                    <span>{formatVND(selectedOrder.refund_amount)}</span>
                   </div>
                 ) : null}
               </div>
@@ -1027,12 +1027,14 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
           </p>
 
           <Input
-            label="Số Tiền Hoàn (USD) *"
+            label="Số Tiền Hoàn (VNĐ) *"
             type="number"
             required
-            min={1}
+            min={100000}
+            step={1000000}
             value={refundAmount}
             onChange={(e) => setRefundAmount(Number(e.target.value))}
+            placeholder="VD: 50000000"
           />
 
           <Textarea
@@ -1121,9 +1123,9 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
               <div className="border rounded-xl p-3 bg-slate-50 space-y-2">
                 <h5 className="font-bold text-slate-900">THÔNG TIN XE BÀN GIAO:</h5>
                 <p>Mẫu xe: {selectedOrder.items?.[0]?.car ? `${selectedOrder.items[0].car.make} ${selectedOrder.items[0].car.model} (${selectedOrder.items[0].car.year})` : 'Mẫu xe sang AutoMatch'}</p>
-                <p>Tổng giá trị hợp đồng: {formatUSD(selectedOrder.total_amount)}</p>
-                <p>Đã thanh toán cọc online: {formatUSD(selectedOrder.deposit_amount)}</p>
-                <p>Tất toán tại showroom: {formatUSD(selectedOrder.remaining_amount)}</p>
+                <p>Tổng giá trị hợp đồng: {formatVND(selectedOrder.total_amount)}</p>
+                <p>Đã thanh toán cọc online: {formatVND(selectedOrder.deposit_amount)}</p>
+                <p>Tất toán tại showroom: {formatVND(selectedOrder.remaining_amount)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 pt-6 text-center">

@@ -30,7 +30,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../components/ui/Table';
-import { formatUSD, formatUSDCompact, formatDateTime, cn } from '../lib/utils';
+import { formatVND, formatVNDCompact, formatDateTime, cn } from '../lib/utils';
 import { statusMap } from '../design-system/tokens';
 import type { NavView } from '../components/layout/Sidebar';
 
@@ -215,7 +215,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-7">
         <MetricCard
           title="Tổng Giá Trị Hợp Đồng"
-          value={formatUSDCompact(totalContractValue)}
+          value={formatVNDCompact(totalContractValue)}
           change={filteredOrders.length}
           changePeriod="hợp đồng ký kết"
           icon={<Receipt className="w-5 h-5" />}
@@ -225,7 +225,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
         <MetricCard
           title="Tiền Cọc Thực Thu"
-          value={formatUSDCompact(totalDepositCollected)}
+          value={formatVNDCompact(totalDepositCollected)}
           change={filteredOrders.filter((o) => o.deposit_status === 'paid').length}
           changePeriod="giao dịch đã cọc"
           icon={<Coins className="w-5 h-5" />}
@@ -235,7 +235,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
 
         <MetricCard
           title="Còn Lại Thu Tại Showroom"
-          value={formatUSDCompact(remainingDue)}
+          value={formatVNDCompact(remainingDue)}
           change={activeOrders.length}
           changePeriod="đơn đang tiến hành"
           icon={<DollarSign className="w-5 h-5" />}
@@ -360,7 +360,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(val) => formatUSDCompact(val)}
+                  tickFormatter={(val) => formatVNDCompact(val)}
                 />
                 <Tooltip
                   content={({ active, payload }) => {
@@ -369,11 +369,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                         <div className="bg-slate-900/95 backdrop-blur-md text-white p-3.5 rounded-2xl shadow-xl text-xs space-y-1">
                           <p className="font-bold text-slate-300">{payload[0].payload.month}</p>
                           <p className="text-blue-400 font-semibold">
-                            Tiền cọc: {formatUSD(payload[0].value as number)}
+                            Tiền cọc: {formatVND(payload[0].value as number)}
                           </p>
                           {payload[1] && (
                             <p className="text-indigo-300">
-                              Tổng hợp đồng: {formatUSD(payload[1].value as number)}
+                              Tổng hợp đồng: {formatVND(payload[1].value as number)}
                             </p>
                           )}
                           <p className="text-slate-400 text-[10px]">
@@ -518,7 +518,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({ onNavigate
                         <div className="text-[11px] text-slate-500">{ord.profile?.email}</div>
                       </TableCell>
                       <TableCell className="font-bold text-xs text-emerald-600">
-                        {formatUSD(ord.deposit_amount)}
+                        {formatVND(ord.deposit_amount)}
                       </TableCell>
                       <TableCell>
                         <span

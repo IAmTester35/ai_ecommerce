@@ -25,7 +25,7 @@ import { Modal } from '../components/ui/Modal';
 import { SearchBar } from '../components/ui/SearchBar';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Pagination } from '../components/ui/Pagination';
-import { formatUSD, cn } from '../lib/utils';
+import { formatVND, cn } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 import { ShowroomsView } from './ShowroomsView';
 import { AddCarModal } from '../components/cars/AddCarModal';
@@ -176,7 +176,7 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
   const outOfStockCount = cars.filter((c) => c.stock_quantity === 0).length;
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Hãng Xe', 'Dòng Xe', 'Năm', 'Công Suất (HP)', 'Giá Niêm Yết (USD)', 'Tồn Kho', 'Trạng Thái', 'Showroom'];
+    const headers = ['ID', 'Hãng Xe', 'Dòng Xe', 'Năm', 'Công Suất (HP)', 'Giá Niêm Yết (VNĐ)', 'Tồn Kho', 'Trạng Thái', 'Showroom'];
     const rows = filteredCars.map((c) => [
       `"${c.id}"`,
       `"${c.make || ''}"`,
@@ -495,7 +495,7 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
 
                         <TableCell>
                           <span className="font-extrabold text-blue-600 text-xs">
-                            {formatUSD(car.price)}
+                            {formatVND(car.price)}
                           </span>
                         </TableCell>
 
@@ -638,7 +638,7 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
                             {car.make} {car.model}
                           </h4>
                           <p className="font-extrabold text-blue-600 text-sm mt-1">
-                            {formatUSD(car.price)}
+                            {formatVND(car.price)}
                           </p>
                         </div>
 

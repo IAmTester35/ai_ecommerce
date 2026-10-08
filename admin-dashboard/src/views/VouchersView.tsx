@@ -23,7 +23,7 @@ import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Modal } from '../components/ui/Modal';
 import { EmptyState } from '../components/ui/EmptyState';
-import { formatUSD, formatDate } from '../lib/utils';
+import { formatVND, formatDate } from '../lib/utils';
 import { useToast } from '../context/ToastContext';
 
 const getInitialVoucherForm = (): Omit<Voucher, 'id' | 'created_at' | 'used_count'> => {
@@ -208,7 +208,7 @@ export const VouchersView: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-extrabold text-rose-700 mt-2">
-              {formatUSD(campaignMetrics.totalDiscountGiven)}
+              {formatVND(campaignMetrics.totalDiscountGiven)}
             </p>
           </div>
           <span className="text-xs text-rose-600/80 mt-2 block font-medium">Chiết khấu tài chính</span>
@@ -223,7 +223,7 @@ export const VouchersView: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-extrabold text-amber-700 mt-2">
-              {formatUSD(campaignMetrics.depositRevenueWithVoucher)}
+              {formatVND(campaignMetrics.depositRevenueWithVoucher)}
             </p>
           </div>
           <span className="text-xs text-amber-600/80 mt-2 block font-medium">Từ các đơn có voucher</span>
@@ -308,10 +308,10 @@ export const VouchersView: React.FC = () => {
                     <p className="text-lg font-black text-slate-900">
                       {vc.discount_type === 'percentage'
                         ? `Giảm ${vc.discount_value}%`
-                        : `Giảm ${formatUSD(vc.discount_value)}`}
+                        : `Giảm ${formatVND(vc.discount_value)}`}
                       {vc.discount_type === 'percentage' && vc.max_discount_amount && (
                         <span className="text-xs font-normal text-slate-500 block">
-                          (Tối đa {formatUSD(vc.max_discount_amount)})
+                          (Tối đa {formatVND(vc.max_discount_amount)})
                         </span>
                       )}
                     </p>
@@ -319,7 +319,7 @@ export const VouchersView: React.FC = () => {
 
                   {/* Conditions & Per User Limit */}
                   <div className="text-[11px] text-slate-600 space-y-1">
-                    <p>• Đơn hàng tối thiểu: <strong>{formatUSD(vc.min_order_value)}</strong></p>
+                    <p>• Đơn hàng tối thiểu: <strong>{formatVND(vc.min_order_value)}</strong></p>
                     <p>• Giới hạn mỗi người dùng: <strong>{vc.max_uses_per_user || 1} lần</strong></p>
                     {vc.start_date && vc.end_date && (
                       <p className="flex items-center gap-1 text-slate-500">
@@ -385,7 +385,7 @@ export const VouchersView: React.FC = () => {
             rows={2}
             value={formData.description || ''}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Giảm ngay 2,000 USD vào tiền đặt cọc giữ xe..."
+            placeholder="Giảm ngay 20,000,000 VNĐ vào tiền đặt cọc giữ xe..."
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -394,7 +394,7 @@ export const VouchersView: React.FC = () => {
               value={formData.discount_type}
               onChange={(e) => setFormData({ ...formData, discount_type: e.target.value as DiscountType })}
             >
-              <option value="fixed">Số tiền cố định (USD)</option>
+              <option value="fixed">Số tiền cố định (VNĐ)</option>
               <option value="percentage">Phần trăm (%)</option>
             </Select>
 
@@ -410,18 +410,19 @@ export const VouchersView: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label={formData.discount_type === 'percentage' ? 'Phần Trăm Giảm (1-100%) *' : 'Số Tiền Giảm (USD) *'}
+              label={formData.discount_type === 'percentage' ? 'Phần Trăm Giảm (1-100%) *' : 'Số Tiền Giảm (VNĐ) *'}
               type="number"
               value={formData.discount_value}
               onChange={(e) => setFormData({ ...formData, discount_value: Number(e.target.value) })}
               min={1}
+              step={formData.discount_type === 'percentage' ? 1 : 1000000}
               max={formData.discount_type === 'percentage' ? 100 : undefined}
               required
             />
 
             {formData.discount_type === 'percentage' ? (
               <Input
-                label="Giảm Tối Đa (USD)"
+                label="Giảm Tối Đa (VNĐ)"
                 type="number"
                 value={formData.max_discount_amount || ''}
                 onChange={(e) =>
@@ -430,15 +431,16 @@ export const VouchersView: React.FC = () => {
                     max_discount_amount: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                placeholder="VD: 2000"
+                placeholder="VD: 50000000"
+                step={1000000}
               />
             ) : (
               <Input
-                label="Giá Trị Đơn Hàng Tối Thiểu (USD)"
+                label="Giá Trị Đơn Hàng Tối Thiểu (VNĐ)"
                 type="number"
                 value={formData.min_order_value}
                 onChange={(e) => setFormData({ ...formData, min_order_value: Number(e.target.value) })}
-                step={500}
+                step={10000000}
                 min={0}
               />
             )}
