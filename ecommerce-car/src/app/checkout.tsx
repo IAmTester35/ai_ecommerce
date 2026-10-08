@@ -25,8 +25,10 @@ import { Badge } from '../components/ui/Badge';
 import { formatVnd, formatVndPrice, usdToVnd } from '../utils/currency';
 import { FALLBACK_CAR_URL } from '../constants/images';
 import { Showroom, Voucher } from '../types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function CheckoutScreen() {
+  const insets = useSafeAreaInsets();
   const { user, profile } = useAuthStore();
   const { items, checkout, isCheckingOut } = useCartStore();
   const { createZaloPayOrder, openZaloPayUrl, isProcessing } = usePaymentStore();
@@ -344,7 +346,7 @@ export default function CheckoutScreen() {
   return (
     <View style={styles.screen}>
       {/* Top Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
@@ -695,7 +697,7 @@ export default function CheckoutScreen() {
           )}
         </View>
 
-        <View style={{ height: 40 }} />
+        <View style={{ height: Math.max(insets.bottom + 20, 40) }} />
       </ResponsiveContainer>
     </View>
   );
@@ -707,7 +709,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 48,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',

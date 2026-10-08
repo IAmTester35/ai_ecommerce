@@ -24,8 +24,10 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { formatVnd, formatVndPrice } from '../../utils/currency';
 import { OrderStatus, DepositStatus } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OrderDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id, app_trans_id } = useLocalSearchParams<{ id: string; app_trans_id?: string }>();
   const { user } = useAuthStore();
   const { selectedOrder, fetchOrderDetails, isLoading } = useOrderStore();
@@ -143,8 +145,17 @@ export default function OrderDetailScreen() {
     year: 'numeric',
   });
 
-  // Calculate original MSRP sum if discount exists
-  const totalMSRP = selectedOrder.total_amount + (selectedOrder.discount_amount || 0);
+  // Safe resolution helper for order amounts (handles both new VND orders and legacy USD test orders)
+  const resolveOrderVnd = (amount?: number | null): number => {
+    if (!amount || amount <= 0) return 0;
+    return amount < 1_000_000 ? Math.round(amount * 25400 * 2.54) : amount;
+  };
+
+  const totalAmountVnd = resolveOrderVnd(selectedOrder.total_amount);
+  const discountAmountVnd = selectedOrder.discount_amount || 0;
+  const depositAmountVnd = resolveOrderVnd(selectedOrder.deposit_amount) || Math.round(totalAmountVnd * 0.10);
+  const remainingAmountVnd = resolveOrderVnd(selectedOrder.remaining_amount) || Math.round(totalAmountVnd * 0.90);
+  const totalMSRP = totalAmountVnd + discountAmountVnd;
 
   const renderLeftInfo = () => (
     <>
@@ -195,7 +206,7 @@ export default function OrderDetailScreen() {
                 Ưu đãi ({selectedOrder.voucher?.code || 'Voucher'}):
               </Text>
               <Text style={[styles.infoValue, { color: colors.success }]}>
-                -{formatVnd(selectedOrder.discount_amount)}
+                -{formatVnd(discountAmountVnd)}
               </Text>
             </View>
           </>
@@ -203,7 +214,7 @@ export default function OrderDetailScreen() {
 
         <View style={styles.financialRow}>
           <Text style={styles.infoLabelBold}>Tổng giá trị xe sau ưu đãi:</Text>
-          <Text style={styles.infoValueBold}>{formatVnd(selectedOrder.total_amount)}</Text>
+          <Text style={styles.infoValueBold}>{formatVnd(totalAmountVnd)}</Text>
         </View>
 
         {/* Deposit Split Box */}
@@ -214,13 +225,13 @@ export default function OrderDetailScreen() {
               <Text style={styles.depositSub}>Bảo lưu giá & xác lập quyền sở hữu</Text>
             </View>
             <Text style={styles.depositHighlight}>
-              {formatVnd(selectedOrder.deposit_amount || Math.round(selectedOrder.total_amount * 0.10))}
+              {formatVnd(depositAmountVnd)}
             </Text>
           </View>
           <View style={styles.remainingRow}>
             <Text style={styles.remainingLabel}>Còn lại thanh toán khi nhận xe tại Showroom:</Text>
             <Text style={styles.remainingAmount}>
-              {formatVnd(selectedOrder.remaining_amount || Math.round(selectedOrder.total_amount * 0.90))}
+              {formatVnd(remainingAmountVnd)}
             </Text>
           </View>
         </View>
@@ -313,7 +324,7 @@ export default function OrderDetailScreen() {
             </Text>
             <Text style={styles.itemQuantity}>Số lượng: x{item.quantity} xe</Text>
             <Text style={styles.itemDepositPrice}>
-              Giá niêm yết: {formatVndPrice(item.price, 'usd', {
+              Giá niêm yết: {formatVndPrice(item.price, undefined, {
                 engineHp: item.car?.engine_hp,
                 fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
               })}
@@ -371,7 +382,7 @@ export default function OrderDetailScreen() {
   return (
     <View style={styles.screen}>
       {/* Top Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
@@ -420,7 +431,6 @@ const styles = StyleSheet.create({
     fontSize: typography.sizes.xs,
   },
   header: {
-    paddingTop: 48,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',

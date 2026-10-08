@@ -21,6 +21,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { formatVndPrice } from '../components/ui/PriceTag';
 import { Order, OrderStatus } from '../types';
 import { FALLBACK_CAR_URL } from '../constants/images';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'Tất cả' },
@@ -32,6 +33,7 @@ const STATUS_TABS: { id: string; label: string }[] = [
 ];
 
 export default function OrdersScreen() {
+  const insets = useSafeAreaInsets();
   const { user } = useAuthStore();
   const { orders, fetchOrders, isLoading } = useOrderStore();
   const { select } = useResponsive();
@@ -89,7 +91,10 @@ export default function OrdersScreen() {
     });
 
     const firstCar = item.order_items?.[0]?.car;
-    const depositAmount = item.deposit_amount || Math.round(item.total_amount * 0.10);
+    const rawTotal = item.total_amount || 0;
+    const totalAmount = rawTotal > 0 && rawTotal < 1_000_000 ? Math.round(rawTotal * 25400 * 2.54) : rawTotal;
+    const rawDeposit = item.deposit_amount || Math.round(totalAmount * 0.10);
+    const depositAmount = rawDeposit > 0 && rawDeposit < 1_000_000 ? Math.round(rawDeposit * 25400 * 2.54) : rawDeposit;
 
     return (
       <TouchableOpacity
@@ -158,7 +163,7 @@ export default function OrdersScreen() {
   return (
     <View style={styles.screen}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
@@ -240,7 +245,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 48,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',

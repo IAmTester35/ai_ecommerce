@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../theme';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -29,6 +30,7 @@ const QUICK_CATEGORIES = [
 ];
 
 export default function CartScreen() {
+  const insets = useSafeAreaInsets();
   const { items, fetchCart, updateQuantity, removeFromCart, isLoading } = useCartStore();
   const { user } = useAuthStore();
   const { isMobile, isLargeScreen } = useResponsive();
@@ -115,7 +117,7 @@ export default function CartScreen() {
   if (items.length === 0 && !isLoading) {
     return (
       <View style={styles.screen}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
           <View style={styles.headerInner}>
             <TouchableOpacity
               style={styles.backBtn}
@@ -369,7 +371,7 @@ export default function CartScreen() {
   return (
     <View style={styles.screen}>
       {/* Top Navigation Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
           <TouchableOpacity
             style={styles.backBtn}
@@ -421,7 +423,7 @@ export default function CartScreen() {
 
       {/* Bottom Sticky Action Bar (Mobile Only) */}
       {isMobile && (
-        <View style={styles.bottomCheckoutBar}>
+        <View style={[styles.bottomCheckoutBar, { paddingBottom: Math.max(insets.bottom, 14) }]}>
           <View style={styles.bottomTotalGroup}>
             <Text style={styles.bottomDepositLabel}>Tiền cọc giữ xe (10%):</Text>
             <Text style={styles.bottomDepositAmount}>{formatVnd(depositAmountVnd)}</Text>
@@ -450,7 +452,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 48,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',

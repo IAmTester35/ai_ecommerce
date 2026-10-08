@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
@@ -35,11 +36,12 @@ import { QAModal } from '../../components/car/QAModal';
 import { CarCard } from '../../components/car/CarCard';
 import { DepositButton } from '../../components/car/DepositButton';
 import { PriceBreakdownModal } from '../../components/car/PriceBreakdownModal';
-import { CarSpecInput } from '../../utils/currency';
+import { CarSpecInput, formatVndPrice } from '../../utils/currency';
 import { Review, CarQA } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export default function CarDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { selectedCar, fetchCarDetails, topCars, savedCars, toggleSaveCar, isLoading, error } = useCarStore();
   const { addToCart } = useCartStore();
@@ -305,7 +307,7 @@ export default function CarDetailScreen() {
     <View style={styles.container}>
       <ResponsiveContainer scrollable maxWidth="xl" showsVerticalScrollIndicator={false}>
         {/* Top Floating / Navigation Bar */}
-        <View style={styles.topNavBar}>
+        <View style={[styles.topNavBar, { paddingTop: Math.max(insets.top, 44) }]}>
           <TouchableOpacity
             style={styles.floatingBackBtn}
             onPress={() => router.back()}
@@ -396,6 +398,34 @@ export default function CarDetailScreen() {
                     size="xs"
                     dot
                   />
+                </View>
+
+                {/* Cockpit Key Specs Bar (Mobile First Grid) */}
+                <View style={styles.cockpitSpecsGrid}>
+                  <View style={styles.specBox}>
+                    <Ionicons name="speedometer-outline" size={16} color={colors.primaryHover} />
+                    <Text style={styles.specBoxValue}>{selectedCar.engine_hp || 350} HP</Text>
+                    <Text style={styles.specBoxLabel}>Công suất</Text>
+                  </View>
+                  <View style={styles.specBox}>
+                    <Ionicons name="flash-outline" size={16} color={colors.secondaryHover} />
+                    <Text style={styles.specBoxValue} numberOfLines={1}>
+                      {selectedCar.metadata?.fuel_type?.split(' ')[0] || 'Xăng'}
+                    </Text>
+                    <Text style={styles.specBoxLabel}>Nhiên liệu</Text>
+                  </View>
+                  <View style={styles.specBox}>
+                    <Ionicons name="cog-outline" size={16} color={colors.success} />
+                    <Text style={styles.specBoxValue} numberOfLines={1}>
+                      {selectedCar.metadata?.transmission?.split(' ')[0] || 'Tự động'}
+                    </Text>
+                    <Text style={styles.specBoxLabel}>Hộp số</Text>
+                  </View>
+                  <View style={styles.specBox}>
+                    <Ionicons name="people-outline" size={16} color={colors.conflict} />
+                    <Text style={styles.specBoxValue}>{selectedCar.metadata?.seating_capacity || 5} chỗ</Text>
+                    <Text style={styles.specBoxLabel}>Chỗ ngồi</Text>
+                  </View>
                 </View>
 
                 {/* Mobile Showroom Location Badge */}
@@ -598,45 +628,56 @@ export default function CarDetailScreen() {
 
       {/* Sticky Bottom Action Bar (Only on Mobile) */}
       {isMobile && (
-        <View style={styles.bottomBar}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={styles.chatAiBtn}
-            onPress={() =>
-              router.push({
-                pathname: '/(tabs)/ai-chat' as any,
-                params: { initialPrompt: `Tư vấn chi tiết cho tôi về xe ${selectedCar.make} ${selectedCar.model}` },
-              })
-            }
-          >
-            <Ionicons name="sparkles" size={15} color={colors.primaryHover} />
-            <Text style={styles.chatAiText}>Hỏi AI</Text>
-          </TouchableOpacity>
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <View style={styles.bottomPriceCol}>
+            <Text style={styles.bottomPriceLabel}>Giá niêm yết</Text>
+            <Text style={styles.bottomPriceValue} numberOfLines={1}>
+              {formatVndPrice(selectedCar.price, undefined, carSpec)}
+            </Text>
+            <Text style={styles.bottomInstallmentSub}>Cọc 10% giữ xe • Góp 85%</Text>
+          </View>
 
-          <Button
-            title="Lái Thử"
-            variant="outline"
-            size="sm"
-            onPress={handleOpenTestDriveModal}
-            style={styles.testDriveBtn}
-          />
+          <View style={styles.bottomCtaGroup}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.bottomIconBtn}
+              onPress={() =>
+                router.push({
+                  pathname: '/(tabs)/ai-chat' as any,
+                  params: { initialPrompt: `Tư vấn chi tiết cho tôi về xe ${selectedCar.make} ${selectedCar.model}` },
+                })
+              }
+              accessibilityLabel="Hỏi AI"
+            >
+              <Ionicons name="sparkles" size={17} color={colors.primaryHover} />
+            </TouchableOpacity>
 
-          <Button
-            title="Thêm Giỏ"
-            variant="secondary"
-            size="sm"
-            onPress={handleAddToCart}
-            style={styles.addToCartBtn}
-            icon={<Ionicons name="bag-handle-outline" size={13} color={colors.text} />}
-          />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.bottomIconBtn}
+              onPress={handleOpenTestDriveModal}
+              accessibilityLabel="Lái thử"
+            >
+              <Ionicons name="car-sport-outline" size={17} color={colors.text} />
+            </TouchableOpacity>
 
-          <DepositButton
-            carId={id}
-            title="Đặt Cọc"
-            size="sm"
-            directCheckout
-            style={styles.depositBtn}
-          />
+            <TouchableOpacity
+              activeOpacity={0.8}
+              style={styles.bottomIconBtn}
+              onPress={handleAddToCart}
+              accessibilityLabel="Thêm vào giỏ"
+            >
+              <Ionicons name="bag-handle-outline" size={17} color={colors.text} />
+            </TouchableOpacity>
+
+            <DepositButton
+              carId={id}
+              title="Đặt Cọc"
+              size="md"
+              directCheckout
+              style={styles.bottomDepositBtn}
+            />
+          </View>
         </View>
       )}
 
@@ -714,7 +755,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 48,
     paddingBottom: spacing.xs + 2,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
@@ -1011,36 +1051,86 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xs + 2,
-    paddingBottom: 22,
+    paddingTop: 10,
     backgroundColor: colors.surface,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
   },
-  chatAiBtn: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
+  bottomPriceCol: {
+    flex: 1,
+    marginRight: spacing.sm,
   },
-  chatAiText: {
-    color: colors.primaryHover,
-    fontSize: 10,
+  bottomPriceLabel: {
+    color: colors.textMuted,
+    fontSize: 9.5,
     fontWeight: typography.weights.medium,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  bottomPriceValue: {
+    color: colors.primaryHover,
+    fontSize: 15,
+    fontWeight: typography.weights.bold,
     marginTop: 1,
   },
-  testDriveBtn: {
+  bottomInstallmentSub: {
+    color: colors.textSecondary,
+    fontSize: 9.5,
+    marginTop: 1,
+  },
+  bottomCtaGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bottomIconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: radii.md,
+    backgroundColor: colors.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  bottomDepositBtn: {
+    minWidth: 100,
+    height: 38,
+  },
+  cockpitSpecsGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    marginVertical: spacing.md,
+  },
+  specBox: {
     flex: 1,
-    height: 40,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.md,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
-  addToCartBtn: {
-    flex: 1.1,
-    height: 40,
+  specBoxValue: {
+    color: colors.text,
+    fontSize: 11.5,
+    fontWeight: typography.weights.bold,
+    marginTop: 4,
+    textAlign: 'center',
   },
-  depositBtn: {
-    flex: 1.45,
-    height: 40,
+  specBoxLabel: {
+    color: colors.textMuted,
+    fontSize: 9,
+    marginTop: 1,
+    textAlign: 'center',
   },
   showroomSidebarBox: {
     backgroundColor: 'rgba(37, 99, 235, 0.08)',

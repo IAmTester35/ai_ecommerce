@@ -6,9 +6,11 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../theme';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { Card } from '../components/ui/Card';
@@ -16,14 +18,22 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { NotificationItem } from '../types';
 
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const { notifications, fetchNotifications, markAsRead, markAllAsRead, isLoading } =
     useNotificationStore();
 
   const [filterUnreadOnly, setFilterUnreadOnly] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchNotifications();
+    setRefreshing(false);
+  };
 
   const displayedNotifications = filterUnreadOnly
     ? notifications.filter((n) => !n.is_read)
@@ -112,7 +122,7 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.screen}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
@@ -189,6 +199,14 @@ export default function NotificationsScreen() {
           renderItem={renderItem}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
         />
       )}
     </View>
@@ -201,7 +219,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 48,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
