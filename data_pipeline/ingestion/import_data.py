@@ -57,20 +57,26 @@ def main():
         car_key = f"{make}_{model}_{year}"
         if car_key not in unique_cars:
             price_val = row['MSRP']
-            price = int(float(price_val)) if pd.notnull(price_val) and str(price_val).strip() != '' else None
+            msrp_usd = int(float(price_val)) if pd.notnull(price_val) and str(price_val).strip() != '' else None
             
             hp_val = row['Engine_HP']
             hp = int(float(hp_val)) if pd.notnull(hp_val) and str(hp_val).strip() != '' else None
             
+            fuel_type = str(row.get('Engine_Fuel_Type', '')).strip()
+            is_ev = 'electric' in fuel_type.lower()
+            tax_mult = 1.60 if is_ev else 2.54
+            price_vnd = int(round(msrp_usd * 25400 * tax_mult)) if msrp_usd else None
+
             metadata = {
-                "engine_fuel_type": str(row.get('Engine_Fuel_Type', '')).strip(),
+                "engine_fuel_type": fuel_type,
                 "engine_cylinders": str(row.get('Engine_Cylinders', '')).strip(),
                 "transmission_type": str(row.get('Transmission_Type', '')).strip(),
                 "driven_wheels": str(row.get('Driven_Wheels', '')).strip(),
                 "number_of_doors": str(row.get('Number_of_Doors', '')).strip(),
                 "market_category": str(row.get('Market_Category', '')).strip(),
                 "vehicle_size": str(row.get('Vehicle_Size', '')).strip(),
-                "vehicle_style": str(row.get('Vehicle_Style', '')).strip()
+                "vehicle_style": str(row.get('Vehicle_Style', '')).strip(),
+                "msrp_usd": msrp_usd
             }
             
             car_id = str(uuid.uuid5(CAR_NAMESPACE, car_key))
@@ -80,7 +86,7 @@ def main():
                 "model": model,
                 "year": year,
                 "engine_hp": hp,
-                "price": price,
+                "price": price_vnd,
                 "metadata": metadata
             }
 

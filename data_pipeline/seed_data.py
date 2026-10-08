@@ -428,7 +428,11 @@ def seed_orders_and_items():
         sr = showrooms[idx % len(showrooms)]
         vouch = vouchers[idx % len(vouchers)] if use_vouch and vouchers else None
 
-        price = car.get("price") or 35000
+        raw_price = car.get("price") or 35000
+        fuel_type = str(car.get("metadata", {}).get("engine_fuel_type") or car.get("metadata", {}).get("fuel_type") or "").strip().lower()
+        is_ev = "electric" in fuel_type or "thuần điện" in fuel_type or fuel_type == "điện"
+        tax_mult = 1.60 if is_ev else 2.54
+        price = int(round(raw_price * 25400 * tax_mult)) if raw_price < 1000000 else raw_price
         qty = 1
         total_before_discount = price * qty
         discount = 0

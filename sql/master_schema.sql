@@ -991,6 +991,30 @@ VALUES
         'total',
         200,
         TRUE
+    ),
+    (
+        'TEST99',
+        'Ưu Đãi Kiểm Thử Giảm 99% Giá Xe',
+        'Mã kiểm thử QA / Developer: Giảm 99% tổng giá trị xe (không giới hạn tối đa), giúp kiểm thử đặt cọc và thanh toán ZaloPay với số tiền nhỏ.',
+        'percentage',
+        99,
+        NULL,
+        0,
+        'total',
+        999999,
+        TRUE
+    ),
+    (
+        'TESTDEP99',
+        'Ưu Đãi Kiểm Thử Giảm 99% Tiền Cọc',
+        'Mã kiểm thử QA / Developer: Giảm 99% trực tiếp vào tiền cọc xe trực tuyến, tối ưu test thanh toán nhanh.',
+        'percentage',
+        99,
+        NULL,
+        0,
+        'deposit',
+        999999,
+        TRUE
     )
 ON CONFLICT (code) DO NOTHING;
 
