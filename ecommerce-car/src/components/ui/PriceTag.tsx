@@ -43,8 +43,8 @@ export const PriceTag: React.FC<PriceTagProps> = ({
     }
   };
 
-  const formattedPrice = formatVndPrice(price, 'usd', spec);
-  const priceVnd = usdToVnd(price, spec);
+  const formattedPrice = formatVndPrice(price, undefined, spec);
+  const priceVnd = price && price < 1_000_000 ? usdToVnd(price, spec) : (price || 0);
 
   // Estimate monthly installment: 30% down payment, 7 years, 8.5% interest
   const installment = calculateInstallmentPlan(priceVnd, 30, 7, 0.085);
@@ -67,7 +67,7 @@ export const PriceTag: React.FC<PriceTagProps> = ({
 
         {originalPrice && originalPrice > (price || 0) && (
           <Text style={styles.originalPrice}>
-            {formatVndPrice(originalPrice, 'usd', spec)}
+            {formatVndPrice(originalPrice, undefined, spec)}
           </Text>
         )}
       </View>

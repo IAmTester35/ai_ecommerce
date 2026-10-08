@@ -106,7 +106,7 @@ export const CarCard: React.FC<CarCardProps> = ({
             Năm {car.year || 2024} • {car.metadata?.body_type || 'Xe mới'}
           </Text>
 
-          <Text style={styles.price}>{formatVndPrice(car.price, 'usd', carSpec)}</Text>
+          <Text style={styles.price}>{formatVndPrice(car.price, undefined, carSpec)}</Text>
 
           {specItems.length > 0 && (
             <Text style={styles.specInline} numberOfLines={1}>
@@ -136,7 +136,7 @@ export const CarCard: React.FC<CarCardProps> = ({
 
   return (
     <TouchableOpacity
-      activeOpacity={0.9}
+      activeOpacity={0.88}
       onPress={() => onPressDetails?.(car.id)}
       style={[
         styles.card,
@@ -149,31 +149,39 @@ export const CarCard: React.FC<CarCardProps> = ({
           source={{ uri: car.image_url || fallbackImage }}
           style={styles.image}
           contentFit="cover"
-          transition={200}
+          transition={250}
         />
+        <View style={styles.imageGradientOverlay} />
 
         {hasMatchScore && matchScore !== null && (
           <View style={styles.badgeTopLeft}>
             <Badge
-              label={`${matchScore}% Match`}
+              label={`${matchScore}% Match AI`}
               variant={matchScore >= 90 ? 'primary' : 'secondary'}
               size="xs"
+              dot
             />
           </View>
         )}
 
         {onPressToggleSave && (
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.7}
             onPress={() => onPressToggleSave(car.id)}
             style={styles.saveBadgeTopRight}
           >
             <Ionicons
               name={isSaved ? 'bookmark' : 'bookmark-outline'}
               size={14}
-              color={isSaved ? colors.primaryHover : colors.text}
+              color={isSaved ? colors.primaryHover : '#FFFFFF'}
             />
           </TouchableOpacity>
+        )}
+
+        {car.stock_quantity !== undefined && car.stock_quantity > 0 && isCompact && (
+          <View style={styles.stockBadgeBottomRight}>
+            <Text style={styles.stockBadgeText}>Sẵn {car.stock_quantity} xe</Text>
+          </View>
         )}
       </View>
 
@@ -185,13 +193,13 @@ export const CarCard: React.FC<CarCardProps> = ({
         </View>
 
         <Text style={styles.yearSub}>
-          Năm {car.year || 2024} • {car.metadata?.body_type || 'Xe mới'}
+          Đời {car.year || 2024} • {car.metadata?.body_type || 'Nhập khẩu chính hãng'}
         </Text>
 
         <View style={styles.priceRow}>
-          <Text style={styles.price}>{formatVndPrice(car.price, 'usd', carSpec)}</Text>
-          {car.stock_quantity !== undefined && car.stock_quantity > 0 && (
-            <Badge label={`Sẵn ${car.stock_quantity}`} variant="neutral" size="xs" />
+          <Text style={styles.price}>{formatVndPrice(car.price, undefined, carSpec)}</Text>
+          {!isCompact && car.stock_quantity !== undefined && car.stock_quantity > 0 && (
+            <Badge label={`Sẵn ${car.stock_quantity} xe`} variant="neutral" size="xs" dot />
           )}
         </View>
 
@@ -199,11 +207,17 @@ export const CarCard: React.FC<CarCardProps> = ({
           <View style={styles.specsRow}>
             {specItems.map((spec, index) => (
               <View key={spec + index} style={styles.specChip}>
+                <Ionicons
+                  name={index === 0 ? 'speedometer-outline' : index === 1 ? 'flash-outline' : 'cog-outline'}
+                  size={9}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 3 }}
+                />
                 <Text style={styles.specChipText}>{spec}</Text>
               </View>
             ))}
             {car.showroom && (
-              <View style={[styles.specChip, { backgroundColor: 'rgba(37, 99, 235, 0.12)' }]}>
+              <View style={[styles.specChip, { backgroundColor: 'rgba(37, 99, 235, 0.14)' }]}>
                 <Ionicons name="location-outline" size={9} color={colors.primaryHover} style={{ marginRight: 2 }} />
                 <Text style={[styles.specChipText, { color: colors.primaryHover }]}>{car.showroom.city}</Text>
               </View>
@@ -221,7 +235,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                 style={styles.actionPillOutline}
                 onPress={() => onPressCompare(car)}
               >
-                <Ionicons name="git-compare-outline" size={11} color={colors.textSecondary} />
+                <Ionicons name="git-compare-outline" size={12} color={colors.textSecondary} />
                 <Text style={styles.actionPillOutlineText}>So sánh</Text>
               </TouchableOpacity>
             )}
@@ -235,30 +249,43 @@ export const CarCard: React.FC<CarCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.cardBg,
-    borderRadius: radii.md,
+    borderRadius: radii.lg,
     overflow: 'hidden',
     marginBottom: spacing.md,
     width: '100%',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 3,
   },
   cardCompact: {
-    width: 230,
+    width: 250,
     marginRight: spacing.md,
     marginBottom: 0,
   },
   imageContainer: {
-    height: 145,
+    height: 165,
     width: '100%',
     backgroundColor: colors.surfaceElevated,
     position: 'relative',
   },
   imageContainerCompact: {
-    height: 125,
+    height: 140,
   },
   image: {
     width: '100%',
     height: '100%',
+  },
+  imageGradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 48,
+    backgroundColor: 'rgba(11, 13, 17, 0.35)',
   },
   badgeTopLeft: {
     position: 'absolute',
@@ -269,14 +296,30 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 28,
-    height: 28,
+    width: 30,
+    height: 30,
     borderRadius: radii.full,
     backgroundColor: 'rgba(11, 13, 17, 0.75)',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  stockBadgeBottomRight: {
+    position: 'absolute',
+    bottom: 6,
+    right: 8,
+    backgroundColor: 'rgba(11, 13, 17, 0.85)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radii.xs,
     borderWidth: 0.5,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  stockBadgeText: {
+    color: colors.textSecondary,
+    fontSize: 9.5,
+    fontWeight: typography.weights.medium,
   },
   content: {
     padding: spacing.md,

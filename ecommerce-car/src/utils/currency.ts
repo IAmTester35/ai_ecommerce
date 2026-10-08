@@ -115,11 +115,19 @@ export const formatUsd = (amountInUsd?: number | null): string => {
  */
 export const formatVndPrice = (
   price?: number | null,
-  unit: 'usd' | 'vnd' = 'usd',
+  unit?: 'usd' | 'vnd',
   spec?: CarSpecInput
 ): string => {
   if (!price || price <= 0 || isNaN(price)) return 'Liên hệ giá';
-  const vndAmount = unit === 'usd' ? usdToVnd(price, spec) : price;
+  let isUsd = false;
+  if (unit === 'usd') {
+    isUsd = price < 1_000_000;
+  } else if (unit === 'vnd') {
+    isUsd = false;
+  } else {
+    isUsd = price < 1_000_000;
+  }
+  const vndAmount = isUsd ? usdToVnd(price, spec) : price;
   return formatVnd(vndAmount);
 };
 
