@@ -1961,16 +1961,9 @@
   resolved "https://registry.yarnpkg.com/@types/json5/-/json5-0.0.29.tgz#ee28707ae94e11d2b827bcbe5270bcea7f3e71ee"
   integrity sha512-dRLjCWHYg4oaA77cxO64oO+7JwCwnIzkZPdrrC71jQmQtlhM556pwKo5bUzqvZndkVbeFLIIi+9TC40JNF5hNQ==
 
-"@types/node@*":
+"@types/node@*", "@types/node@^26.2.0":
   version "26.2.0"
   resolved "https://registry.npmjs.org/@types/node/-/node-26.2.0.tgz"
-  integrity sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==
-  dependencies:
-    undici-types "~8.3.0"
-
-"@types/node@^26.2.0":
-  version "26.2.0"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-26.2.0.tgz#5a4875a862fda8fdc57de8faa579bb81ecba1685"
   integrity sha512-5IviulTZeRNp2vAJ514cc/HUlY5nZ9fCbq9DMyC52BrhFZACo3nI0R7qBxhQmo/d27NFe96ur/b7Wwxklda+kg==
   dependencies:
     undici-types "~8.3.0"
@@ -6524,15 +6517,15 @@ react-native-mmkv@^4.3.2:
   resolved "https://registry.npmjs.org/react-native-mmkv/-/react-native-mmkv-4.3.2.tgz"
   integrity sha512-49OAyfkg0/TMWiWELZN6VuVQPZPhizwL4DTmp8b7B1md3dB/s3LH3mGfC3T+lp9W0y/rqxZMEnotLFTIbOAenQ==
 
-react-native-nitro-modules@^0.37.0:
-  version "0.37.0"
-  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.37.0.tgz#9ded1451fb517176bf388436c7c52dbed6b6e9b9"
-  integrity sha512-ULS2CBZcdwGw5d4Y35EV/tbCOsNsQOnQ9LC9CehMhDNm5c90lwF/LxRamzKuFpjI547G7teTQgD0peqYSGnP9g==
+react-native-nitro-modules@^0.37.1:
+  version "0.37.1"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.37.1.tgz#368bda3038ebe796b219d98e0a364f9166e2cc7c"
+  integrity sha512-KpW6EQVQ/bfegpCGxN9Be+ndvsfj56t4IESEvCASu9gWpJa/NDfHpIeIwCOvZQ3eXmLEj6YD4wCLqcC1FJPr2w==
 
-react-native-nitro-sse@^2.4.2:
-  version "2.4.2"
-  resolved "https://registry.yarnpkg.com/react-native-nitro-sse/-/react-native-nitro-sse-2.4.2.tgz#cf7bb4b10e10ee6ebd49d5a6603dd955f96a43d9"
-  integrity sha512-nzsYN63QnwP76BGOQUemfi2/jMdPXxwr3WLqXnaOTu6Yi7ruRivAN3rgQcgioqxJDHmhGTToY93kJ1Av1wJgbw==
+react-native-nitro-sse@3.2.0-beta.1:
+  version "3.2.0-beta.1"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-sse/-/react-native-nitro-sse-3.2.0-beta.1.tgz#d2c840baa2bd3e4ffd66e9bba56d1d5f02b6d6b0"
+  integrity sha512-hbtECfpbBcXowLYQHkT3rTxF5NoiCMsh7PJgzObrBmRNxEYMEvVIDz0Zr0OuAeGz0CYC1f9anZemiu/Am52OCA==
 
 react-native-reanimated@4.5.1:
   version "4.5.1"

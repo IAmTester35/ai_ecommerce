@@ -94,14 +94,52 @@ jest.mock('expo-web-browser', () => ({
 }));
 
 // Mock react-native-nitro-sse
-jest.mock('react-native-nitro-sse', () => ({
-  createSSEClient: jest.fn(() => ({
-    connect: jest.fn(),
-    disconnect: jest.fn(),
-    on: jest.fn(),
-    off: jest.fn(),
-  })),
-}));
+jest.mock('react-native-nitro-sse', () => {
+  const mockClient = {
+    setup: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    removeAllEventListeners: jest.fn(),
+    start: jest.fn(),
+    stop: jest.fn(),
+    restart: jest.fn(),
+    flush: jest.fn(),
+    isConnected: jest.fn(() => false),
+    getStats: jest.fn(() => ({})),
+    updateHeaders: jest.fn(),
+    setLastProcessedId: jest.fn(),
+    injectMockEvent: jest.fn(),
+    getState: jest.fn(() => 'idle'),
+    dispose: jest.fn(),
+  };
+
+  return {
+    createNitroSse: jest.fn(() => {
+      throw new Error('Native NitroSse not available in Jest');
+    }),
+    useNitroSse: jest.fn((options: any) => ({
+      client: mockClient,
+      isReady: true,
+      state: 'idle',
+      isConnected: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+      restart: jest.fn(),
+      flush: jest.fn(),
+      updateHeaders: jest.fn(),
+      setLastProcessedId: jest.fn(),
+      getStats: jest.fn(),
+      injectMockEvent: jest.fn(),
+    })),
+    safeSerializeConfig: jest.fn((val: any) => JSON.stringify(val)),
+    createSSEClient: jest.fn(() => ({
+      connect: jest.fn(),
+      disconnect: jest.fn(),
+      on: jest.fn(),
+      off: jest.fn(),
+    })),
+  };
+});
 
 // Mock expo-image
 jest.mock('expo-image', () => {
