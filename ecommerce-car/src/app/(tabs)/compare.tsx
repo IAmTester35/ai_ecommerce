@@ -10,6 +10,7 @@ import {
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { globalAlert } from '../../store/useDialogStore';
@@ -24,6 +25,7 @@ import { Car, CarResponse } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export default function CompareScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ ids?: string }>();
   const { topCars, fetchTopCars, isLoading: isTopCarsLoading } = useCarStore();
   const { isLargeScreen } = useResponsive();
@@ -33,6 +35,7 @@ export default function CompareScreen() {
   const [isExtraLoading, setIsExtraLoading] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [highlightDifferences, setHighlightDifferences] = useState(true);
+  const [compareMode, setCompareMode] = useState<'battle' | 'table'>('battle');
 
   useEffect(() => {
     fetchTopCars();
@@ -134,7 +137,7 @@ export default function CompareScreen() {
     <View style={styles.screen}>
       <ResponsiveContainer scrollable maxWidth="xl" showsVerticalScrollIndicator={false}>
         {/* Header Title Bar */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
           <View style={styles.titleRow}>
             <View style={styles.titleLeft}>
               {router.canGoBack() && (
@@ -192,6 +195,41 @@ export default function CompareScreen() {
           </Card>
         ) : (
           <>
+            {/* Mode Switcher on Mobile when 2 cars */}
+            {comparedCars.length === 2 && !isLargeScreen && (
+              <View style={styles.modeSwitcher}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setCompareMode('battle')}
+                  style={[styles.modeBtn, compareMode === 'battle' && styles.modeBtnActive]}
+                >
+                  <Ionicons
+                    name="flash"
+                    size={13}
+                    color={compareMode === 'battle' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text style={[styles.modeBtnText, compareMode === 'battle' && styles.modeBtnTextActive]}>
+                    Đối Đầu 1 vs 1
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setCompareMode('table')}
+                  style={[styles.modeBtn, compareMode === 'table' && styles.modeBtnActive]}
+                >
+                  <Ionicons
+                    name="grid-outline"
+                    size={13}
+                    color={compareMode === 'table' ? '#FFFFFF' : colors.textSecondary}
+                  />
+                  <Text style={[styles.modeBtnText, compareMode === 'table' && styles.modeBtnTextActive]}>
+                    Bảng Chi Tiết
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
             {/* Comparison Options Bar */}
             <Card style={styles.aiSummaryCard} padding={spacing.sm}>
               <View style={styles.optionsRow}>
@@ -205,7 +243,7 @@ export default function CompareScreen() {
                     size={15}
                     color={colors.primaryHover}
                   />
-                  <Text style={styles.toggleDiffText}>Làm nổi bật thông số khác biệt</Text>
+                  <Text style={styles.toggleDiffText}>Làm nổi bật điểm khác biệt</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -219,7 +257,148 @@ export default function CompareScreen() {
               </View>
             </Card>
 
-            {isLoading && comparedCars.length === 0 ? (
+            {compareMode === 'battle' && comparedCars.length === 2 && !isLargeScreen ? (
+              /* Mobile Head-to-Head 1vs1 Battle View */
+              <View style={styles.battleContainer}>
+                {/* 2 Cars Header */}
+                <View style={styles.battleHeaderRow}>
+                  {/* Car 1 */}
+                  <View style={styles.battleCarCard}>
+                    <TouchableOpacity
+                      style={styles.battleRemoveBtn}
+                      onPress={() => removeCar(comparedCars[0].id)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                    <Image
+                      source={{ uri: comparedCars[0].image_url || fallbackImage }}
+                      style={styles.battleCarImg}
+                      contentFit="cover"
+                    />
+                    <Text style={styles.battleCarName} numberOfLines={2}>
+                      {comparedCars[0].make} {comparedCars[0].model}
+                    </Text>
+                    <Text style={styles.battleCarPrice}>
+                      {formatVndPrice(comparedCars[0].price)}
+                    </Text>
+                  </View>
+
+                  <View style={styles.battleVsCircle}>
+                    <Text style={styles.battleVsText}>VS</Text>
+                  </View>
+
+                  {/* Car 2 */}
+                  <View style={styles.battleCarCard}>
+                    <TouchableOpacity
+                      style={styles.battleRemoveBtn}
+                      onPress={() => removeCar(comparedCars[1].id)}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                    </TouchableOpacity>
+                    <Image
+                      source={{ uri: comparedCars[1].image_url || fallbackImage }}
+                      style={styles.battleCarImg}
+                      contentFit="cover"
+                    />
+                    <Text style={styles.battleCarName} numberOfLines={2}>
+                      {comparedCars[1].make} {comparedCars[1].model}
+                    </Text>
+                    <Text style={styles.battleCarPrice}>
+                      {formatVndPrice(comparedCars[1].price)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Battle Spec Comparisons */}
+                <View style={styles.battleMatrixCard}>
+                  {/* Row: Công suất */}
+                  <View style={styles.battleSpecRow}>
+                    <View style={styles.battleColLeft}>
+                      <Text style={[styles.battleValText, (comparedCars[0].engine_hp || 0) >= (comparedCars[1].engine_hp || 0) && styles.winnerVal]}>
+                        {comparedCars[0].engine_hp ? `${comparedCars[0].engine_hp} HP` : 'N/A'}
+                      </Text>
+                      {(comparedCars[0].engine_hp || 0) > (comparedCars[1].engine_hp || 0) && (
+                        <View style={styles.winnerBadge}><Text style={styles.winnerBadgeText}>Mạnh hơn</Text></View>
+                      )}
+                    </View>
+                    <View style={styles.battleColCenter}>
+                      <Ionicons name="speedometer-outline" size={14} color={colors.primaryHover} />
+                      <Text style={styles.battleSpecLabel}>Công suất</Text>
+                    </View>
+                    <View style={styles.battleColRight}>
+                      <Text style={[styles.battleValText, (comparedCars[1].engine_hp || 0) >= (comparedCars[0].engine_hp || 0) && styles.winnerVal]}>
+                        {comparedCars[1].engine_hp ? `${comparedCars[1].engine_hp} HP` : 'N/A'}
+                      </Text>
+                      {(comparedCars[1].engine_hp || 0) > (comparedCars[0].engine_hp || 0) && (
+                        <View style={styles.winnerBadge}><Text style={styles.winnerBadgeText}>Mạnh hơn</Text></View>
+                      )}
+                    </View>
+                  </View>
+
+                  {/* Row: Nhiên liệu */}
+                  <View style={styles.battleSpecRow}>
+                    <View style={styles.battleColLeft}>
+                      <Text style={styles.battleValText} numberOfLines={1}>
+                        {comparedCars[0].metadata?.fuel_type || 'Xăng'}
+                      </Text>
+                    </View>
+                    <View style={styles.battleColCenter}>
+                      <Ionicons name="flash-outline" size={14} color={colors.secondaryHover} />
+                      <Text style={styles.battleSpecLabel}>Nhiên liệu</Text>
+                    </View>
+                    <View style={styles.battleColRight}>
+                      <Text style={styles.battleValText} numberOfLines={1}>
+                        {comparedCars[1].metadata?.fuel_type || 'Xăng'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Row: Hộp số */}
+                  <View style={styles.battleSpecRow}>
+                    <View style={styles.battleColLeft}>
+                      <Text style={styles.battleValText} numberOfLines={1}>
+                        {comparedCars[0].metadata?.transmission || 'Tự động'}
+                      </Text>
+                    </View>
+                    <View style={styles.battleColCenter}>
+                      <Ionicons name="cog-outline" size={14} color={colors.success} />
+                      <Text style={styles.battleSpecLabel}>Hộp số</Text>
+                    </View>
+                    <View style={styles.battleColRight}>
+                      <Text style={styles.battleValText} numberOfLines={1}>
+                        {comparedCars[1].metadata?.transmission || 'Tự động'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Row: Số chỗ */}
+                  <View style={styles.battleSpecRow}>
+                    <View style={styles.battleColLeft}>
+                      <Text style={styles.battleValText}>
+                        {comparedCars[0].metadata?.seating_capacity || 5} chỗ
+                      </Text>
+                    </View>
+                    <View style={styles.battleColCenter}>
+                      <Ionicons name="people-outline" size={14} color={colors.conflict} />
+                      <Text style={styles.battleSpecLabel}>Số chỗ</Text>
+                    </View>
+                    <View style={styles.battleColRight}>
+                      <Text style={styles.battleValText}>
+                        {comparedCars[1].metadata?.seating_capacity || 5} chỗ
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Actions */}
+                <View style={styles.battleActionsRow}>
+                  <DepositButton carId={comparedCars[0].id} title="Đặt Cọc Xe 1" size="sm" directCheckout style={{ flex: 1 }} />
+                  <DepositButton carId={comparedCars[1].id} title="Đặt Cọc Xe 2" size="sm" directCheckout style={{ flex: 1 }} />
+                </View>
+              </View>
+            ) : isLoading && comparedCars.length === 0 ? (
               <ActivityIndicator color={colors.primary} size="small" style={{ marginVertical: 30 }} />
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tableScroll}>
@@ -287,7 +466,7 @@ export default function CompareScreen() {
                     {comparedCars.map((car) => (
                       <View key={car.id} style={[styles.carCol, { width: colWidth }]}>
                         <Text style={styles.metricValueHighlight}>
-                          {formatVndPrice(car.price, 'usd', {
+                          {formatVndPrice(car.price, undefined, {
                             engineHp: car.engine_hp,
                             fuelType: car.metadata?.engine_fuel_type || car.metadata?.fuel_type,
                           })}
@@ -427,7 +606,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 48,
     paddingBottom: spacing.sm,
   },
   titleRow: {
@@ -675,5 +853,163 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 10,
     textAlign: 'center',
+  },
+  modeSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.full,
+    padding: 3,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  modeBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: radii.full,
+    gap: 4,
+  },
+  modeBtnActive: {
+    backgroundColor: colors.primary,
+  },
+  modeBtnText: {
+    color: colors.textSecondary,
+    fontSize: 11.5,
+    fontWeight: typography.weights.medium,
+  },
+  modeBtnTextActive: {
+    color: '#FFFFFF',
+    fontWeight: typography.weights.semibold,
+  },
+  battleContainer: {
+    marginVertical: spacing.xs,
+  },
+  battleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+    marginVertical: spacing.sm,
+  },
+  battleCarCard: {
+    flex: 1,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.lg,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    position: 'relative',
+  },
+  battleRemoveBtn: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    zIndex: 2,
+  },
+  battleCarImg: {
+    width: '100%',
+    height: 90,
+    borderRadius: radii.md,
+    backgroundColor: colors.surface,
+  },
+  battleCarName: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: typography.weights.bold,
+    marginTop: 6,
+    minHeight: 30,
+  },
+  battleCarPrice: {
+    color: colors.primaryHover,
+    fontSize: 12.5,
+    fontWeight: typography.weights.bold,
+    marginTop: 2,
+  },
+  battleVsCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 8,
+    borderWidth: 2,
+    borderColor: colors.background,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  battleVsText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: typography.weights.black,
+    fontStyle: 'italic',
+  },
+  battleMatrixCard: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.lg,
+    padding: spacing.md,
+    marginVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    gap: spacing.md,
+  },
+  battleSpecRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+  },
+  battleColLeft: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  battleColCenter: {
+    width: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  battleColRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  battleSpecLabel: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: typography.weights.medium,
+    marginTop: 2,
+  },
+  battleValText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: typography.weights.semibold,
+  },
+  winnerVal: {
+    color: colors.success,
+  },
+  winnerBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: radii.xs,
+    marginTop: 2,
+  },
+  winnerBadgeText: {
+    color: colors.success,
+    fontSize: 8.5,
+    fontWeight: typography.weights.semibold,
+  },
+  battleActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
 });

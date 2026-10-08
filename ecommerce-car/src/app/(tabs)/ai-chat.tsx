@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../../theme';
 import { UIChatMessage } from '../../types/ui';
 import { historyService } from '../../services/historyService';
@@ -36,11 +37,12 @@ const generateUUID = (): string => {
 };
 
 export default function AIChatScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ initialPrompt?: string }>();
   const { user } = useAuthStore();
   const { addToCart } = useCartStore();
   const [input, setInput] = useState('');
-  const [sessionId] = useState(() => generateUUID());
+  const [sessionId, setSessionId] = useState(() => generateUUID());
   const [messages, setMessages] = useState<UIChatMessage[]>(() => [
     {
       id: 'welcome-msg',
@@ -263,16 +265,42 @@ export default function AIChatScreen() {
     }
   };
 
+  const handleNewChat = () => {
+    aiSseService.disconnect();
+    setSessionId(generateUUID());
+    setIsTyping(false);
+    setMessages([
+      {
+        id: `welcome-msg-${Date.now()}`,
+        role: 'assistant',
+        content:
+          'Xin chào! Tôi là trợ lý AI AutoMatch. Hãy nêu ngân sách, dòng xe hoặc thông số bạn mong muốn để nhận tư vấn chính xác.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    ]);
+    setInput('');
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={85}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 95 : 0}
     >
       <View style={styles.headerInfo}>
         <View style={styles.headerInner}>
-          <View style={styles.liveDot} />
-          <Text style={styles.headerText}>AutoMatch RAG AI • SSE Trực Tuyến</Text>
+          <View style={styles.headerStatusRow}>
+            <View style={styles.liveDot} />
+            <Text style={styles.headerText}>Chuyên gia AI AutoMatch • Trực tuyến 24/7</Text>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.newChatBtn}
+            onPress={handleNewChat}
+          >
+            <Ionicons name="refresh-outline" size={13} color={colors.textSecondary} />
+            <Text style={styles.newChatBtnText}>Đoạn chat mới</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -302,17 +330,30 @@ export default function AIChatScreen() {
       </View>
 
       {/* Input Field Bar */}
-      <View style={styles.inputBar}>
+      <View style={[styles.inputBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <View style={styles.inputBarInner}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Nhập yêu cầu tìm xe (vd: SUV gầm cao dưới 1 tỷ)..."
-            placeholderTextColor={colors.textMuted}
-            value={input}
-            onChangeText={setInput}
-            onSubmitEditing={() => handleSendMessage()}
-            returnKeyType="send"
-          />
+          <View style={styles.inputWrapper}>
+            <Ionicons name="sparkles" size={14} color={colors.primaryHover} style={styles.sparkleIcon} />
+            <TextInput
+              style={styles.textInput}
+              placeholder="Nhập yêu cầu (vd: SUV gầm cao dưới 2 tỷ)..."
+              placeholderTextColor={colors.textMuted}
+              value={input}
+              onChangeText={setInput}
+              onSubmitEditing={() => handleSendMessage()}
+              returnKeyType="send"
+            />
+            {input.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setInput('')}
+                style={styles.clearInputBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
           <TouchableOpacity
             activeOpacity={0.8}
             style={[styles.sendBtn, (!input.trim() || isTyping) && styles.sendBtnDisabled]}
@@ -321,7 +362,7 @@ export default function AIChatScreen() {
           >
             <Ionicons
               name={isTyping ? 'hourglass-outline' : 'arrow-up'}
-              size={16}
+              size={18}
               color={input.trim() && !isTyping ? '#FFFFFF' : colors.textMuted}
             />
           </TouchableOpacity>
@@ -339,8 +380,9 @@ const styles = StyleSheet.create({
   headerInfo: {
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
-    paddingVertical: 6,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    paddingVertical: 8,
+    paddingHorizontal: spacing.lg,
   },
   headerInner: {
     width: '100%',
@@ -348,7 +390,11 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  headerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
   liveDot: {
@@ -359,9 +405,22 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: typography.weights.medium,
+  },
+  newChatBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: radii.full,
+    gap: 4,
+  },
+  newChatBtnText: {
+    color: colors.textSecondary,
     fontSize: 10,
     fontWeight: typography.weights.medium,
-    letterSpacing: 0.2,
   },
   chatArea: {
     flex: 1,
@@ -380,8 +439,8 @@ const styles = StyleSheet.create({
   inputBar: {
     backgroundColor: colors.surface,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.04)',
-    paddingVertical: spacing.sm,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    paddingTop: spacing.xs + 2,
   },
   inputBarInner: {
     width: '100%',
@@ -392,22 +451,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     gap: spacing.xs + 2,
   },
+  inputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    paddingHorizontal: spacing.md,
+    height: 44,
+  },
+  sparkleIcon: {
+    marginRight: 6,
+  },
   textInput: {
     flex: 1,
-    height: 42,
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radii.md,
-    paddingHorizontal: spacing.md,
+    height: 44,
     color: colors.text,
     fontSize: typography.sizes.xs + 1,
     paddingVertical: 0,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  clearInputBtn: {
+    padding: 4,
+    marginLeft: 4,
   },
   sendBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: radii.md,
+    width: 44,
+    height: 44,
+    borderRadius: radii.full,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',

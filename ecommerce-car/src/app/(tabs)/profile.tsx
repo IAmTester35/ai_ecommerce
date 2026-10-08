@@ -9,6 +9,7 @@ import {
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTestDriveStore } from '../../store/useTestDriveStore';
@@ -24,6 +25,7 @@ import { formatVndPrice } from '../../components/ui/PriceTag';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { user, profile, signOut } = useAuthStore();
   const { testDrives, fetchTestDrives, cancelTestDrive } = useTestDriveStore();
   const { savedCars, fetchSavedCars, toggleSaveCar } = useCarStore();
@@ -526,7 +528,7 @@ export default function ProfileScreen() {
   return (
     <View style={styles.screen}>
       <ResponsiveContainer scrollable maxWidth="xl" showsVerticalScrollIndicator={false}>
-        <View style={[styles.profileLayout, isLargeScreen && styles.profileLayoutSplit]}>
+        <View style={[styles.profileLayout, { paddingTop: Math.max(insets.top, 24) }, isLargeScreen && styles.profileLayoutSplit]}>
           <View style={[styles.profileColumn, isLargeScreen && styles.profileColumnSplit]}>
             {renderLeftSection()}
           </View>
@@ -548,7 +550,6 @@ const styles = StyleSheet.create({
   },
   profileLayout: {
     width: '100%',
-    paddingTop: 48,
   },
   profileLayoutSplit: {
     flexDirection: 'row',

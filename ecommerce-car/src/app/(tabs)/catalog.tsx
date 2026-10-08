@@ -1,14 +1,17 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
+  ScrollView,
+  RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useCarStore } from '../../store/useCarStore';
 import { useCartStore } from '../../store/useCartStore';
@@ -21,7 +24,17 @@ import { SearchBar } from '../../components/ui/SearchBar';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { CarFilterParams, CarResponse } from '../../types';
 
+const CATEGORY_CHIPS = [
+  { id: 'all', label: 'Tất cả' },
+  { id: 'Coupe', label: 'Coupe / Sport' },
+  { id: 'SUV', label: 'SUV' },
+  { id: 'Sedan', label: 'Sedan' },
+  { id: 'Điện', label: 'Xe Điện EV' },
+  { id: '7 chỗ', label: '7 Chỗ' },
+];
+
 export default function CatalogScreen() {
+  const insets = useSafeAreaInsets();
   const { filteredCars, filters, setFilters, applyFilters, resetFilters, savedCars, toggleSaveCar, isLoading } =
     useCarStore();
   const { addToCart } = useCartStore();
@@ -31,6 +44,7 @@ export default function CatalogScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [layoutMode, setLayoutMode] = useState<CarCardLayout>('grid');
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const numColumns = layoutMode === 'grid' ? select({ mobile: 1, tablet: 2, desktop: 3, wide: 4 }) : 1;
 
@@ -38,9 +52,31 @@ export default function CatalogScreen() {
     applyFilters();
   }, [applyFilters]);
 
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await applyFilters();
+    } catch {
+      // silent
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [applyFilters]);
+
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
-    setFilters({ query: text });
+    setFilters({ query: text.trim() || undefined });
+    applyFilters();
+  };
+
+  const handleQuickCategorySelect = (catId: string) => {
+    if (catId === 'all') {
+      setFilters({ bodyType: undefined, fuelType: undefined });
+    } else if (catId === 'Điện') {
+      setFilters({ fuelType: 'Điện', bodyType: undefined });
+    } else {
+      setFilters({ bodyType: catId, fuelType: undefined });
+    }
     applyFilters();
   };
 
@@ -99,7 +135,12 @@ export default function CatalogScreen() {
     if (activeFilterCount === 0) return null;
 
     return (
-      <View style={styles.activeFiltersRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.activeFiltersRow}
+        style={{ marginTop: spacing.xs }}
+      >
         {filters.make && filters.make !== 'all' && (
           <TouchableOpacity
             style={styles.filterTag}
@@ -132,7 +173,7 @@ export default function CatalogScreen() {
               applyFilters();
             }}
           >
-            <Text style={styles.filterTagText}>Kiểu dáng: {filters.bodyType}</Text>
+            <Text style={styles.filterTagText}>Dòng: {filters.bodyType}</Text>
             <Ionicons name="close" size={10} color={colors.primaryHover} />
           </TouchableOpacity>
         )}
@@ -170,14 +211,14 @@ export default function CatalogScreen() {
         >
           <Text style={styles.clearAllText}>Xóa tất cả</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     );
   };
 
   return (
     <View style={styles.screen}>
-      {/* Top Header constrained */}
-      <View style={styles.header}>
+      {/* Top Header constrained with Safe Area */}
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
           <Text style={styles.headerTitle}>Kho Xe Trực Tuyến</Text>
 
@@ -192,13 +233,43 @@ export default function CatalogScreen() {
             style={{ marginTop: spacing.xs + 2 }}
           />
 
+          {/* Quick Category Chips */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickChipsScroll}
+            style={styles.quickChipsWrapper}
+          >
+            {CATEGORY_CHIPS.map((cat) => {
+              const isActive =
+                cat.id === 'all'
+                  ? !filters.bodyType && !filters.fuelType
+                  : cat.id === 'Điện'
+                  ? filters.fuelType === 'Điện'
+                  : filters.bodyType === cat.id;
+
+              return (
+                <TouchableOpacity
+                  key={cat.id}
+                  activeOpacity={0.75}
+                  onPress={() => handleQuickCategorySelect(cat.id)}
+                  style={[styles.quickChip, isActive && styles.quickChipActive]}
+                >
+                  <Text style={[styles.quickChipText, isActive && styles.quickChipTextActive]}>
+                    {cat.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
           {/* Active Filter Tags */}
           {renderActiveFilterTags()}
 
           {/* Subheader with View Switcher & Result Count */}
           <View style={styles.toolBar}>
             <Text style={styles.resultCount}>
-              <Text style={styles.countBold}>{filteredCars.length}</Text> mẫu xe
+              <Text style={styles.countBold}>{filteredCars.length}</Text> mẫu xe sẵn sàng
             </Text>
 
             <View style={styles.viewToggleGroup}>
@@ -262,6 +333,14 @@ export default function CatalogScreen() {
           columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primaryHover}
+              colors={[colors.primaryHover]}
+            />
+          }
           renderItem={({ item: car }) => {
             const isSaved = savedCars.some((sc) => sc.car_id === car.id);
             return (
@@ -298,7 +377,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingTop: 48,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
@@ -317,11 +395,39 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     letterSpacing: -0.2,
   },
+  quickChipsWrapper: {
+    marginTop: spacing.xs,
+  },
+  quickChipsScroll: {
+    paddingVertical: 2,
+    gap: 6,
+  },
+  quickChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radii.full,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  quickChipActive: {
+    backgroundColor: 'rgba(59, 130, 246, 0.16)',
+    borderColor: colors.primaryHover,
+  },
+  quickChipText: {
+    color: colors.textSecondary,
+    fontSize: 11.5,
+    fontWeight: typography.weights.medium,
+  },
+  quickChipTextActive: {
+    color: '#FFFFFF',
+    fontWeight: typography.weights.semibold,
+  },
   activeFiltersRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: spacing.xs,
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 2,
   },
   filterTag: {
     flexDirection: 'row',
