@@ -130,9 +130,9 @@ class ZaloPayService:
             logger.error(f"Error processing ZaloPay callback: {e}")
             return {"return_code": 0, "return_message": f"Error processing callback: {str(e)}"}
 
-    async def check_order_status(self, app_trans_id: str) -> Dict[str, Any]:
+    async def check_order_status(self, app_trans_id: str, db: Client = None) -> Dict[str, Any]:
         """
-        Kiểm tra trạng thái đơn hàng ZaloPay bất đồng bộ.
+        Kiểm tra trạng thái đơn hàng ZaloPay bất đồng bộ và tự động đồng bộ DB nếu thành công.
         """
         post_data = {
             "app_id": self.app_id,
@@ -146,4 +146,20 @@ class ZaloPayService:
         async with httpx.AsyncClient() as client:
             response = await client.post(self.query_endpoint, data=post_data, headers=headers, timeout=10.0)
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+
+        # Tự động cập nhật DB nếu ZaloPay xác nhận thanh toán thành công (return_code = 1)
+        if result.get("return_code") == 1 and db:
+            try:
+                await asyncio.to_thread(
+                    db.table("orders").update({
+                        "payment_status": "paid",
+                        "deposit_status": "paid",
+                        "status": "deposit_paid",
+                    }).eq("app_trans_id", app_trans_id).execute
+                )
+                logger.info(f"Auto-synchronized order status to deposit_paid for app_trans_id {app_trans_id}")
+            except Exception as sync_err:
+                logger.warning(f"Could not auto-sync order for app_trans_id {app_trans_id}: {sync_err}")
+
+        return result

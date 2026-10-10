@@ -75,6 +75,17 @@ export const authService = {
   },
 
   /**
+   * Gửi email khôi phục mật khẩu
+   */
+  resetPasswordForEmail: async (email: string) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}`,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
    * Lấy session hiện tại
    */
   getSession: async (): Promise<Session | null> => {

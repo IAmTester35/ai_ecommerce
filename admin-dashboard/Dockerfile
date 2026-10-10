@@ -8,8 +8,9 @@ WORKDIR /app
 # Copy dependency definitions
 COPY package.json yarn.lock* ./
 
-# Install dependencies (fallback to npm if yarn lockfile has mismatch)
-RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile --ignore-engines || yarn install --ignore-engines; else npm install; fi
+# Install dependencies with build cache mount (fallback to npm if yarn lockfile has mismatch)
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    if [ -f yarn.lock ]; then yarn install --frozen-lockfile --ignore-engines || yarn install --ignore-engines; else npm install; fi
 
 # Copy application source code
 COPY . .
@@ -24,7 +25,7 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
     VITE_API_URL=$VITE_API_URL
 
 # Build production bundle
-RUN npm run build
+RUN yarn build
 
 # ==========================================
 # STAGE 2: Lightweight Production Nginx

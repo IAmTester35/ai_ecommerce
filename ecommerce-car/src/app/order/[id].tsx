@@ -24,6 +24,7 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { formatVnd, formatVndPrice } from '../../utils/currency';
 import { OrderStatus, DepositStatus } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
+import { supabase } from '../../api/supabaseClient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OrderDetailScreen() {
@@ -36,16 +37,58 @@ export default function OrderDetailScreen() {
 
   const [checkingPayment, setCheckingPayment] = useState(false);
 
+  // 1. Fetch chi tiết đơn hàng khi mount
   useEffect(() => {
     if (id && user?.id) {
       fetchOrderDetails(id);
     }
   }, [id, user?.id, fetchOrderDetails]);
 
+  // 2. Lắng nghe thay đổi Realtime từ Supabase (Webhook hoặc Admin cập nhật)
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`order-realtime-${id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
+        () => {
+          fetchOrderDetails(id);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, fetchOrderDetails]);
+
+  const effectiveTransId = app_trans_id || selectedOrder?.app_trans_id;
+
+  // 3. Tự động kiểm tra trạng thái ZaloPay 1 lần khi người dùng vừa chuyển từ checkout sang
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (app_trans_id && id && selectedOrder && selectedOrder.deposit_status === 'unpaid') {
+      timer = setTimeout(async () => {
+        try {
+          const res = await checkPaymentStatus(app_trans_id);
+          if (res.return_code === 1) {
+            await fetchOrderDetails(id);
+          }
+        } catch (e) {
+          // Im lặng nếu chưa có kết quả (người dùng có thể bấm nút kiểm tra thủ công)
+        }
+      }, 1500);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [app_trans_id, id, selectedOrder?.deposit_status]);
+
   const handleCheckPaymentStatus = async () => {
-    const transId = app_trans_id;
+    const transId = effectiveTransId;
     if (!transId) {
-      globalAlert('Thông báo', 'Không tìm thấy mã giao dịch ZaloPay.');
+      globalAlert('Thông báo', 'Đơn hàng này chưa có mã giao dịch cổng ZaloPay.');
       return;
     }
 
@@ -267,8 +310,8 @@ export default function OrderDetailScreen() {
         </Card>
       )}
 
-      {/* 3. ZaloPay Payment Status Card (if trans id available) */}
-      {app_trans_id && (
+      {/* 3. ZaloPay Payment Status Card */}
+      {(effectiveTransId || selectedOrder.payment_method === 'zalopay') && (
         <Card style={styles.paymentCard} padding={spacing.md}>
           <View style={styles.paymentHeaderRow}>
             <View style={styles.paymentIconBox}>
@@ -276,14 +319,16 @@ export default function OrderDetailScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.paymentTitle}>Cổng Thanh Toán ZaloPay</Text>
-              <Text style={styles.paymentSubtitle}>Mã GD: {app_trans_id}</Text>
+              <Text style={styles.paymentSubtitle}>
+                Mã GD: {effectiveTransId || 'Chưa có mã giao dịch'}
+              </Text>
             </View>
             {getDepositStatusBadge(selectedOrder.deposit_status)}
           </View>
 
           {statusResult && (
             <View style={styles.statusResultBox}>
-              <Text style={styles.statusResultTitle}>Kết quả giao dịch:</Text>
+              <Text style={styles.statusResultTitle}>Kết quả đối soát ZaloPay:</Text>
               <Text style={styles.statusResultText}>• {statusResult.return_message}</Text>
               {statusResult.zp_trans_id && (
                 <Text style={styles.statusResultText}>• Mã ZaloPay: {statusResult.zp_trans_id}</Text>
@@ -291,15 +336,24 @@ export default function OrderDetailScreen() {
             </View>
           )}
 
-          <Button
-            title={checkingPayment ? 'Đang kiểm tra...' : 'Cập nhật trạng thái ZaloPay'}
-            variant="outline"
-            size="sm"
-            onPress={handleCheckPaymentStatus}
-            loading={checkingPayment || isProcessing}
-            icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
-            style={{ marginTop: spacing.xs + 2 }}
-          />
+          {selectedOrder.deposit_status === 'paid' ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs + 2, gap: 6 }}>
+              <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+              <Text style={{ fontSize: 12, color: colors.success, fontWeight: '600' }}>
+                Đã thanh toán cọc thành công qua cổng ZaloPay
+              </Text>
+            </View>
+          ) : (
+            <Button
+              title={checkingPayment ? 'Đang kiểm tra...' : 'Kiểm tra & Đồng bộ trạng thái ZaloPay'}
+              variant="outline"
+              size="sm"
+              onPress={handleCheckPaymentStatus}
+              loading={checkingPayment || isProcessing}
+              icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
+              style={{ marginTop: spacing.xs + 2 }}
+            />
+          )}
         </Card>
       )}
     </>

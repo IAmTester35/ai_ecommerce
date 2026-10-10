@@ -9,11 +9,18 @@ import {
   UserCheck,
   UserMinus,
   Search,
-  Plus,
   AlertCircle,
   Building2,
   Calendar,
   Heart,
+  Copy,
+  Check,
+  Send,
+  UserPlus,
+  Trash2,
+  CheckCircle2,
+  KeyRound,
+  RefreshCw,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -37,14 +44,44 @@ export const CustomersView: React.FC = () => {
     customers,
     showrooms,
     addCustomer,
+    inviteMember,
+    cancelInvite,
+    deleteCustomer,
+    resetCustomerPassword,
     updateCustomerRole,
     toggleProfileActive,
     updateProfileShowroom,
   } = useData();
   const { isOwner } = useAuth();
-  const { error } = useToast();
+  const { success, error } = useToast();
 
-  // Add Customer Modal State
+  // Invite Member Modal State
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [inviteRole, setInviteRole] = useState<UserRole>('manager');
+  const [inviteShowroomId, setInviteShowroomId] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{
+    link: string;
+    email: string;
+    emailSent: boolean;
+  } | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Reset Password Modal State
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [targetUserForReset, setTargetUserForReset] = useState<Profile | null>(null);
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
+  // Delete User Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [targetUserForDelete, setTargetUserForDelete] = useState<Profile | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  // Add Customer Modal State (Legacy / Fast Creation)
   const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
   const [newCustomerEmail, setNewCustomerEmail] = useState('');
   const [newCustomerName, setNewCustomerName] = useState('');
@@ -98,74 +135,141 @@ export const CustomersView: React.FC = () => {
     });
   }, [activeTab, customerList, staffList, searchTerm]);
 
-  const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
-  const paginatedData = filteredData.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // Paginated Sliced Data
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
 
-  // Open 360 Dossier Modal
+  const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+
+  // Open Dossier Modal
   const openProfileDetails = async (profile: Profile) => {
     setSelectedProfile(profile);
     setIsDetailModalOpen(true);
     setIsLoadingDossier(true);
     try {
-      const d = await dataServices.fetchCustomer360(profile.id);
-      setDossierData(d);
-    } catch (e) {
-      console.warn('Could not fetch 360 dossier:', e);
+      const data = await dataServices.fetchCustomer360(profile.id);
+      setDossierData(data);
+    } catch (err) {
+      console.warn('Failed to fetch user dossier:', err);
+      setDossierData({ orders: [], testDrives: [], savedCars: [] });
     } finally {
       setIsLoadingDossier(false);
     }
   };
 
-  // Toggle Active/Suspend Customer
-  const handleToggleActive = async (profile: Profile) => {
-    if (!isOwner) {
-      error('Từ chối', 'Chỉ Owner mới có quyền khóa hoặc kích hoạt tài khoản.');
-      return;
-    }
-    if (profile.role === 'owner') {
-      error('Từ chối', 'Không thể khóa tài khoản Chủ Sở Hữu.');
-      return;
-    }
+  // Open Invite Modal Helper
+  const openInviteModal = (defaultRole: UserRole = 'manager') => {
+    setInviteRole(defaultRole);
+    setInviteEmail('');
+    setInviteName('');
+    setInvitePhone('');
+    setInviteShowroomId('');
+    setInviteResult(null);
+    setCopiedLink(false);
+    setIsInviteModalOpen(true);
+  };
 
-    const newStatus = profile.is_active === false ? true : false;
-    const actionName = newStatus ? 'kích hoạt' : 'khóa';
-    if (window.confirm(`Bạn có chắc muốn ${actionName} tài khoản ${profile.email}?`)) {
-      await toggleProfileActive(profile.id, newStatus);
+  // Reset Password Handlers
+  const openResetPasswordModal = (user: Profile) => {
+    setTargetUserForReset(user);
+    setNewPasswordInput('AutoMatch@' + Math.floor(1000 + Math.random() * 9000));
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!targetUserForReset) return;
+    setIsResettingPassword(true);
+    await resetCustomerPassword(targetUserForReset.id, targetUserForReset.email, newPasswordInput);
+    setIsResettingPassword(false);
+    setIsResetPasswordModalOpen(false);
+  };
+
+  const handleSendResetEmail = async () => {
+    if (!targetUserForReset) return;
+    setIsResettingPassword(true);
+    await resetCustomerPassword(targetUserForReset.id, targetUserForReset.email);
+    setIsResettingPassword(false);
+    setIsResetPasswordModalOpen(false);
+  };
+
+  // Delete User Handlers
+  const openDeleteModal = (user: Profile) => {
+    setTargetUserForDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!targetUserForDelete) return;
+    setIsDeletingUser(true);
+    await deleteCustomer(targetUserForDelete.id);
+    setIsDeletingUser(false);
+    setIsDeleteModalOpen(false);
+    setTargetUserForDelete(null);
+  };
+
+  // Handle Send Invite
+  const handleSendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim() || !inviteName.trim()) {
+      error('Thiếu thông tin', 'Vui lòng nhập đầy đủ email và họ tên người nhận.');
+      return;
+    }
+    setIsInviting(true);
+    const res = await inviteMember({
+      email: inviteEmail.trim(),
+      full_name: inviteName.trim(),
+      phone: invitePhone.trim() || null,
+      role: inviteRole,
+      showroom_id: inviteShowroomId || null,
+    });
+    setIsInviting(false);
+
+    if (res.success) {
+      setInviteResult({
+        link: res.inviteLink,
+        email: inviteEmail.trim(),
+        emailSent: res.emailSent,
+      });
     }
   };
 
-  // Action: Promote Customer to Manager with Showroom Assignment
+  // Handle Promote to Manager
   const handlePromoteToManager = async () => {
+    if (!selectedUserToPromote) return;
     if (!isOwner) {
-      alert('Chỉ tài khoản Chủ Sở Hữu (Owner) mới có quyền bổ nhiệm Quản lý Showroom.');
+      error('Từ chối quyền', 'Chỉ Chủ sở hữu (Owner) mới có quyền phân bổ quản trị.');
       return;
     }
-    if (!selectedUserToPromote) return;
 
-    const okRole = await updateCustomerRole(selectedUserToPromote, 'manager');
-    if (okRole) {
+    const targetUser = customers.find((c) => c.id === selectedUserToPromote);
+    const successResult = await updateCustomerRole(selectedUserToPromote, 'manager');
+    if (successResult) {
       if (appointedShowroomId) {
         await updateProfileShowroom(selectedUserToPromote, appointedShowroomId);
       }
       setIsAppointModalOpen(false);
       setSelectedUserToPromote('');
       setAppointedShowroomId('');
-      setActiveTab('staff');
+      success('Bổ nhiệm thành công', `${targetUser?.full_name || targetUser?.email} đã trở thành Showroom Manager.`);
     }
   };
 
-  // Action: Revoke Manager Role
-  const handleRevokeManager = async (staff: Profile) => {
+  // Handle Account Activation Toggle
+  const handleToggleActive = async (profile: Profile) => {
     if (!isOwner) {
-      alert('Chỉ tài khoản Chủ Sở Hữu (Owner) mới có quyền thu hồi quyền Quản lý.');
+      error('Từ chối quyền', 'Chỉ Chủ sở hữu mới có quyền khóa/mở khóa tài khoản.');
       return;
     }
+    const nextStatus = profile.is_active === false;
+    await toggleProfileActive(profile.id, nextStatus);
+  };
 
-    if (staff.role === 'owner') {
-      alert('Không thể thu hồi quyền của Chủ Sở Hữu (Owner) duy nhất.');
+  // Handle Revoke Manager Role
+  const handleRevokeManager = async (staff: Profile) => {
+    if (!isOwner) {
+      error('Từ chối quyền', 'Chỉ Chủ sở hữu mới có quyền thu hồi vai trò Quản lý.');
       return;
     }
 
@@ -214,31 +318,33 @@ export const CustomersView: React.FC = () => {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-1">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
-            Khách Hàng & Quản Trị
+            Khách Hàng & Ban Điều Hành
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 font-normal">
-            Hồ sơ CRM khách hàng và phân quyền điều hành Showroom
+            Hồ sơ CRM khách hàng, phân quyền điều hành Showroom và gửi liên kết mời nhân sự mới
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Button
-            variant="outline"
+            variant="primary"
             size="md"
-            leftIcon={<Plus className="w-4 h-4 text-blue-600" />}
-            onClick={() => setIsAddCustomerModalOpen(true)}
+            leftIcon={<UserPlus className="w-4 h-4" />}
+            onClick={() => openInviteModal(activeTab === 'staff' ? 'manager' : 'user')}
+            className="cursor-pointer font-bold shadow-xs"
           >
-            Thêm Khách Hàng
+            {activeTab === 'staff' ? 'Mời Quản Trị / Nhân Sự Mới' : 'Mời / Thêm Khách Hàng'}
           </Button>
 
-          {isOwner && (
+          {isOwner && activeTab === 'staff' && (
             <Button
-              variant="primary"
+              variant="outline"
               size="md"
-              leftIcon={<ShieldCheck className="w-4 h-4" />}
+              leftIcon={<ShieldCheck className="w-4 h-4 text-indigo-600" />}
               onClick={() => setIsAppointModalOpen(true)}
+              className="cursor-pointer"
             >
-              Bổ Nhiệm Quản Lý
+              Bổ Nhiệm Từ CRM
             </Button>
           )}
         </div>
@@ -259,7 +365,7 @@ export const CustomersView: React.FC = () => {
           )}
         >
           <Users className="w-4 h-4" />
-          <span>Danh Sách Khách Hàng ({customerList.length})</span>
+          <span>Khách Hàng CRM ({customerList.length})</span>
         </button>
 
         <button
@@ -274,199 +380,540 @@ export const CustomersView: React.FC = () => {
               : 'border-transparent text-slate-500 hover:text-slate-800'
           )}
         >
-          <ShieldCheck className="w-4 h-4" />
-          <span>Ban Quản Lý & Showroom ({staffList.length})</span>
+          <Shield className="w-4 h-4" />
+          <span>Ban Điều Hành & Quản Lý ({staffList.length})</span>
         </button>
       </div>
 
-      {/* Filter Toolbar */}
-      <div className="bg-white border border-slate-200/70 rounded-2xl p-4 shadow-[0_2px_12px_-2px_rgba(15,23,42,0.04)] flex flex-col sm:flex-row items-center justify-between gap-3">
+      {/* Search & Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="w-full sm:w-96">
           <SearchBar
-            placeholder="Tìm theo tên, email, số điện thoại..."
             value={searchTerm}
             onChange={(val) => {
               setSearchTerm(val);
               setCurrentPage(1);
             }}
+            placeholder={
+              activeTab === 'customers'
+                ? 'Tìm theo tên, email hoặc số điện thoại khách hàng...'
+                : 'Tìm theo tên hoặc email Quản trị viên...'
+            }
           />
         </div>
-        <div className="text-xs text-slate-500 font-medium w-full sm:w-auto text-left sm:text-right">
-          Tìm thấy <strong className="text-slate-800 font-semibold">{filteredData.length}</strong> {activeTab === 'customers' ? 'khách hàng' : 'nhân sự quản lý'}
+
+        <div className="text-xs text-slate-500 font-medium">
+          Hiển thị {paginatedData.length} trên tổng số {filteredData.length}{' '}
+          {activeTab === 'customers' ? 'khách hàng' : 'nhân sự'}
         </div>
       </div>
 
-      {/* Table Content */}
-      {filteredData.length === 0 ? (
-        <EmptyState
-          icon={<Users className="w-12 h-12 text-slate-300" />}
-          title="Không tìm thấy người dùng nào"
-          description="Thử thay đổi từ khóa tìm kiếm hoặc chuyển tab xem."
-        />
-      ) : (
-        <Card className="overflow-hidden">
-          <Table bare>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Tài Khoản / Người Dùng</TableHead>
-                <TableHead>Liên Hệ</TableHead>
-                <TableHead>Vai Trò (Role)</TableHead>
-                {activeTab === 'staff' && <TableHead>Showroom Trực Thuộc</TableHead>}
-                <TableHead>Trạng Thái</TableHead>
-                <TableHead>Ngày Đăng Ký</TableHead>
-                <TableHead className="text-right">Hành Động</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedData.map((user) => {
-                const isActive = user.is_active !== false;
-                const assignedShowroom = showrooms.find((s) => s.id === user.showroom_id);
+      {/* Profiles Table */}
+      <Card className="overflow-hidden border-slate-200/90 shadow-xs">
+        {paginatedData.length === 0 ? (
+          <EmptyState
+            icon={activeTab === 'customers' ? <Users className="w-10 h-10 text-slate-400" /> : <Shield className="w-10 h-10 text-slate-400" />}
+            title={activeTab === 'customers' ? 'Chưa tìm thấy khách hàng' : 'Chưa có nhân sự quản trị'}
+            description={
+              searchTerm
+                ? 'Không tìm thấy kết quả phù hợp với từ khóa tìm kiếm.'
+                : activeTab === 'customers'
+                  ? 'Bấm nút "Mời / Thêm Khách Hàng" ở trên để gửi link đăng ký hoặc tạo hồ sơ.'
+                  : 'Bấm nút "Mời Quản Trị / Nhân Sự Mới" để tạo link mời và cấp quyền điều hành.'
+            }
+            actionLabel={activeTab === 'staff' ? 'Gửi Link Mời Nhân Sự' : 'Mời Khách Hàng Mới'}
+            onAction={() => openInviteModal(activeTab === 'staff' ? 'manager' : 'user')}
+          />
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50/75">
+                  <TableHead className="w-72">Họ & Tên</TableHead>
+                  <TableHead>Email / Liên Hệ</TableHead>
+                  <TableHead>Vai Trò Cấp Quyền</TableHead>
+                  {activeTab === 'staff' && <TableHead>Showroom Phụ Trách</TableHead>}
+                  <TableHead>Trạng Thái</TableHead>
+                  <TableHead>Ngày Khởi Tạo</TableHead>
+                  <TableHead className="text-right">Thao Tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedData.map((user) => {
+                  const isActive = user.is_active !== false;
+                  const assignedShowroom = showrooms.find((s) => s.id === user.showroom_id);
 
-                return (
-                  <TableRow key={user.id} className="hover:bg-slate-50/80 transition-colors">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={
-                            user.avatar_url ||
-                            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
-                          }
-                          alt=""
-                          className="w-9 h-9 rounded-xl object-cover border border-slate-200 bg-slate-100 shrink-0"
-                        />
-                        <div>
-                          <p className="font-bold text-xs text-slate-900">
-                            {user.full_name || 'Khách hàng'}
-                          </p>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            #{user.id.slice(0, 8)}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="text-xs space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-slate-700">
-                          <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{user.email}</span>
-                        </div>
-                        {user.phone && (
-                          <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
-                            <Phone className="w-3 h-3 text-slate-400" />
-                            <span>{user.phone}</span>
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      {user.role === 'owner' ? (
-                        <Badge variant="primary" size="sm" className="font-bold">
-                          <Crown className="w-3 h-3 mr-1 text-amber-500" />
-                          Owner (Chủ Sở Hữu)
-                        </Badge>
-                      ) : user.role === 'manager' ? (
-                        <Badge variant="secondary" size="sm" className="font-bold">
-                          <Shield className="w-3 h-3 mr-1 text-indigo-600" />
-                          Showroom Manager
-                        </Badge>
-                      ) : (
-                        <Badge variant="neutral" size="sm">
-                          Khách Hàng
-                        </Badge>
-                      )}
-                    </TableCell>
-
-                    {activeTab === 'staff' && (
+                  return (
+                    <TableRow key={user.id} className="hover:bg-slate-50/80 transition-colors">
                       <TableCell>
-                        {user.role === 'manager' && isOwner ? (
-                          <Select
-                            value={user.showroom_id || ''}
-                            onChange={(e) => handleManagerShowroomChange(user.id, e.target.value)}
-                            className="text-xs py-1"
-                          >
-                            <option value="">-- Toàn hệ thống --</option>
-                            {showrooms.map((sr) => (
-                              <option key={sr.id} value={sr.id}>
-                                {sr.name}
-                              </option>
-                            ))}
-                          </Select>
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={
+                              user.avatar_url ||
+                              'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80'
+                            }
+                            alt=""
+                            className="w-9 h-9 rounded-xl object-cover border border-slate-200 bg-slate-100 shrink-0"
+                          />
+                          <div>
+                            <p className="font-bold text-xs text-slate-900">
+                              {user.full_name || 'Khách hàng'}
+                            </p>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              #{user.id.slice(0, 8)}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="text-xs space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-slate-700">
+                            <Mail className="w-3.5 h-3.5 text-slate-400" />
+                            <span>{user.email}</span>
+                          </div>
+                          {user.phone && (
+                            <div className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <span>{user.phone}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        {user.role === 'owner' ? (
+                          <Badge variant="primary" size="sm" className="font-bold">
+                            <Crown className="w-3 h-3 mr-1 text-amber-500" />
+                            Owner (Chủ Sở Hữu)
+                          </Badge>
+                        ) : user.role === 'manager' ? (
+                          <Badge variant="secondary" size="sm" className="font-bold">
+                            <Shield className="w-3 h-3 mr-1 text-indigo-600" />
+                            Showroom Manager
+                          </Badge>
                         ) : (
-                          <span className="text-xs font-semibold text-slate-700">
-                            {assignedShowroom?.name || 'Quản lý toàn quốc'}
-                          </span>
+                          <Badge variant="neutral" size="sm">
+                            Khách Hàng
+                          </Badge>
                         )}
                       </TableCell>
-                    )}
 
-                    <TableCell>
-                      <Badge variant={isActive ? 'success' : 'danger'} size="sm">
-                        {isActive ? 'Hoạt động' : 'Đã khóa'}
-                      </Badge>
-                    </TableCell>
+                      {activeTab === 'staff' && (
+                        <TableCell>
+                          {user.role === 'manager' && isOwner ? (
+                            <Select
+                              value={user.showroom_id || ''}
+                              onChange={(e) => handleManagerShowroomChange(user.id, e.target.value)}
+                              className="text-xs py-1"
+                            >
+                              <option value="">-- Toàn hệ thống --</option>
+                              {showrooms.map((sr) => (
+                                <option key={sr.id} value={sr.id}>
+                                  {sr.name}
+                                </option>
+                              ))}
+                            </Select>
+                          ) : (
+                            <span className="text-xs font-semibold text-slate-700">
+                              {assignedShowroom?.name || 'Quản lý toàn quốc'}
+                            </span>
+                          )}
+                        </TableCell>
+                      )}
 
-                    <TableCell className="text-xs text-slate-500">
-                      {formatDateTime(user.created_at)}
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => openProfileDetails(user)}
-                        >
-                          Hồ Sơ 360
-                        </Button>
-
-                        {/* Account active/suspend toggle */}
-                        {user.role !== 'owner' && isOwner && (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleActive(user)}
-                            className={cn(
-                              'p-1.5 rounded-lg transition-colors cursor-pointer',
-                              isActive
-                                ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
-                                : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
-                            )}
-                            title={isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
-                          >
-                            {isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                          </button>
+                      <TableCell>
+                        {user.is_pending_invite ? (
+                          <Badge variant="warning" size="sm" className="bg-amber-50 text-amber-700 border-amber-200 font-semibold">
+                            Chờ kích hoạt
+                          </Badge>
+                        ) : (
+                          <Badge variant={isActive ? 'success' : 'danger'} size="sm">
+                            {isActive ? 'Hoạt động' : 'Đã khóa'}
+                          </Badge>
                         )}
+                      </TableCell>
 
-                        {activeTab === 'staff' && user.role === 'manager' && isOwner && (
+                      <TableCell className="text-xs text-slate-500">
+                        {formatDateTime(user.created_at)}
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Copy Invite Link Action for Pending Invites */}
+                          {user.is_pending_invite && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const link =
+                                    user.invite_link ||
+                                    `${window.location.origin}/login?invite_token=${btoa(
+                                      JSON.stringify({ email: user.email, role: user.role })
+                                    )}&email=${encodeURIComponent(user.email)}&role=${user.role}`;
+                                  navigator.clipboard.writeText(link);
+                                  success('Đã sao chép link mời', `Link mời cho ${user.email} đã được lưu vào bộ nhớ tạm.`);
+                                }}
+                                className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
+                                title="Sao chép lại liên kết mời"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (window.confirm(`Bạn có chắc muốn hủy lời mời cho ${user.email}?`)) {
+                                    cancelInvite(user.id);
+                                  }
+                                }}
+                                className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer"
+                                title="Hủy lời mời"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+
                           <Button
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
-                            className="text-rose-600 hover:bg-rose-50"
-                            onClick={() => handleRevokeManager(user)}
+                            onClick={() => openProfileDetails(user)}
                           >
-                            Hạ Cấp
+                            Hồ Sơ
                           </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            totalItems={filteredData.length}
-            pageSize={pageSize}
-          />
-        </Card>
+                          {/* Reset Password Action */}
+                          {!user.is_pending_invite && (isOwner || user.role === 'user') && (
+                            <button
+                              type="button"
+                              onClick={() => openResetPasswordModal(user)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer"
+                              title="Đặt lại mật khẩu"
+                            >
+                              <KeyRound className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Account active/suspend toggle */}
+                          {!user.is_pending_invite && user.role !== 'owner' && isOwner && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(user)}
+                              className={cn(
+                                'p-1.5 rounded-lg transition-colors cursor-pointer',
+                                isActive
+                                  ? 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                  : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50'
+                              )}
+                              title={isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
+                            >
+                              {isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                            </button>
+                          )}
+
+                          {/* Delete User Action */}
+                          {!user.is_pending_invite && user.role !== 'owner' && (isOwner || user.role === 'user') && (
+                            <button
+                              type="button"
+                              onClick={() => openDeleteModal(user)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                              title="Xóa tài khoản"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {activeTab === 'staff' && user.role === 'manager' && isOwner && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-rose-600 hover:bg-rose-50"
+                              onClick={() => handleRevokeManager(user)}
+                            >
+                              Hạ Cấp
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
 
-      {/* Modal: Appoint New Showroom Manager */}
+      {/* Invite Member & Grant Access Modal */}
+      <Modal
+        isOpen={isInviteModalOpen}
+        onClose={() => {
+          setIsInviteModalOpen(false);
+          setInviteResult(null);
+        }}
+        title={inviteResult ? 'Tạo Lời Mời Thành Công' : 'Mời Thành Viên Mới & Cấp Quyền'}
+        description={
+          inviteResult
+            ? 'Liên kết mời và thông tin kích hoạt tài khoản đã sẵn sàng.'
+            : 'Nhập địa chỉ email để tạo và gửi link mời tham gia ban quản trị hoặc khách hàng VIP.'
+        }
+        maxWidth="lg"
+      >
+        {inviteResult ? (
+          <div className="space-y-5 text-left py-1">
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-start gap-3">
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-emerald-900">
+                  Lời mời đã được khởi tạo thành công!
+                </h4>
+                <p className="text-xs text-emerald-700 leading-relaxed">
+                  {inviteResult.emailSent
+                    ? `Hệ thống đã tự động gửi email kích hoạt tới hòm thư ${inviteResult.email}. Ngoài ra bạn có thể sao chép đường link bên dưới để gửi trực tiếp qua Zalo / Telegram / Slack.`
+                    : `Hệ thống đã bảo mật liên kết kích hoạt cho ${inviteResult.email}. Bạn có thể sao chép liên kết bên dưới để gửi trực tiếp cho người nhận qua Zalo, Telegram hoặc Email.`}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 block">
+                Đường Dẫn Mời Kích Hoạt (Invite Link)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={inviteResult.link}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-mono text-slate-700 select-all focus:outline-none"
+                />
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => {
+                    navigator.clipboard.writeText(inviteResult.link);
+                    setCopiedLink(true);
+                    success('Đã sao chép!', 'Đường link mời đã được lưu vào bộ nhớ tạm.');
+                    setTimeout(() => setCopiedLink(false), 2500);
+                  }}
+                  leftIcon={copiedLink ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  className="shrink-0 cursor-pointer font-bold"
+                >
+                  {copiedLink ? 'Đã Sao Chép' : 'Sao Chép'}
+                </Button>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Người nhận chỉ cần nhấp vào liên kết trên để xác thực tài khoản và thiết lập mật khẩu đăng nhập.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setInviteResult(null);
+                  setInviteEmail('');
+                  setInviteName('');
+                  setInvitePhone('');
+                }}
+              >
+                Mời Thêm Người Khác
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setIsInviteModalOpen(false);
+                  setInviteResult(null);
+                }}
+              >
+                Hoàn Tất
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSendInvite} className="space-y-4 text-left">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">
+                Địa Chỉ Email Người Nhận *
+              </label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="nhansu@automatch.vn hoặc customer@gmail.com"
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                />
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Link kích hoạt bảo mật sẽ được tạo riêng tương ứng với địa chỉ email này.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Họ & Tên Người Được Mời *
+                </label>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  placeholder="VD: Trần Hoàng Long"
+                  required
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Số Điện Thoại Liên Hệ
+                </label>
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                    placeholder="0987 654 321"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">
+                Vai Trò & Quyền Hạn Cấp Phát *
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setInviteRole('manager')}
+                  className={cn(
+                    'p-3 rounded-2xl border text-left cursor-pointer transition-all',
+                    inviteRole === 'manager'
+                      ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-blue-700 mb-1">
+                    <Shield className="w-3.5 h-3.5" />
+                    <span>Quản Lý Showroom</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug">
+                    Duyệt lái thử, cập nhật xe & đối soát hợp đồng
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setInviteRole('user')}
+                  className={cn(
+                    'p-3 rounded-2xl border text-left cursor-pointer transition-all',
+                    inviteRole === 'user'
+                      ? 'border-indigo-600 bg-indigo-50/60 ring-2 ring-indigo-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-indigo-700 mb-1">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>Khách Hàng (User)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 leading-snug">
+                    Hồ sơ CRM khách hàng VIP trải nghiệm xe
+                  </p>
+                </button>
+
+                {isOwner && (
+                  <button
+                    type="button"
+                    onClick={() => setInviteRole('owner')}
+                    className={cn(
+                      'p-3 rounded-2xl border text-left cursor-pointer transition-all',
+                      inviteRole === 'owner'
+                        ? 'border-amber-600 bg-amber-50/60 ring-2 ring-amber-500/20'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    )}
+                  >
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 mb-1">
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>Đồng Sở Hữu (Owner)</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug">
+                      Toàn quyền tối cao điều hành toàn hệ thống
+                    </p>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {inviteRole === 'manager' && (
+              <div className="space-y-1.5 animate-in fade-in">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Showroom Trực Thuộc Phụ Trách
+                </label>
+                <Select
+                  value={inviteShowroomId}
+                  onChange={(e) => setInviteShowroomId(e.target.value)}
+                  className="w-full text-xs"
+                >
+                  <option value="">-- Quản lý toàn quốc (Tất cả Showroom) --</option>
+                  {showrooms.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} ({s.city})
+                    </option>
+                  ))}
+                </Select>
+              </div>
+            )}
+
+            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-2xl text-[11px] text-blue-900 flex items-start gap-2.5">
+              <Send className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5 leading-relaxed">
+                <span className="font-bold">Cơ chế gửi lời mời:</span>
+                <p>
+                  Hệ thống sẽ gửi email kích hoạt và tạo sẵn link mời bảo mật để bạn có thể sao chép gửi trực tiếp qua Zalo, Telegram hoặc Email cho người nhận.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setIsInviteModalOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                isLoading={isInviting}
+                leftIcon={<Send className="w-4 h-4" />}
+                className="font-bold cursor-pointer"
+              >
+                Tạo Link Mời & Gửi Lời Mời
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Appoint Manager Modal */}
       <Modal
         isOpen={isAppointModalOpen}
         onClose={() => {
@@ -508,11 +955,10 @@ export const CustomersView: React.FC = () => {
                 <div
                   key={c.id}
                   onClick={() => setSelectedUserToPromote(c.id)}
-                  className={`p-3 flex items-center justify-between text-xs cursor-pointer transition-colors ${
-                    selectedUserToPromote === c.id
-                      ? 'bg-indigo-50/80 border-l-4 border-indigo-600'
-                      : 'hover:bg-slate-50'
-                  }`}
+                  className={`p-3 flex items-center justify-between text-xs cursor-pointer transition-colors ${selectedUserToPromote === c.id
+                    ? 'bg-indigo-50/80 border-l-4 border-indigo-600'
+                    : 'hover:bg-slate-50'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5">
                     <img
@@ -584,7 +1030,7 @@ export const CustomersView: React.FC = () => {
         <Modal
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          title={`Hồ Sơ 360 Độ: ${selectedProfile.full_name || 'Khách Hàng'}`}
+          title={`Hồ Sơ: ${selectedProfile.full_name || 'Khách Hàng'}`}
           description={`Email: ${selectedProfile.email}`}
           maxWidth="2xl"
         >
@@ -759,7 +1205,7 @@ export const CustomersView: React.FC = () => {
         </Modal>
       )}
 
-      {/* Add Customer Modal */}
+      {/* Legacy Add Customer Modal */}
       <Modal
         isOpen={isAddCustomerModalOpen}
         onClose={() => setIsAddCustomerModalOpen(false)}
@@ -829,6 +1275,159 @@ export const CustomersView: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Reset Password Modal */}
+      {targetUserForReset && (
+        <Modal
+          isOpen={isResetPasswordModalOpen}
+          onClose={() => {
+            setIsResetPasswordModalOpen(false);
+            setTargetUserForReset(null);
+          }}
+          title={`Đặt Lại Mật Khẩu: ${targetUserForReset.full_name || targetUserForReset.email}`}
+          description={`Email: ${targetUserForReset.email} • Vai trò: ${targetUserForReset.role.toUpperCase()}`}
+          maxWidth="md"
+        >
+          <div className="space-y-4 text-left">
+            <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/80 text-xs text-amber-800 space-y-1">
+              <span className="font-bold flex items-center gap-1.5 text-amber-900">
+                <KeyRound className="w-4 h-4 text-amber-600" />
+                Cấp mật khẩu mới cho người dùng
+              </span>
+              <p className="leading-relaxed text-[11px]">
+                Bạn có thể tự cấp một mật khẩu mới trực tiếp (sau đó sao chép gửi cho người dùng) hoặc gửi email yêu cầu đặt lại mật khẩu.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 block">
+                  Mật Khẩu Mới Cấp Phát *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setNewPasswordInput('AutoMatch@' + Math.floor(1000 + Math.random() * 9000))}
+                  className="text-[11px] font-semibold text-blue-600 hover:underline cursor-pointer flex items-center gap-1"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>Sinh mật khẩu khác</span>
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  placeholder="Nhập mật khẩu mới..."
+                  required
+                  className="flex-1 font-mono text-xs"
+                />
+                <Button
+                  variant="outline"
+                  size="md"
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(newPasswordInput);
+                    success('Đã sao chép mật khẩu', `Mật khẩu ${newPasswordInput} đã được lưu vào clipboard.`);
+                  }}
+                  leftIcon={<Copy className="w-4 h-4" />}
+                  title="Sao chép mật khẩu"
+                >
+                  Copy
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <Button
+                variant="outline"
+                type="button"
+                size="sm"
+                onClick={handleSendResetEmail}
+                isLoading={isResettingPassword}
+              >
+                Gửi Email Reset
+              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    setIsResetPasswordModalOpen(false);
+                    setTargetUserForReset(null);
+                  }}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  variant="primary"
+                  type="button"
+                  size="sm"
+                  onClick={handleConfirmResetPassword}
+                  isLoading={isResettingPassword}
+                >
+                  Xác Nhận Đổi Mật Khẩu
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete User Confirm Modal */}
+      {targetUserForDelete && (
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setTargetUserForDelete(null);
+          }}
+          title="Xác Nhận Xóa Vĩnh Viễn Tài Khoản"
+          description={`Tài khoản: ${targetUserForDelete.email}`}
+          maxWidth="sm"
+        >
+          <div className="space-y-4 text-left">
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200/80 text-xs text-rose-800 space-y-2">
+              <div className="flex items-center gap-2 font-bold text-rose-900">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Cảnh báo hành động không thể hoàn tác</span>
+              </div>
+              <p className="leading-relaxed">
+                Bạn có chắc chắn muốn xóa tài khoản{' '}
+                <strong className="text-slate-900">{targetUserForDelete.full_name || targetUserForDelete.email}</strong>{' '}
+                ({targetUserForDelete.role === 'manager' ? 'Quản lý Showroom' : 'Khách hàng CRM'})?
+              </p>
+              <p className="text-[11px] text-rose-700">
+                Hồ sơ tài khoản sẽ bị gỡ bỏ vĩnh viễn khỏi danh sách quản lý.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setTargetUserForDelete(null);
+                }}
+              >
+                Hủy Bỏ
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={handleConfirmDelete}
+                isLoading={isDeletingUser}
+                leftIcon={<Trash2 className="w-4 h-4" />}
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold cursor-pointer"
+              >
+                Xác Nhận Xóa Tài Khoản
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

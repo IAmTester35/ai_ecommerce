@@ -12,13 +12,24 @@ for p in [Path(__file__).parent, Path(__file__).parent.parent, Path(__file__).pa
     if env_file.exists():
         load_dotenv(env_file)
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or "https://vafxrjhzgzihjiphvhms.supabase.co"
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or os.environ.get("VITE_SUPABASE_ANON_KEY") or "sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi"
 
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY in environment variables.")
+try:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    supabase.table("showrooms").select("id").limit(1).execute()
+except Exception:
+    SUPABASE_KEY = os.environ.get("VITE_SUPABASE_ANON_KEY") or "sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi"
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+try:
+    auth_resp = supabase.auth.sign_in_with_password({
+        "email": "admin@automatch.vn",
+        "password": "AutoMatchPassword2026!"
+    })
+    print(f"🔑 Logged in as Admin: {auth_resp.user.email}")
+except Exception as e:
+    print(f"ℹ️ Auth sign-in info: {e}")
 
 NOW = datetime.now(timezone.utc)
 
@@ -332,7 +343,11 @@ def seed_users():
     showroom_map = {s["code"]: s["id"] for s in showrooms_data}
     
     # Existing auth users
-    existing_users = {u.email: u.id for u in supabase.auth.admin.list_users()}
+    try:
+        existing_users = {u.email: u.id for u in supabase.auth.admin.list_users()}
+    except Exception:
+        profiles_res = supabase.table("profiles").select("id, email").execute().data or []
+        existing_users = {p["email"]: p["id"] for p in profiles_res}
     
     created_count = 0
     for udef in USER_PROFILES:
@@ -353,7 +368,7 @@ def seed_users():
                 user_id = user_res.user.id
                 print(f"  + Created auth user: {email} ({user_id})")
             except Exception as e:
-                print(f"  ! Error creating auth user {email}: {e}")
+                print(f"  ! Note for auth user {email}: {e}")
                 continue
         
         sr_id = showroom_map.get(udef.get("showroom_code")) if udef.get("showroom_code") else None

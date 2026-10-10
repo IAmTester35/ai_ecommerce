@@ -9,6 +9,8 @@ export interface Profile {
   role: UserRole;
   showroom_id?: string | null;
   is_active?: boolean;
+  is_pending_invite?: boolean;
+  invite_link?: string;
   created_at: string;
   updated_at: string;
   showroom?: Showroom | null;

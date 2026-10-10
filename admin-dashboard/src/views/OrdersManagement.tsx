@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Printer,
   Calendar,
+  AlertTriangle,
 } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
@@ -95,6 +96,10 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
   // Handover Sheet (Biên bản bàn giao) Modal State
   const [isHandoverModalOpen, setIsHandoverModalOpen] = useState(false);
 
+  // Delete Order Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
+
   const openOrderDrawer = (order: Order) => {
     setSelectedOrder(order);
     setIsDrawerOpen(true);
@@ -125,13 +130,21 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
     }
   };
 
-  const handleDeleteOrder = async (orderId: string) => {
+  const handleDeleteOrderClick = () => {
     if (!isOwner) {
       error('Quyền hạn bị từ chối', 'Chỉ tài khoản cấp Owner mới có quyền xóa đơn đặt cọc.');
       return;
     }
-    if (window.confirm(`Bạn có chắc chắn muốn xóa hợp đồng #${orderId.slice(0, 8)} khỏi cơ sở dữ liệu?`)) {
-      await deleteOrder(orderId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedOrder) return;
+    setIsSubmittingDelete(true);
+    const ok = await deleteOrder(selectedOrder.id);
+    setIsSubmittingDelete(false);
+    if (ok) {
+      setIsDeleteModalOpen(false);
       setIsDrawerOpen(false);
       setSelectedOrder(null);
     }
@@ -974,7 +987,7 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
                   size="sm"
                   className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                   leftIcon={<Trash2 className="w-3.5 h-3.5" />}
-                  onClick={() => handleDeleteOrder(selectedOrder.id)}
+                  onClick={handleDeleteOrderClick}
                 >
                   Xóa HĐ
                 </Button>
@@ -1159,6 +1172,47 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Delete Order Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => !isSubmittingDelete && setIsDeleteModalOpen(false)}
+        title="Xác Nhận Xóa Hợp Đồng Vĩnh Viễn"
+      >
+        <div className="space-y-4 text-left">
+          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="text-xs text-rose-800 space-y-1">
+              <p className="font-bold">Cảnh báo: Thao tác này không thể hoàn tác!</p>
+              <p>
+                Hợp đồng đặt cọc <span className="font-mono font-bold">#{selectedOrder?.id.slice(0, 8)}</span> của khách hàng{' '}
+                <span className="font-semibold">{selectedOrder?.profile?.full_name || 'Khách hàng'}</span> sẽ bị xóa hoàn toàn khỏi cơ sở dữ liệu.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button
+              variant="secondary"
+              size="md"
+              type="button"
+              disabled={isSubmittingDelete}
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Hủy Bỏ
+            </Button>
+            <Button
+              variant="danger"
+              size="md"
+              type="button"
+              isLoading={isSubmittingDelete}
+              onClick={handleConfirmDelete}
+            >
+              Xác Nhận Xóa Vĩnh Viễn
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

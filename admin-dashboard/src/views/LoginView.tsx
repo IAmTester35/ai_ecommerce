@@ -10,6 +10,8 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  ArrowLeft,
+  KeyRound,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -17,12 +19,40 @@ import { Badge } from '../components/ui/Badge';
 import { ROLE_INFO } from '../lib/permissions';
 
 export const LoginView: React.FC = () => {
-  const { signIn, signInDemo, isLoading } = useAuth();
+  const { signIn, resetPassword, isLoading } = useAuth();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<'login' | 'forgot_password'>('login');
+  const [email, setEmail] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('email') || (import.meta.env.VITE_ADMIN_EMAIL as string) || '';
+    } catch {
+      return (import.meta.env.VITE_ADMIN_EMAIL as string) || '';
+    }
+  });
+  const [password, setPassword] = useState((import.meta.env.VITE_ADMIN_PASSWORD as string) || '');
+  const [resetEmail, setResetEmail] = useState(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('email') || '';
+    } catch {
+      return '';
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const hasInvite = params.get('invite_token') || params.get('invited');
+      if (hasInvite) {
+        return 'Bạn đã nhận được lời mời tham gia cổng quản trị AutoMatch. Hãy dùng chức năng "Quên mật khẩu?" bên dưới để đặt mật khẩu riêng nếu đây là lần đầu truy cập.';
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  });
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +66,24 @@ export const LoginView: React.FC = () => {
     const res = await signIn(email, password);
     if (!res.success) {
       setErrorMessage(res.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    if (!resetEmail.trim()) {
+      setErrorMessage('Vui lòng nhập địa chỉ email quản trị.');
+      return;
+    }
+
+    const res = await resetPassword(resetEmail);
+    if (res.success) {
+      setSuccessMessage(`Đã gửi liên kết khôi phục mật khẩu đến ${resetEmail.trim()}. Vui lòng kiểm tra hộp thư email.`);
+    } else {
+      setErrorMessage(res.error || 'Không thể gửi email khôi phục mật khẩu. Vui lòng thử lại.');
     }
   };
 
@@ -127,113 +175,193 @@ export const LoginView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: Clean Luxury Login Form Card */}
+        {/* Right Column: Luxury Login / Forgot Password Form Card */}
         <div className="lg:col-span-6">
           <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/90 shadow-xl shadow-slate-200/50 space-y-6 text-left relative">
-            {/* Form Title & Context */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                  Đăng Nhập Quản Trị Viên
-                </h3>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Hệ thống sẵn sàng" />
-              </div>
-              <p className="text-xs text-slate-500">
-                Nhập email và mật khẩu tài khoản được cấp quyền để truy cập hệ thống điều hành.
-              </p>
-            </div>
-
-            {/* Error Message Notification */}
-            {errorMessage && (
-              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-start gap-2.5 text-xs text-rose-700 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
-                <span className="leading-snug">{errorMessage}</span>
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 block">
-                  Email Quản Trị Viên *
-                </label>
-                <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="admin@automatch.vn"
-                    autoComplete="email"
-                    required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
-                  />
+            {mode === 'login' ? (
+              <>
+                {/* Form Title & Context */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                      Đăng Nhập Quản Trị Viên
+                    </h3>
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" title="Hệ thống sẵn sàng" />
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Nhập email và mật khẩu tài khoản được cấp quyền để truy cập hệ thống điều hành.
+                  </p>
                 </div>
-              </div>
 
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-700 block">
-                    Mật Khẩu *
-                  </label>
-                </div>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
-                    title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                {/* Error Message Notification */}
+                {errorMessage && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-start gap-2.5 text-xs text-rose-700 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                    <span className="leading-snug">{errorMessage}</span>
+                  </div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 block">
+                      Email Quản Trị Viên *
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="admin@automatch.vn"
+                        autoComplete="email"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700 block">
+                        Mật Khẩu *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setErrorMessage(null);
+                          setSuccessMessage(null);
+                          setResetEmail(email.trim());
+                          setMode('forgot_password');
+                        }}
+                        className="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer transition-colors"
+                      >
+                        Quên mật khẩu?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        required
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer p-1"
+                        title={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    size="lg"
+                    isLoading={isLoading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 mt-2 py-3 cursor-pointer"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                    Đăng Nhập Vào Hệ Thống
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <>
+                {/* Forgot Password Header */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <KeyRound className="w-4 h-4" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                      Khôi Phục Mật Khẩu
+                    </h3>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Nhập email tài khoản quản trị để nhận liên kết xác thực đặt lại mật khẩu an toàn.
+                  </p>
                 </div>
-              </div>
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                isLoading={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 mt-2 py-3"
-              >
-                Đăng Nhập Vào Hệ Thống
-              </Button>
-            </form>
+                {/* Notifications */}
+                {errorMessage && (
+                  <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-start gap-2.5 text-xs text-rose-700 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                    <span className="leading-snug">{errorMessage}</span>
+                  </div>
+                )}
 
-            {/* Quick Demo Access Bar */}
-            <div className="pt-2 border-t border-slate-100 space-y-2">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">
-                Truy Cập Quản Trị Trực Tiếp (1-Click Demo)
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => signInDemo('owner')}
-                  className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl border border-indigo-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Quyền Owner</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => signInDemo('manager')}
-                  className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Quản Lý Chi Nhánh</span>
-                </button>
-              </div>
-            </div>
+                {successMessage ? (
+                  <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-3.5 text-xs text-emerald-800 animate-in fade-in">
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <p className="leading-relaxed">{successMessage}</p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="md"
+                      onClick={() => {
+                        setMode('login');
+                        setSuccessMessage(null);
+                        setErrorMessage(null);
+                      }}
+                      className="w-full text-xs font-semibold"
+                    >
+                      Quay lại trang Đăng nhập
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleResetPassword} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-slate-700 block">
+                        Email Quản Trị Viên *
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          value={resetEmail}
+                          onChange={(e) => setResetEmail(e.target.value)}
+                          placeholder="admin@automatch.vn"
+                          autoComplete="email"
+                          required
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      isLoading={isLoading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-600/20 mt-2 py-3 cursor-pointer"
+                    >
+                      Gửi Liên Kết Khôi Phục
+                    </Button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode('login');
+                        setErrorMessage(null);
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 pt-1 cursor-pointer transition-colors"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Quay lại Đăng nhập</span>
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
 
             {/* Security Notice Box */}
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 leading-relaxed">

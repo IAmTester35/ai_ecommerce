@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { DataProvider } from './context/DataContext';
 import { AdminLayout } from './components/layout/AdminLayout';
 import { LoginView } from './views/LoginView';
+import { AcceptInviteView } from './views/AcceptInviteView';
 import type { NavView } from './components/layout/Sidebar';
 import { Zap, Loader2 } from 'lucide-react';
 
@@ -26,11 +27,21 @@ const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [currentView, setCurrentView] = useState<NavView>('dashboard');
   const [isAddCarModalOpen, setIsAddCarModalOpen] = useState(false);
+  const [hasDismissedInvite, setHasDismissedInvite] = useState(false);
 
   const handleOpenAddCar = () => {
     setCurrentView('cars');
     setIsAddCarModalOpen(true);
   };
+
+  const isInvite = !hasDismissedInvite && (() => {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      return Boolean(p.get('invite_token') || p.get('invited'));
+    } catch {
+      return false;
+    }
+  })();
 
   // Luxury Fullscreen Loading State (Light Mode Admin Standard)
   if (isLoading) {
@@ -45,6 +56,11 @@ const AppContent: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  // Handle invitation URL first
+  if (isInvite) {
+    return <AcceptInviteView onDismiss={() => setHasDismissedInvite(true)} />;
   }
 
   // Not authenticated as Owner/Manager -> Render Admin Login Portal

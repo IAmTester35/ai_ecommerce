@@ -10,41 +10,77 @@ services:
     env_file:
       - ./backend/.env
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    networks:
+      - automatch_net
 
   admin-dashboard:
     build:
       context: ./admin-dashboard
       dockerfile: Dockerfile
       args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
-        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     container_name: automatch_admin_dashboard
     restart: unless-stopped
     ports:
       - "5173:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - automatch_net
 
   ecommerce-car:
     build:
       context: ./ecommerce-car
       dockerfile: Dockerfile
       args:
-        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
-        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
+        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL}
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
         EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:8000}
     container_name: automatch_ecommerce_car
     restart: unless-stopped
     ports:
       - "8081:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
     depends_on:
       backend:
         condition: service_healthy
+    networks:
+      - automatch_net
 
+networks:
+  automatch_net:
+    driver: bridge

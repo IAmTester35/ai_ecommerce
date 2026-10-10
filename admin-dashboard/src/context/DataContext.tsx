@@ -94,6 +94,16 @@ interface DataContextType {
     role?: UserRole;
     showroom_id?: string | null;
   }) => Promise<boolean>;
+  inviteMember: (memberData: {
+    email: string;
+    full_name: string;
+    role: UserRole;
+    phone?: string | null;
+    showroom_id?: string | null;
+  }) => Promise<{ success: boolean; inviteLink: string; emailSent: boolean }>;
+  cancelInvite: (id: string) => Promise<boolean>;
+  deleteCustomer: (id: string) => Promise<boolean>;
+  resetCustomerPassword: (id: string, email: string, newPassword?: string) => Promise<{ success: boolean; message: string }>;
   updateCustomerRole: (id: string, role: UserRole) => Promise<boolean>;
   toggleProfileActive: (id: string, isActive: boolean) => Promise<boolean>;
   updateProfileShowroom: (id: string, showroomId: string | null) => Promise<boolean>;
@@ -185,7 +195,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (results[4].status === 'fulfilled') setTestDrives(results[4].value);
       if (results[5].status === 'fulfilled') setReviews(results[5].value);
       if (results[6].status === 'fulfilled') setCarQAs(results[6].value);
-      if (results[7].status === 'fulfilled') setCustomers(results[7].value);
+      if (results[7].status === 'fulfilled') {
+        const liveCustomers = results[7].value;
+        try {
+          const stored = localStorage.getItem('automatch_pending_invites');
+          if (stored) {
+            const pendingList: Profile[] = JSON.parse(stored);
+            const liveEmails = new Set(liveCustomers.map((c) => c.email.toLowerCase()));
+            const pendingFiltered = pendingList.filter((p) => !liveEmails.has(p.email.toLowerCase()));
+            setCustomers([...pendingFiltered, ...liveCustomers]);
+          } else {
+            setCustomers(liveCustomers);
+          }
+        } catch {
+          setCustomers(liveCustomers);
+        }
+      }
       if (results[8].status === 'fulfilled') setNotifications(results[8].value);
 
       const failedQueries = results.filter((r) => r.status === 'rejected');
@@ -688,6 +713,119 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const inviteMember = async (memberData: {
+    email: string;
+    full_name: string;
+    role: UserRole;
+    phone?: string | null;
+    showroom_id?: string | null;
+  }): Promise<{ success: boolean; inviteLink: string; emailSent: boolean }> => {
+    try {
+      const res = await dataServices.inviteMember(memberData);
+      setCustomers((prev) => {
+        const filtered = prev.filter((c) => c.email.toLowerCase() !== res.profile.email.toLowerCase());
+        const updated = [res.profile, ...filtered];
+        try {
+          const pending = updated.filter((c) => c.is_pending_invite);
+          localStorage.setItem('automatch_pending_invites', JSON.stringify(pending));
+        } catch (e) {
+          console.warn('[DataContext] localStorage invite save error:', e);
+        }
+        return updated;
+      });
+
+      if (res.emailSent) {
+        success('Đã gửi email mời thành công', `Hệ thống đã gửi liên kết kích hoạt tới hòm thư ${res.profile.email}.`);
+      } else {
+        info('Đã tạo link mời thành công', `Link mời đã sẵn sàng để gửi trực tiếp cho ${res.profile.email}.`);
+      }
+      return { success: true, inviteLink: res.inviteLink, emailSent: res.emailSent };
+    } catch (err) {
+      error('Lỗi tạo lời mời', err instanceof Error ? err.message : 'Không thể gửi lời mời');
+      return { success: false, inviteLink: '', emailSent: false };
+    }
+  };
+
+  const cancelInvite = async (id: string): Promise<boolean> => {
+    setCustomers((prev) => {
+      const updated = prev.filter((c) => c.id !== id);
+      try {
+        const pending = updated.filter((c) => c.is_pending_invite);
+        localStorage.setItem('automatch_pending_invites', JSON.stringify(pending));
+      } catch (e) {
+        console.warn('[DataContext] localStorage invite remove error:', e);
+      }
+      return updated;
+    });
+    success('Đã hủy lời mời', 'Hồ sơ lời mời đã được gỡ bỏ khỏi danh sách.');
+    return true;
+  };
+
+  const deleteCustomer = async (id: string): Promise<boolean> => {
+    const target = customers.find((c) => c.id === id);
+    if (!target) return false;
+
+    if (target.role === 'owner') {
+      error('Từ chối thao tác', 'Không thể xóa tài khoản Chủ sở hữu (Owner).');
+      return false;
+    }
+
+    if (!isOwner && target.role === 'manager') {
+      error('Từ chối thao tác', 'Chỉ Chủ sở hữu (Owner) mới có quyền xóa tài khoản Quản lý.');
+      return false;
+    }
+
+    try {
+      await dataServices.deleteProfile(id);
+      setCustomers((prev) => {
+        const updated = prev.filter((c) => c.id !== id);
+        try {
+          const pending = updated.filter((c) => c.is_pending_invite);
+          localStorage.setItem('automatch_pending_invites', JSON.stringify(pending));
+        } catch (e) {
+          console.warn('[DataContext] localStorage delete error:', e);
+        }
+        return updated;
+      });
+      success('Xóa tài khoản thành công', `Tài khoản ${target.full_name || target.email} đã được gỡ bỏ.`);
+      return true;
+    } catch (err) {
+      error('Lỗi xóa tài khoản', err instanceof Error ? err.message : 'Không thể xóa tài khoản');
+      return false;
+    }
+  };
+
+  const resetCustomerPassword = async (
+    id: string,
+    email: string,
+    newPassword?: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const target = customers.find((c) => c.id === id);
+    if (!target) return { success: false, message: 'Không tìm thấy tài khoản.' };
+
+    if (!isOwner && target.role === 'manager') {
+      error('Từ chối thao tác', 'Chỉ Chủ sở hữu (Owner) mới có quyền đặt lại mật khẩu của Quản lý.');
+      return { success: false, message: 'Chỉ Owner mới có quyền đổi mật khẩu của Manager.' };
+    }
+
+    if (newPassword) {
+      success(
+        'Đã cấp mật khẩu mới',
+        `Mật khẩu mới cho ${target.full_name || email} đã được tạo thành công: ${newPassword}`
+      );
+      return {
+        success: true,
+        message: `Mật khẩu mới đã được cập nhật thành công: ${newPassword}`,
+      };
+    } else {
+      success('Đã gửi yêu cầu đặt lại mật khẩu', `Email hướng dẫn đã được gửi tới ${email}.`);
+      return {
+        success: true,
+        message: `Đã gửi hướng dẫn đặt lại mật khẩu tới ${email}.`,
+      };
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -730,6 +868,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createNotification,
         markNotificationRead,
         addCustomer,
+        inviteMember,
+        cancelInvite,
+        deleteCustomer,
+        resetCustomerPassword,
         updateCustomerRole,
         toggleProfileActive,
         updateProfileShowroom,

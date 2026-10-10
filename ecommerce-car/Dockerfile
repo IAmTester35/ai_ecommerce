@@ -8,8 +8,9 @@ WORKDIR /app
 # Copy dependency definitions
 COPY package.json yarn.lock* ./
 
-# Install dependencies (fallback to npm if yarn lockfile has mismatch)
-RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile --ignore-engines || yarn install --ignore-engines; else npm install; fi
+# Install dependencies with build cache mount (fallback to npm if yarn lockfile has mismatch)
+RUN --mount=type=cache,target=/usr/local/share/.cache/yarn \
+    if [ -f yarn.lock ]; then yarn install --frozen-lockfile --ignore-engines || yarn install --ignore-engines; else npm install; fi
 
 # Copy application source code
 COPY . .

@@ -17,7 +17,8 @@ export const Badge: React.FC<BadgeProps> = ({
   children,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center font-medium tracking-tight select-none border transition-colors';
+  const baseStyles =
+    'inline-flex items-center justify-center font-medium tracking-tight select-none border transition-colors whitespace-nowrap shrink-0 text-center';
 
   const variants = {
     primary: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -40,8 +41,8 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   const sizes = {
-    sm: 'text-xs px-2 py-0.5 gap-1.5',
-    md: 'text-xs px-2.5 py-1 gap-1.5 font-medium',
+    sm: 'text-xs px-2.5 py-0.5 gap-1.5 min-h-[22px]',
+    md: 'text-xs px-3 py-1 gap-1.5 font-medium min-h-[26px]',
   };
 
   return (

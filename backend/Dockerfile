@@ -26,14 +26,20 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Cài curl để hỗ trợ docker healthcheck
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+# Tạo non-root user để tăng tính bảo mật
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup appuser
 
 COPY --from=builder /opt/venv /opt/venv
-COPY . .
+COPY --chown=appuser:appgroup . .
+
+USER appuser
 
 EXPOSE 8000
+
+# Healthcheck thuần Python không cần cài curl
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')" || exit 1
 
 # Chạy uvicorn với access-log và log-level info
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--access-log", "--log-level", "info"]

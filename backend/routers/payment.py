@@ -55,13 +55,16 @@ async def payment_callback(
         }
 
 @router.post("/status")
-async def check_order_status(req: CheckOrderStatusRequest):
+async def check_order_status(
+    req: CheckOrderStatusRequest,
+    db: Client = Depends(get_supabase)
+):
     """
-    Kiểm tra trạng thái đơn hàng ZaloPay
+    Kiểm tra trạng thái đơn hàng ZaloPay và tự động đồng bộ DB khi thành công
     """
     try:
         logger.info(f"Checking ZaloPay order status for app_trans_id: {req.app_trans_id}")
-        res = await zalopay_service.check_order_status(req.app_trans_id)
+        res = await zalopay_service.check_order_status(req.app_trans_id, db=db)
         return res
     except Exception as e:
         logger.error(f"Error checking order status: {str(e)}", exc_info=True)

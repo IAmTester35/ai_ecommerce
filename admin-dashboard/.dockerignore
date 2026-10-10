@@ -1,5 +1,8 @@
 node_modules
 dist
+*.md
+.vscode
+.claude
 .git
 .gitignore
 .env
@@ -9,3 +12,4 @@ dist
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+

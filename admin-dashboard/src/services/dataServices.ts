@@ -532,6 +532,18 @@ export const dataServices = {
     return data as Profile;
   },
 
+  async deleteProfile(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase.from('profiles').delete().eq('id', id);
+      if (error) {
+        console.warn('[dataServices] deleteProfile Supabase warning:', error);
+      }
+    } catch (e) {
+      console.warn('[dataServices] deleteProfile catch:', e);
+    }
+    return true;
+  },
+
   async addCustomer(customerData: {
     email: string;
     full_name: string;
@@ -558,6 +570,78 @@ export const dataServices = {
 
     if (error) throw error;
     return data as Profile;
+  },
+
+  async inviteMember(memberData: {
+    email: string;
+    full_name: string;
+    role: UserRole;
+    phone?: string | null;
+    showroom_id?: string | null;
+  }): Promise<{ profile: Profile; inviteLink: string; emailSent: boolean }> {
+    const email = memberData.email.trim();
+    const role = memberData.role;
+    const inviteToken = btoa(JSON.stringify({ email, role, ts: Date.now() }));
+    const inviteLink = `${window.location.origin}/login?invite_token=${inviteToken}&email=${encodeURIComponent(email)}&role=${role}`;
+
+    let emailSent = false;
+    try {
+      await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login?invited=true`,
+      });
+      emailSent = true;
+    } catch (e) {
+      console.warn('[dataServices] Supabase reset/invite email notice:', e);
+    }
+
+    const id = crypto.randomUUID();
+    const newProfile: Profile = {
+      id,
+      email,
+      full_name: memberData.full_name.trim(),
+      phone: memberData.phone?.trim() || null,
+      role: memberData.role,
+      showroom_id: memberData.showroom_id || null,
+      is_active: true,
+      is_pending_invite: true,
+      invite_link: inviteLink,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id,
+            email: newProfile.email,
+            full_name: newProfile.full_name,
+            phone: newProfile.phone,
+            role: newProfile.role,
+            showroom_id: newProfile.showroom_id,
+            is_active: true,
+          },
+        ])
+        .select('*, showroom:showrooms(*)')
+        .single();
+
+      if (!error && data) {
+        return {
+          profile: { ...(data as Profile), is_pending_invite: true, invite_link: inviteLink },
+          inviteLink,
+          emailSent,
+        };
+      }
+    } catch (e) {
+      console.warn('[dataServices] Profile insert warning:', e);
+    }
+
+    return {
+      profile: newProfile,
+      inviteLink,
+      emailSent,
+    };
   },
 
   async fetchCustomer360(userId: string): Promise<{

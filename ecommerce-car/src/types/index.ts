@@ -117,6 +117,7 @@ export interface Order {
   payment_status: PaymentStatus;
   deposit_status: DepositStatus;
   contract_url?: string | null;
+  app_trans_id?: string | null;
   created_at: string;
   updated_at: string;
   order_items?: OrderItem[];

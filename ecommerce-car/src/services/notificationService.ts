@@ -9,7 +9,7 @@ export const notificationService = {
       .order('created_at', { ascending: false });
 
     if (userId) {
-      query = query.eq('user_id', userId);
+      query = query.or(`user_id.eq.${userId},user_id.is.null`);
     }
 
     const { data, error } = await query;

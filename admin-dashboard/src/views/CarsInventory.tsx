@@ -447,10 +447,10 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
                     <TableHead>Mẫu Xe / Hình Ảnh</TableHead>
                     <TableHead>Năm SX</TableHead>
                     <TableHead>Động Cơ / Mã Lực</TableHead>
-                    <TableHead>Giá Niêm Yết (USD)</TableHead>
-                    <TableHead>Tồn Kho (Điều chỉnh nhanh)</TableHead>
+                    <TableHead className="whitespace-nowrap">Giá Niêm Yết (VNĐ)</TableHead>
+                    <TableHead className="whitespace-nowrap">Tồn Kho (Điều chỉnh nhanh)</TableHead>
                     <TableHead>Showroom Trưng Bày</TableHead>
-                    <TableHead>Trạng Thái</TableHead>
+                    <TableHead className="whitespace-nowrap text-center">Trạng Thái</TableHead>
                     <TableHead className="text-right">Hành Động</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -538,10 +538,26 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
                           </span>
                         </TableCell>
 
-                        <TableCell>
-                          <Badge variant={car.is_active ? 'success' : 'neutral'} size="sm">
-                            {car.is_active ? 'Đang bán' : 'Tạm ẩn'}
-                          </Badge>
+                        <TableCell className="whitespace-nowrap text-center">
+                          <button
+                            type="button"
+                            onClick={() => toggleCarActive(car.id)}
+                            className={cn(
+                              'inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold select-none transition-all cursor-pointer border whitespace-nowrap min-w-24 shadow-2xs hover:scale-105 active:scale-95',
+                              car.is_active
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300'
+                                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                            )}
+                            title={car.is_active ? 'Đang mở bán • Nhấp để tạm ẩn' : 'Đang tạm ẩn • Nhấp để mở bán'}
+                          >
+                            <span
+                              className={cn(
+                                'w-1.5 h-1.5 rounded-full shrink-0',
+                                car.is_active ? 'bg-emerald-600 animate-pulse' : 'bg-slate-400'
+                              )}
+                            />
+                            <span className="whitespace-nowrap">{car.is_active ? 'Đang bán' : 'Tạm ẩn'}</span>
+                          </button>
                         </TableCell>
 
                         <TableCell className="text-right">
@@ -616,15 +632,31 @@ export const CarsInventory: React.FC<CarsInventoryProps> = ({
                           alt={`${car.make} ${car.model}`}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
-                        <div className="absolute top-2.5 right-2.5 flex items-center gap-1">
+                        <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
                           {car.stock_quantity <= 2 && (
-                            <Badge variant="warning" size="sm">
+                            <Badge variant="warning" size="sm" className="whitespace-nowrap shadow-xs">
                               {car.stock_quantity === 0 ? 'Hết hàng' : `Còn ${car.stock_quantity}`}
                             </Badge>
                           )}
-                          <Badge variant={car.is_active ? 'success' : 'neutral'} size="sm">
-                            {car.is_active ? 'Sẵn sàng' : 'Tạm ẩn'}
-                          </Badge>
+                          <button
+                            type="button"
+                            onClick={() => toggleCarActive(car.id)}
+                            className={cn(
+                              'inline-flex items-center justify-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border transition-all cursor-pointer shadow-xs whitespace-nowrap min-w-21 hover:scale-105 active:scale-95',
+                              car.is_active
+                                ? 'bg-emerald-600 text-white border-emerald-700 hover:bg-emerald-700'
+                                : 'bg-slate-800/90 text-slate-200 border-slate-700 hover:bg-slate-900'
+                            )}
+                            title={car.is_active ? 'Đang mở bán • Nhấp để tạm ẩn' : 'Đang tạm ẩn • Nhấp để mở bán'}
+                          >
+                            <span
+                              className={cn(
+                                'w-1.5 h-1.5 rounded-full shrink-0',
+                                car.is_active ? 'bg-white animate-pulse' : 'bg-slate-400'
+                              )}
+                            />
+                            <span>{car.is_active ? 'Đang bán' : 'Tạm ẩn'}</span>
+                          </button>
                         </div>
                       </div>
 
