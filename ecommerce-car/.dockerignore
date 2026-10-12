@@ -4,7 +4,6 @@ web-build
 .expo
 android
 ios
-plugins
 keystore.txt
 *.keystore
 *.jks

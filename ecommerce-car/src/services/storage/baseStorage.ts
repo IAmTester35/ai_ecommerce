@@ -1,5 +1,3 @@
-import { createMMKV, MMKV } from 'react-native-mmkv';
-
 export interface IStorage {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
@@ -7,70 +5,49 @@ export interface IStorage {
   clear: () => void;
 }
 
-let mmkvInstance: MMKV | null = null;
-const memoryFallback = new Map<string, string>();
+const memoryStore = new Map<string, string>();
 
-const isServerSide = (): boolean => {
-  return typeof window === 'undefined' || typeof document === 'undefined';
-};
-
-const getMMKVInstance = (): MMKV | null => {
-  if (isServerSide()) {
-    return null;
-  }
-  if (!mmkvInstance) {
-    try {
-      mmkvInstance = createMMKV({
-        id: 'automatch-app-storage',
-      });
-    } catch {
-      return null;
-    }
-  }
-  return mmkvInstance;
+const hasLocalStorage = (): boolean => {
+  return typeof window !== 'undefined' && typeof window.localStorage !== 'undefined';
 };
 
 export const baseStorage: IStorage = {
   getItem: (key: string): string | null => {
     try {
-      const storage = getMMKVInstance();
-      if (!storage) {
-        return memoryFallback.get(key) ?? null;
+      if (hasLocalStorage()) {
+        const val = window.localStorage.getItem(key);
+        if (val !== null) return val;
       }
-      return storage.getString(key) ?? null;
+      return memoryStore.get(key) ?? null;
     } catch {
-      return memoryFallback.get(key) ?? null;
+      return memoryStore.get(key) ?? null;
     }
   },
 
   setItem: (key: string, value: string): void => {
     try {
-      memoryFallback.set(key, value);
-      const storage = getMMKVInstance();
-      if (!storage) return;
-      storage.set(key, value);
+      memoryStore.set(key, value);
+      if (hasLocalStorage()) {
+        window.localStorage.setItem(key, value);
+      }
     } catch {}
   },
 
   removeItem: (key: string): void => {
     try {
-      memoryFallback.delete(key);
-      const storage = getMMKVInstance();
-      if (!storage) return;
-      if (typeof (storage as any).delete === 'function') {
-        (storage as any).delete(key);
-      } else if (typeof (storage as any).remove === 'function') {
-        (storage as any).remove(key);
+      memoryStore.delete(key);
+      if (hasLocalStorage()) {
+        window.localStorage.removeItem(key);
       }
     } catch {}
   },
 
   clear: (): void => {
     try {
-      memoryFallback.clear();
-      const storage = getMMKVInstance();
-      if (!storage) return;
-      storage.clearAll();
+      memoryStore.clear();
+      if (hasLocalStorage()) {
+        window.localStorage.clear();
+      }
     } catch {}
   },
 };

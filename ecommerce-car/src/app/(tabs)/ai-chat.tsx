@@ -20,10 +20,8 @@ import { useCartStore } from '../../store/useCartStore';
 import { globalAlert } from '../../store/useDialogStore';
 import { ChatBubble } from '../../components/chat/ChatBubble';
 import { QuickPrompts } from '../../components/chat/QuickPrompts';
-import { useNitroSse } from 'react-native-nitro-sse';
-import { supabase } from '../../api/supabaseClient';
-import { getApiBaseUrl } from '../../config/api';
-import { CarResponse, SearchDataEvent, SearchProgressEvent } from '../../types';
+import { aiSearchService } from '../../services/aiSearchService';
+import { CarResponse, SearchProgressEvent } from '../../types';
 
 const generateUUID = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -45,7 +43,7 @@ export default function AIChatScreen() {
   const { addToCart } = useCartStore();
   const [input, setInput] = useState('');
   const [sessionId, setSessionId] = useState(() => generateUUID());
-  const [activePrompt, setActivePrompt] = useState<{ query: string; id: string } | null>(null);
+  const isCancelledRef = useRef<boolean>(false);
   const activeAssistantMsgIdRef = useRef<string | null>(null);
   const [messages, setMessages] = useState<UIChatMessage[]>(() => [
     {
@@ -68,173 +66,25 @@ export default function AIChatScreen() {
     return () => clearTimeout(timer);
   }, [messages, isTyping]);
 
-  const { stop: cancelStream } = useNitroSse({
-    url: activePrompt
-      ? `${getApiBaseUrl()}/api/search?r=${encodeURIComponent(activePrompt.id)}`
-      : '',
-    method: 'post',
-    body: activePrompt
-      ? JSON.stringify({
-          query: activePrompt.query,
-          session_id: sessionId,
-        })
-      : undefined,
-    autoStart: true,
-    batchingIntervalMs: 20,
-    autoParseJSON: true,
-    monitorNetwork: true,
-    onBeforeRequest: async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const headers: Record<string, string> = {
-        Connection: 'keep-alive',
-        'Cache-Control': 'no-cache',
-        Accept: 'text/event-stream',
-        'Content-Type': 'application/json',
-      };
-      if (session?.access_token) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-      }
-      return headers;
-    },
-    events: {
-      progress: (e) => {
-        const data = (e.parsedData ||
-          (typeof e.data === 'string' && e.data.trim().startsWith('{')
-            ? JSON.parse(e.data)
-            : e.data)) as SearchProgressEvent;
-        if (data) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === activeAssistantMsgIdRef.current
-                ? {
-                    ...msg,
-                    progress: data,
-                  }
-                : msg
-            )
-          );
-        }
-      },
-      search_data: (e) => {
-        const data = (e.parsedData ||
-          (typeof e.data === 'string' && e.data.trim().startsWith('{')
-            ? JSON.parse(e.data)
-            : e.data)) as SearchDataEvent;
-        if (data) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === activeAssistantMsgIdRef.current
-                ? {
-                    ...msg,
-                    suggestedCars: data.results || [],
-                    conflictDetected: data.conflict_detected || false,
-                    relaxedTerms: data.relaxed_terms || undefined,
-                    extractedConstraints: data.constraints || undefined,
-                  }
-                : msg
-            )
-          );
-        }
-      },
-      done: () => {
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === activeAssistantMsgIdRef.current
-              ? {
-                  ...msg,
-                  isStreaming: false,
-                  progress: msg.progress
-                    ? { ...msg.progress, stage: 'completed', step: 4 }
-                    : undefined,
-                }
-              : msg
-          )
-        );
-        setIsTyping(false);
-        setActivePrompt(null);
-      },
-      error: (e) => {
-        const payload =
-          (e.parsedData as any) ||
-          (typeof e.data === 'string' && e.data.trim().startsWith('{')
-            ? JSON.parse(e.data)
-            : null);
-        const errorMsg =
-          payload?.error ||
-          payload?.message ||
-          e.message ||
-          (typeof e.data === 'string' ? e.data : 'Lỗi kết nối máy chủ');
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === activeAssistantMsgIdRef.current
-              ? {
-                  ...msg,
-                  isStreaming: false,
-                  content: msg.content || errorMsg,
-                  progress: undefined,
-                }
-              : msg
-          )
-        );
-        setIsTyping(false);
-        setActivePrompt(null);
-      },
-    },
-    onMessage: (e) => {
-      if (!e.event || e.event === 'message') {
-        const text =
-          (e.parsedData as any)?.text ??
-          (typeof e.data === 'string' && e.data.trim().startsWith('{')
-            ? JSON.parse(e.data).text
-            : typeof e.data === 'string'
-            ? e.data
-            : '');
-        if (text) {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === activeAssistantMsgIdRef.current
-                ? {
-                    ...msg,
-                    content: msg.content + text,
-                  }
-                : msg
-            )
-          );
-        }
-      }
-    },
-    onError: (e) => {
-      console.error('[AI Chat] SSE error:', e);
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === activeAssistantMsgIdRef.current
-            ? {
-                ...msg,
-                isStreaming: false,
-                content:
-                  msg.content ||
-                  'Hệ thống AI đang bảo trì hoặc mất kết nối máy chủ. Quý khách vui lòng thử lại sau giây lát.',
-                progress: undefined,
-              }
-            : msg
-        )
-      );
-      setIsTyping(false);
-      setActivePrompt(null);
-    },
-    onClose: () => {
-      setIsTyping(false);
-      setActivePrompt(null);
-    },
-  });
+  const updateMessageProgress = useCallback((msgId: string, progress: SearchProgressEvent) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === msgId
+          ? {
+              ...msg,
+              progress,
+            }
+          : msg
+      )
+    );
+  }, []);
 
   const handleSendMessage = useCallback(
     async (textToSend?: string) => {
       const query = (textToSend || input).trim();
-      if (!query) return;
+      if (!query || isTyping) return;
 
+      isCancelledRef.current = false;
       const userMsg: UIChatMessage = {
         id: `user-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
         role: 'user',
@@ -254,7 +104,7 @@ export default function AIChatScreen() {
           step: 1,
           total_steps: 4,
           label: 'Phân tích yêu cầu',
-          detail: 'Đang bóc tách ngân sách, thương hiệu & tiêu chí...',
+          detail: 'Bóc tách ngân sách, thương hiệu & tiêu chí kỹ thuật...',
         },
       };
 
@@ -264,15 +114,102 @@ export default function AIChatScreen() {
       setIsTyping(true);
 
       if (user?.id) {
-        historyService.saveSearchQuery(user.id, query).catch(() => { });
+        historyService.saveSearchQuery(user.id, query).catch(() => {});
       }
 
-      setActivePrompt({
-        query,
-        id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      });
+      // Simulated progressive stages while waiting for HTTP response
+      const timer1 = setTimeout(() => {
+        if (!isCancelledRef.current) {
+          updateMessageProgress(assistantMsgId, {
+            stage: 'searching',
+            step: 2,
+            total_steps: 4,
+            label: 'Truy vấn kho xe',
+            detail: 'Tìm kiếm xe phù hợp trong kho dữ liệu AutoMatch...',
+          });
+        }
+      }, 700);
+
+      const timer2 = setTimeout(() => {
+        if (!isCancelledRef.current) {
+          updateMessageProgress(assistantMsgId, {
+            stage: 'enriching',
+            step: 3,
+            total_steps: 4,
+            label: 'Tải thông số & hình ảnh',
+            detail: 'Đối chiếu thông số kỹ thuật và hình ảnh thực tế...',
+          });
+        }
+      }, 1500);
+
+      const timer3 = setTimeout(() => {
+        if (!isCancelledRef.current) {
+          updateMessageProgress(assistantMsgId, {
+            stage: 'generating',
+            step: 4,
+            total_steps: 4,
+            label: 'AI đang tư vấn',
+            detail: 'Tổng hợp đánh giá chuyên sâu & phân tích đề xuất...',
+          });
+        }
+      }, 2400);
+
+      try {
+        const data = await aiSearchService.searchCars(query, sessionId);
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+
+        if (isCancelledRef.current) return;
+
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  content: data.ai_message || '',
+                  suggestedCars: data.results || [],
+                  conflictDetected: data.conflict_detected || false,
+                  relaxedTerms: data.relaxed_terms || undefined,
+                  extractedConstraints: data.constraints || undefined,
+                  isStreaming: false,
+                  progress: {
+                    stage: 'completed',
+                    step: 4,
+                    total_steps: 4,
+                    label: 'Hoàn tất',
+                  },
+                }
+              : msg
+          )
+        );
+      } catch (err: any) {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+
+        if (isCancelledRef.current) return;
+
+        console.error('[AI Chat] Search error:', err);
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantMsgId
+              ? {
+                  ...msg,
+                  isStreaming: false,
+                  content:
+                    err.message ||
+                    'Hệ thống AI đang bảo trì hoặc mất kết nối máy chủ. Quý khách vui lòng thử lại sau giây lát.',
+                  progress: undefined,
+                }
+              : msg
+          )
+        );
+      } finally {
+        setIsTyping(false);
+      }
     },
-    [input, user]
+    [input, isTyping, sessionId, updateMessageProgress, user]
   );
 
   useEffect(() => {
@@ -324,8 +261,7 @@ export default function AIChatScreen() {
   };
 
   const handleNewChat = () => {
-    cancelStream();
-    setActivePrompt(null);
+    isCancelledRef.current = true;
     setSessionId(generateUUID());
     setIsTyping(false);
     setMessages([

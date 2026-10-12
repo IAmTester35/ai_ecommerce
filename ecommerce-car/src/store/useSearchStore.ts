@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { aiSseService, SseEventTypes } from '../services/aiSseService';
+import { aiSearchService } from '../services/aiSearchService';
 import { SearchDataEvent } from '../types';
 
 interface SearchState {
@@ -10,7 +10,7 @@ interface SearchState {
   isLoading: boolean;
   error: string | null;
   setQuery: (query: string) => void;
-  executeSearch: () => void;
+  executeSearch: () => Promise<void>;
   clearSearch: () => void;
 }
 
@@ -36,47 +36,37 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
   setQuery: (query: string) => set({ query }),
 
-  executeSearch: () => {
+  executeSearch: async () => {
     const { query, sessionId } = get();
     if (!query.trim()) return;
-
-    // Detach any previous listeners before attaching new ones to prevent leaks
-    aiSseService.off(SseEventTypes.SEARCH_DATA);
-    aiSseService.off(SseEventTypes.MESSAGE);
-    aiSseService.off(SseEventTypes.ERROR);
-    aiSseService.off(SseEventTypes.CLOSE);
 
     // Reset old states before new search
     set({ isLoading: true, error: null, results: null, aiMessage: '' });
 
-    // Attach listeners
-    aiSseService.on<SearchDataEvent>(SseEventTypes.SEARCH_DATA, (data) => {
-      set({ results: data });
-    });
-
-    aiSseService.on<{ text: string }>(SseEventTypes.MESSAGE, (data) => {
-      set((state) => ({ aiMessage: state.aiMessage + data.text }));
-    });
-
-    aiSseService.on<any>(SseEventTypes.ERROR, (err) => {
-      set({ error: err?.message || 'Lỗi kết nối SSE', isLoading: false });
-    });
-
-    aiSseService.on<any>(SseEventTypes.CLOSE, () => {
-      set({ isLoading: false });
-      // Cleanup events upon close
-      aiSseService.off(SseEventTypes.SEARCH_DATA);
-      aiSseService.off(SseEventTypes.MESSAGE);
-      aiSseService.off(SseEventTypes.ERROR);
-      aiSseService.off(SseEventTypes.CLOSE);
-    });
-
-    // Start connection
-    aiSseService.connect(query, sessionId);
+    try {
+      const data = await aiSearchService.searchCars(query, sessionId);
+      set({
+        isLoading: false,
+        results: {
+          original_query: data.original_query,
+          constraints: data.constraints,
+          results: data.results,
+          conflict_detected: data.conflict_detected,
+          relaxed_terms: data.relaxed_terms,
+        },
+        aiMessage: data.ai_message,
+        error: null,
+      });
+    } catch (err: any) {
+      set({
+        isLoading: false,
+        error: err.message || 'Lỗi kết nối AI Search',
+      });
+    }
   },
 
   clearSearch: () => {
-    aiSseService.cleanup();
     set({ query: '', results: null, error: null, aiMessage: '', sessionId: generateUUID() });
   },
 }));
+

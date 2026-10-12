@@ -1,4 +1,4 @@
-export * from './aiSseService';
+export * from './aiSearchService';
 export * from './authService';
 export * from './carService';
 export * from './cartService';

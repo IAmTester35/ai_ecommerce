@@ -287,6 +287,32 @@ CREATE TRIGGER update_showrooms_updated_at BEFORE UPDATE ON showrooms FOR EACH R
 CREATE TRIGGER update_orders_updated_at BEFORE UPDATE ON orders FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 CREATE TRIGGER update_car_qa_updated_at BEFORE UPDATE ON car_qa FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 
+-- 4.1.1 Trigger Function: Tự động khởi tạo Profile khi người dùng đăng ký qua Supabase Auth
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email, full_name, phone, role)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.email, ''),
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'phone',
+        'user'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        email = EXCLUDED.email,
+        full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
+        phone = COALESCE(EXCLUDED.phone, profiles.phone),
+        updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 
 -- 4.2 Function: Phân bổ ngẫu nhiên xe vào N Showroom (Random distribution)
 CREATE OR REPLACE FUNCTION distribute_cars_to_showrooms()

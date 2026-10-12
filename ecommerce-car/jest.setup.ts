@@ -47,20 +47,7 @@ jest.mock('react-native', () => {
   };
 });
 
-// Mock react-native-mmkv
-const memoryStore = new Map<string, any>();
-jest.mock('react-native-mmkv', () => ({
-  createMMKV: jest.fn(() => ({
-    set: jest.fn((key: string, value: any) => memoryStore.set(key, value)),
-    getString: jest.fn((key: string) => memoryStore.get(key) ?? null),
-    getNumber: jest.fn((key: string) => memoryStore.get(key) ?? null),
-    getBoolean: jest.fn((key: string) => memoryStore.get(key) ?? null),
-    remove: jest.fn((key: string) => memoryStore.delete(key)),
-    clearAll: jest.fn(() => memoryStore.clear()),
-    contains: jest.fn((key: string) => memoryStore.has(key)),
-  })),
-  MMKV: jest.fn(),
-}));
+
 
 // Mock expo-router
 jest.mock('expo-router', () => ({
@@ -93,53 +80,7 @@ jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn(() => Promise.resolve({ type: 'opened' })),
 }));
 
-// Mock react-native-nitro-sse
-jest.mock('react-native-nitro-sse', () => {
-  const mockClient = {
-    setup: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    removeAllEventListeners: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-    restart: jest.fn(),
-    flush: jest.fn(),
-    isConnected: jest.fn(() => false),
-    getStats: jest.fn(() => ({})),
-    updateHeaders: jest.fn(),
-    setLastProcessedId: jest.fn(),
-    injectMockEvent: jest.fn(),
-    getState: jest.fn(() => 'idle'),
-    dispose: jest.fn(),
-  };
 
-  return {
-    createNitroSse: jest.fn(() => {
-      throw new Error('Native NitroSse not available in Jest');
-    }),
-    useNitroSse: jest.fn((options: any) => ({
-      client: mockClient,
-      isReady: true,
-      state: 'idle',
-      isConnected: false,
-      start: jest.fn(),
-      stop: jest.fn(),
-      restart: jest.fn(),
-      flush: jest.fn(),
-      updateHeaders: jest.fn(),
-      setLastProcessedId: jest.fn(),
-      getStats: jest.fn(),
-      injectMockEvent: jest.fn(),
-    })),
-    safeSerializeConfig: jest.fn((val: any) => JSON.stringify(val)),
-    createSSEClient: jest.fn(() => ({
-      connect: jest.fn(),
-      disconnect: jest.fn(),
-      on: jest.fn(),
-      off: jest.fn(),
-    })),
-  };
-});
 
 // Mock expo-image
 jest.mock('expo-image', () => {
@@ -168,8 +109,10 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 
-// Reset all mocks after each test
+import { baseStorage } from './src/services/storage/baseStorage';
+
+// Reset all mocks and storage after each test
 afterEach(() => {
   jest.clearAllMocks();
-  memoryStore.clear();
+  baseStorage.clear();
 });

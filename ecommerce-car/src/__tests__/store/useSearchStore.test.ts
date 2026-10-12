@@ -1,37 +1,13 @@
 import { useSearchStore } from '../../store/useSearchStore';
-import { aiSseService, SseEventTypes } from '../../services/aiSseService';
+import { aiSearchService } from '../../services/aiSearchService';
 
-jest.mock('../../services/aiSseService', () => {
-  const callbacks = new Map<string, Function>();
-  return {
-    SseEventTypes: {
-      OPEN: 'open',
-      PROGRESS: 'progress',
-      SEARCH_DATA: 'search_data',
-      MESSAGE: 'message',
-      DONE: 'done',
-      ERROR: 'error',
-      CLOSE: 'close',
-    },
-    aiSseService: {
-      connect: jest.fn(),
-      disconnect: jest.fn(),
-      cleanup: jest.fn(),
-      on: jest.fn((event: string, cb: Function) => {
-        callbacks.set(event, cb);
-      }),
-      off: jest.fn((event: string) => {
-        callbacks.delete(event);
-      }),
-      _trigger: (event: string, data: any) => {
-        const cb = callbacks.get(event);
-        if (cb) cb(data);
-      },
-    },
-  };
-});
+jest.mock('../../services/aiSearchService', () => ({
+  aiSearchService: {
+    searchCars: jest.fn(),
+  },
+}));
 
-describe('useSearchStore Suite - AI Search Streaming State Management', () => {
+describe('useSearchStore Suite - AI Search State Management', () => {
   beforeEach(() => {
     useSearchStore.setState({
       query: '',
@@ -48,40 +24,42 @@ describe('useSearchStore Suite - AI Search Streaming State Management', () => {
     expect(useSearchStore.getState().query).toBe('SUV dưới 1 tỷ');
   });
 
-  it('executeSearch connects to aiSseService and collects streaming search data and messages', () => {
+  it('executeSearch calls aiSearchService and saves results and aiMessage', async () => {
     useSearchStore.setState({ query: 'Xe điện sedan' });
 
-    useSearchStore.getState().executeSearch();
-
-    expect(useSearchStore.getState().isLoading).toBe(true);
-    expect(aiSseService.connect).toHaveBeenCalledWith('Xe điện sedan', expect.any(String));
-
-    // Simulate SEARCH_DATA event
-    const searchData = {
+    const searchResponse = {
       original_query: 'Xe điện sedan',
       constraints: { is_out_of_scope: false, soft_intent: 'EV' },
       results: [{ id: 'car-1', make: 'Porsche', model: 'Taycan' }],
       conflict_detected: false,
+      relaxed_terms: [],
+      ai_message: 'Tôi xin giới thiệu Porsche Taycan.',
     };
-    (aiSseService as any)._trigger(SseEventTypes.SEARCH_DATA, searchData);
-    expect(useSearchStore.getState().results).toEqual(searchData);
 
-    // Simulate streaming text chunks
-    (aiSseService as any)._trigger(SseEventTypes.MESSAGE, { text: 'Tôi xin ' });
-    (aiSseService as any)._trigger(SseEventTypes.MESSAGE, { text: 'giới thiệu xe.' });
-    expect(useSearchStore.getState().aiMessage).toBe('Tôi xin giới thiệu xe.');
+    (aiSearchService.searchCars as jest.Mock).mockResolvedValueOnce(searchResponse);
 
-    // Simulate CLOSE
-    (aiSseService as any)._trigger(SseEventTypes.CLOSE, {});
+    await useSearchStore.getState().executeSearch();
+
     expect(useSearchStore.getState().isLoading).toBe(false);
+    expect(aiSearchService.searchCars).toHaveBeenCalledWith('Xe điện sedan', expect.any(String));
+    expect(useSearchStore.getState().results).toEqual({
+      original_query: searchResponse.original_query,
+      constraints: searchResponse.constraints,
+      results: searchResponse.results,
+      conflict_detected: false,
+      relaxed_terms: [],
+    });
+    expect(useSearchStore.getState().aiMessage).toBe('Tôi xin giới thiệu Porsche Taycan.');
+    expect(useSearchStore.getState().error).toBeNull();
   });
 
-  it('executeSearch handles error event', () => {
+  it('executeSearch handles error gracefully', async () => {
     useSearchStore.setState({ query: 'Invalid search' });
-    useSearchStore.getState().executeSearch();
+    (aiSearchService.searchCars as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
-    (aiSseService as any)._trigger(SseEventTypes.ERROR, { message: 'Timeout' });
-    expect(useSearchStore.getState().error).toBe('Timeout');
+    await useSearchStore.getState().executeSearch();
+
+    expect(useSearchStore.getState().error).toBe('Network error');
     expect(useSearchStore.getState().isLoading).toBe(false);
   });
 
@@ -96,6 +74,9 @@ describe('useSearchStore Suite - AI Search Streaming State Management', () => {
     useSearchStore.getState().clearSearch();
 
     expect(useSearchStore.getState().sessionId).not.toBe(oldSession);
-    expect(aiSseService.cleanup).toHaveBeenCalled();
+    expect(useSearchStore.getState().query).toBe('');
+    expect(useSearchStore.getState().results).toBeNull();
+    expect(useSearchStore.getState().aiMessage).toBe('');
   });
 });
+
