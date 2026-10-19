@@ -352,7 +352,7 @@ export default function ProfileScreen() {
                       {sc.car ? `${sc.car.make} ${sc.car.model}` : 'Xe AutoMatch'}
                     </Text>
                     <Text style={styles.savedCarPrice}>
-                      {formatVndPrice(sc.car?.price, 'usd', {
+                      {formatVndPrice(sc.car?.price, 'vnd', {
                         engineHp: sc.car?.engine_hp,
                         fuelType: sc.car?.metadata?.engine_fuel_type || sc.car?.metadata?.fuel_type,
                       })}

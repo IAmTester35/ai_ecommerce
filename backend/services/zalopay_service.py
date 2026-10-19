@@ -30,7 +30,33 @@ class ZaloPayService:
     async def create_payment(self, req: CreatePaymentRequest, db: Client = None) -> Dict[str, Any]:
         """
         Tạo đơn hàng thanh toán ZaloPay bất đồng bộ.
+        Xác thực số tiền đặt cọc trực tiếp từ cơ sở dữ liệu (SSOT) để phòng chống Price Tampering.
         """
+        if not db:
+            raise ValueError("Database client không khả dụng để xác thực đơn hàng.")
+
+        order_res = await asyncio.to_thread(
+            db.table("orders").select("id, deposit_amount, total_amount, deposit_status, payment_status, status").eq("id", req.order_id).maybe_single().execute
+        )
+        order_data = order_res.data if order_res else None
+        if not order_data:
+            raise ValueError(f"Không tìm thấy đơn hàng #{req.order_id} trong hệ thống.")
+
+        if order_data.get("deposit_status") == "paid" or order_data.get("payment_status") == "paid":
+            raise ValueError(f"Đơn hàng #{req.order_id} đã hoàn tất đặt cọc/thanh toán trước đó.")
+
+        if order_data.get("status") == "cancelled":
+            raise ValueError(f"Đơn hàng #{req.order_id} đã bị hủy, không thể khởi tạo thanh toán.")
+
+        db_deposit = order_data.get("deposit_amount")
+        db_total = order_data.get("total_amount")
+        db_amount = db_deposit if (db_deposit is not None and db_deposit > 0) else db_total
+
+        if not db_amount or db_amount <= 0:
+            raise ValueError(f"Đơn hàng #{req.order_id} không có số tiền cần thanh toán hợp lệ trong hệ thống.")
+
+        final_amount = int(db_amount)
+
         trans_id = random.randint(100000, 999999)
         app_trans_id = f"{datetime.now().strftime('%y%m%d')}_{trans_id}"
         app_time = int(time.time() * 1000)
@@ -54,7 +80,7 @@ class ZaloPayService:
             "app_time": app_time,
             "item": items_data,
             "embed_data": embed_data,
-            "amount": req.amount,
+            "amount": final_amount,
             "callback_url": self.callback_url,
             "description": req.note or f"Thanh toan don hang {app_trans_id}",
             "bank_code": ""
@@ -84,7 +110,7 @@ class ZaloPayService:
 
     async def process_callback(self, data_str: str, req_mac: str, db: Client) -> Dict[str, Any]:
         """
-        Xử lý Callback tự động từ ZaloPay webhook với kiểm tra MAC an toàn.
+        Xử lý Callback tự động từ ZaloPay webhook với kiểm tra MAC an toàn và đối soát số tiền.
         """
         mac = self._hmac_sha256(data_str, self.key2)
 
@@ -101,6 +127,21 @@ class ZaloPayService:
             order_id = embed_data.get("order_id")
             user_id = data_json.get("app_user")
             app_trans_id = data_json.get("app_trans_id", "")
+            cb_amount = data_json.get("amount")
+
+            # Đối soát số tiền thực trả từ ZaloPay với giá trị trong DB nếu có order_id
+            if order_id and db:
+                order_check = await asyncio.to_thread(
+                    db.table("orders").select("deposit_amount, total_amount").eq("id", order_id).maybe_single().execute
+                )
+                if order_check and order_check.data:
+                    expected_amount = order_check.data.get("deposit_amount") or order_check.data.get("total_amount")
+                    if cb_amount and expected_amount and int(cb_amount) < int(expected_amount):
+                        logger.error(
+                            f"ZaloPay callback amount mismatch for order {order_id}: "
+                            f"paid={cb_amount}, expected={expected_amount}"
+                        )
+                        return {"return_code": 0, "return_message": "amount mismatch"}
 
             # Cập nhật trạng thái đơn hàng trong Supabase bất đồng bộ
             if order_id:

@@ -15,7 +15,7 @@ describe('PaymentService Suite - FastAPI ZaloPay Integration', () => {
 
   describe('createPayment', () => {
     const paymentReq: PaymentCreateRequest = {
-      amount: 150000000,
+      order_id: 'order-123',
       email: 'customer@test.com',
       address: '123 Le Loi, Hanoi',
       name: 'Nguyen Van A',

@@ -32,7 +32,7 @@ describe('usePaymentStore Suite - Payment Processing & WebBrowser Integration', 
     (paymentService.createPayment as jest.Mock).mockResolvedValueOnce(mockRes);
 
     const payload = {
-      amount: 100000000,
+      order_id: 'order-123',
       email: 'a@test.com',
       address: 'HN',
       name: 'Nguyen',

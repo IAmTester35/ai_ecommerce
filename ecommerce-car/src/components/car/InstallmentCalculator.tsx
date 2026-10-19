@@ -23,7 +23,7 @@ export const InstallmentCalculator: React.FC<InstallmentCalculatorProps> = ({ pr
   const [termYears, setTermYears] = useState<number>(5);
   const interestRateYear = 0.085; // 8.5% / year fixed average
 
-  const priceVnd = usdToVnd(price, spec);
+  const priceVnd = price && price < 1_000_000 ? usdToVnd(price, spec) : (price || 0);
   const plan = calculateInstallmentPlan(priceVnd, downPercent, termYears, interestRateYear);
   const totalMonths = plan.termMonths;
   const downPaymentAmount = plan.downPaymentAmount;

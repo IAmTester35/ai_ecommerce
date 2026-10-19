@@ -145,13 +145,17 @@ async def hybrid_search(
             metadata = c.get('metadata') or {}
             metadata_str = str(metadata)
             review_str = c.get('review') or ''
-            p_usd = c.get('price') or 0
+            p_raw = c.get('price') or 0
             engine_hp = c.get('engine_hp')
-            fuel_type = metadata.get('engine_fuel_type') or metadata.get('fuel_type')
             
-            p_vnd = calculate_car_price_vnd(p_usd, engine_hp, fuel_type)
-            vnd_str = format_vnd_str(p_vnd)
-            price_info = f"${p_usd:,} USD (~{vnd_str})" if p_usd > 0 else "Liên hệ giá"
+            if p_raw > 0 and p_raw < 1_000_000:
+                fuel_type = metadata.get('engine_fuel_type') or metadata.get('fuel_type')
+                p_vnd = calculate_car_price_vnd(p_raw, engine_hp, fuel_type)
+            else:
+                p_vnd = p_raw
+
+            vnd_str = format_vnd_str(p_vnd) if p_vnd > 0 else "Liên hệ giá"
+            price_info = vnd_str
             doc_text = (
                 f"Car: {c.get('year')} {c.get('make')} {c.get('model')} - "
                 f"Price: {price_info} - Engine: {engine_hp}HP. "

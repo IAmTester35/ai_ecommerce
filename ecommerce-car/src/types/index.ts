@@ -143,8 +143,7 @@ export interface PaymentItem {
 }
 
 export interface PaymentCreateRequest {
-  order_id?: string;
-  amount: number;
+  order_id: string;
   items: PaymentItem[];
   email: string;
   address: string;

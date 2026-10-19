@@ -296,7 +296,7 @@ export const CarPickerModal: React.FC<CarPickerModalProps> = ({
                     {item.make} {item.model}
                   </Text>
                   <Text style={styles.carRowPrice}>
-                    {formatVndPrice(item.price, 'usd', {
+                    {formatVndPrice(item.price, 'vnd', {
                       engineHp: item.engine_hp,
                       fuelType: item.metadata?.engine_fuel_type || item.metadata?.fuel_type,
                     })}

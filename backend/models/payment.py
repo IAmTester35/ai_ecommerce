@@ -13,8 +13,7 @@ class PaymentItem(BaseModel):
 class CreatePaymentRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    order_id: Optional[str] = Field(None, description="Supabase Order ID (UUID) nếu đã tạo qua checkout_cart")
-    amount: int = Field(..., description="Tổng số tiền thanh toán (VND)")
+    order_id: str = Field(..., description="Supabase Order ID (UUID) bắt buộc tạo qua checkout_cart")
     items: List[PaymentItem] = Field(default_factory=list, description="Danh sách sản phẩm")
     email: str = Field(..., description="Email người nhận")
     address: str = Field(..., description="Địa chỉ giao hàng")

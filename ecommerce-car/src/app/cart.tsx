@@ -56,10 +56,13 @@ export default function CartScreen() {
   // 2. Financial Calculations
   const rawTotalVnd = useMemo(() => {
     return items.reduce((sum, item) => {
-      const itemPriceVnd = usdToVnd(item.car?.price || 0, {
-        engineHp: item.car?.engine_hp,
-        fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
-      });
+      const price = item.car?.price || 0;
+      const itemPriceVnd = price > 0 && price < 1_000_000
+        ? usdToVnd(price, {
+            engineHp: item.car?.engine_hp,
+            fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+          })
+        : price;
       return sum + itemPriceVnd * item.quantity;
     }, 0);
   }, [items]);

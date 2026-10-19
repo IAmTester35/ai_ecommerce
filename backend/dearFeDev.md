@@ -271,8 +271,7 @@ Hỗ trợ khởi tạo thanh toán ZaloPay, kiểm tra trạng thái và tự �
 - **Body Request:**
   ```json
   {
-    "order_id": "UUID_DON_HANG_SUPABASE_NEU_CO",
-    "amount": 50000000,
+    "order_id": "UUID_DON_HANG_BAT_BUOC_TU_CHECKOUT_CART",
     "items": [
       { "id": "UUID_XE", "name": "Porsche 911", "price": 50000000, "itemCount": 1 }
     ],

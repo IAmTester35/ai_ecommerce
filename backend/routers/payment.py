@@ -23,10 +23,18 @@ async def create_payment(
     Tạo đơn hàng thanh toán ZaloPay
     """
     try:
-        logger.info(f"Creating payment order for order_id: {req.order_id}, amount: {req.amount}")
+        logger.info(f"Creating payment order for order_id: {req.order_id}")
         res = await zalopay_service.create_payment(req, db=db)
         logger.info(f"Payment order created successfully: {res.get('order_url', '')}")
         return res
+    except ValueError as ve:
+        logger.warning(f"Invalid payment request: {ve}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(ve)
+        )
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating ZaloPay order: {str(e)}", exc_info=True)
         raise HTTPException(

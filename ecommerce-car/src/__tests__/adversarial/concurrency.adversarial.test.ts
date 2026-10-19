@@ -67,7 +67,7 @@ describe('Adversarial & Concurrency Suite - Race Conditions & Double Submissions
     (paymentService.createPayment as jest.Mock).mockReturnValue(paymentPromise);
 
     const payload = {
-      amount: 1000000,
+      order_id: 'order-123',
       email: 'a@test.com',
       address: 'HN',
       name: 'Nguyen',

@@ -74,10 +74,13 @@ export default function CheckoutScreen() {
   // 2. Financial Calculations
   const rawTotalVnd = useMemo(() => {
     return items.reduce((sum, item) => {
-      const itemPriceVnd = usdToVnd(item.car?.price || 0, {
-        engineHp: item.car?.engine_hp,
-        fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
-      });
+      const price = item.car?.price || 0;
+      const itemPriceVnd = price > 0 && price < 1_000_000
+        ? usdToVnd(price, {
+            engineHp: item.car?.engine_hp,
+            fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+          })
+        : price;
       return sum + itemPriceVnd * item.quantity;
     }, 0);
   }, [items]);
@@ -156,10 +159,13 @@ export default function CheckoutScreen() {
       if (selectedPaymentMethod === 'zalopay') {
         // Step 2: Build ZaloPay payload with deposit prices
         const paymentItems = items.map((item) => {
-          const itemPriceVnd = usdToVnd(item.car?.price || 0, {
-            engineHp: item.car?.engine_hp,
-            fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
-          });
+          const price = item.car?.price || 0;
+          const itemPriceVnd = price > 0 && price < 1_000_000
+            ? usdToVnd(price, {
+                engineHp: item.car?.engine_hp,
+                fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+              })
+            : price;
           return {
             id: item.car_id,
             name: item.car ? `${item.car.make} ${item.car.model} (Cọc 10%)` : 'Xe ô tô AutoMatch (Cọc 10%)',
@@ -170,7 +176,6 @@ export default function CheckoutScreen() {
 
         const payload = {
           order_id: orderId,
-          amount: depositAmountVnd,
           items: paymentItems,
           email,
           address: selectedShowroom?.address || '',
@@ -245,7 +250,7 @@ export default function CheckoutScreen() {
             </Text>
             <Text style={styles.itemYear}>Năm {item.car?.year || 2024} • x{item.quantity} xe</Text>
             <Text style={styles.itemPrice}>
-              Niêm yết: {formatVndPrice(item.car?.price, 'usd', {
+              Niêm yết: {formatVndPrice(item.car?.price, 'vnd', {
                 engineHp: item.car?.engine_hp,
                 fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
               })}
@@ -380,7 +385,7 @@ export default function CheckoutScreen() {
                       </Text>
                       <Text style={styles.itemYear}>Năm {item.car?.year || 2024} • x{item.quantity} xe</Text>
                       <Text style={styles.itemPrice}>
-                        Niêm yết: {formatVndPrice(item.car?.price, 'usd', {
+                        Niêm yết: {formatVndPrice(item.car?.price, 'vnd', {
                           engineHp: item.car?.engine_hp,
                           fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
                         })}

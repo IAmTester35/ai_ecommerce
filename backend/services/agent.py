@@ -18,16 +18,18 @@ async def extract_constraints(query: str) -> ExtractedConstraints:
     Analyze the user query: "{query}"
 
     Extract constraints and perform Semantic Expansion according to these rules:
-    - max_price: Maximum budget integer normalized to USD (MSRP integer).
-      * If user specifies USD (e.g. "under 30000", "$40k", "35000 USD"), extract the integer (e.g. 30000, 40000).
-      * If user specifies Vietnamese Dong (VNĐ/tỷ/triệu/tr) (e.g. "dưới 1 tỷ", "tầm 800 triệu", "dưới 2 tỷ"), CONVERT to raw USD MSRP using realistic Vietnam automotive tax multiplier (~64,500 VND per 1 USD MSRP, taking into account import duty, excise tax, VAT and dealer margin):
-        - "1 tỷ" / "1 tỉ" (1,000,000,000 / 64500) -> 15500
-        - "1.5 tỷ" (1,500,000,000 / 64500) -> 23250
-        - "2 tỷ" (2,000,000,000 / 64500) -> 31000
-        - "3 tỷ" (3,000,000,000 / 64500) -> 46500
-        - "5 tỷ" (5,000,000,000 / 64500) -> 77500
-        - "800 triệu" / "800tr" (800,000,000 / 64500) -> 12400
-        - "500 triệu" / "500tr" (500,000,000 / 64500) -> 7750
+    - max_price: Maximum budget integer in Vietnamese Dong (VNĐ) matching cars.price in DB.
+      * If user specifies Vietnamese Dong (e.g. "dưới 1 tỷ", "tầm 800 triệu", "dưới 2 tỷ", "1.5 tỉ", "3 tỷ"):
+        - "1 tỷ" / "1 tỉ" -> 1000000000
+        - "1.5 tỷ" -> 1500000000
+        - "2 tỷ" -> 2000000000
+        - "3 tỷ" -> 3000000000
+        - "5 tỷ" -> 5000000000
+        - "800 triệu" / "800tr" -> 800000000
+        - "500 triệu" / "500tr" -> 500000000
+      * If user specifies USD (e.g. "under 30000", "$40k", "35000 USD"): convert USD to estimated VND showroom price using exchange rate and taxes (~64,500 VND per 1 USD):
+        - "$30,000" / "30000 USD" -> 1935000000
+        - "$40,000" / "40k USD" -> 2580000000
       * Return null if not specified.
     - min_hp: Minimum engine horsepower constraint. If user demands a powerful engine (e.g. "động cơ mạnh", "xe khỏe", "high horsepower"), set a reasonable threshold (e.g. 200), otherwise null.
     - make: Car brand in lowercase (e.g. "toyota", "ford"). Return null if not specified.
@@ -98,16 +100,18 @@ async def generate_ai_response(
         review_snippet = c.get('review', '')
         engine_hp = c.get('engine_hp')
         meta = c.get('metadata') or {}
-        price_usd = c.get('price')
+        price_raw = c.get('price')
 
         hp_str = f", Engine: {engine_hp} HP" if engine_hp else ""
         meta_str = ", ".join([f"{k}: {v}" for k, v in meta.items() if v]) if isinstance(meta, dict) else ""
 
-        if price_usd and price_usd > 0:
-            fuel_type = meta.get('engine_fuel_type') or meta.get('fuel_type')
-            price_vnd = calculate_car_price_vnd(price_usd, engine_hp, fuel_type)
-            vnd_fmt = format_vnd_str(price_vnd)
-            price_display = f"${price_usd:,} USD (~{vnd_fmt})"
+        if price_raw and price_raw > 0:
+            if price_raw < 1_000_000:
+                fuel_type = meta.get('engine_fuel_type') or meta.get('fuel_type')
+                price_vnd = calculate_car_price_vnd(price_raw, engine_hp, fuel_type)
+            else:
+                price_vnd = price_raw
+            price_display = format_vnd_str(price_vnd)
         else:
             price_display = "Liên hệ giá"
 

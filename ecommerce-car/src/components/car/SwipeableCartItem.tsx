@@ -225,7 +225,7 @@ export const SwipeableCartItem: React.FC<SwipeableCartItemProps> = ({
             <View style={styles.priceContainer}>
               <Text style={styles.priceLabel}>Niêm yết:</Text>
               <Text style={styles.itemPrice}>
-                {formatVndPrice(car?.price, 'usd', {
+                {formatVndPrice(car?.price, 'vnd', {
                   engineHp: car?.engine_hp,
                   fuelType: car?.metadata?.engine_fuel_type || car?.metadata?.fuel_type,
                 })}
