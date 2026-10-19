@@ -27,16 +27,18 @@ import { FALLBACK_CAR_URL } from '../../constants/images';
 import { supabase } from '../../api/supabaseClient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isOrderExpired, getRemainingPaymentSeconds, formatCountdown } from '../../utils/orderUtils';
+import { safeBack } from '../../utils/navigation';
 
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id, app_trans_id } = useLocalSearchParams<{ id: string; app_trans_id?: string }>();
   const { user } = useAuthStore();
   const { selectedOrder, fetchOrderDetails, isLoading } = useOrderStore();
-  const { checkPaymentStatus, isProcessing, statusResult } = usePaymentStore();
+  const { checkPaymentStatus, createZaloPayOrder, openZaloPayUrl, isProcessing, statusResult } = usePaymentStore();
   const { isLargeScreen } = useResponsive();
 
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [isOpeningPayment, setIsOpeningPayment] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(() => getRemainingPaymentSeconds(selectedOrder));
 
   // Countdown timer for 15-minute payment window
@@ -83,25 +85,25 @@ export default function OrderDetailScreen() {
 
   const effectiveTransId = app_trans_id || selectedOrder?.app_trans_id;
 
-  // 3. Tự động kiểm tra trạng thái ZaloPay 1 lần khi người dùng vừa chuyển từ checkout sang
+  // 3. Tự động kiểm tra trạng thái ZaloPay định kỳ (polling mỗi 4s) khi đang mở trang và chưa thanh toán
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (app_trans_id && id && selectedOrder && selectedOrder.deposit_status === 'unpaid') {
-      timer = setTimeout(async () => {
-        try {
-          const res = await checkPaymentStatus(app_trans_id);
-          if (res.return_code === 1) {
-            await fetchOrderDetails(id);
-          }
-        } catch (e) {
-          // Im lặng nếu chưa có kết quả (người dùng có thể bấm nút kiểm tra thủ công)
-        }
-      }, 1500);
+    if (!effectiveTransId || !id || !selectedOrder || selectedOrder.deposit_status === 'paid' || isOrderExpired(selectedOrder)) {
+      return;
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [app_trans_id, id, selectedOrder?.deposit_status]);
+    const interval = setInterval(async () => {
+      try {
+        const res = await checkPaymentStatus(effectiveTransId);
+        if (res.return_code === 1) {
+          await fetchOrderDetails(id);
+          clearInterval(interval);
+        }
+      } catch {
+        // Im lặng khi poll định kỳ
+      }
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [effectiveTransId, id, selectedOrder?.deposit_status]);
 
   const handleCheckPaymentStatus = async () => {
     const transId = effectiveTransId;
@@ -116,14 +118,53 @@ export default function OrderDetailScreen() {
       if (id) {
         await fetchOrderDetails(id);
       }
+      const message = (res as any).friendly_message || res.return_message || 'Chưa nhận được phản hồi.';
       globalAlert(
         res.return_code === 1 ? 'Thành công' : 'Trạng thái ZaloPay',
-        `Phản hồi: ${res.return_message}`
+        message
       );
     } catch (err: any) {
       globalAlert('Lỗi kiểm tra', err.message || 'Không thể lấy trạng thái từ ZaloPay.');
     } finally {
       setCheckingPayment(false);
+    }
+  };
+
+  const handleReopenPayment = async () => {
+    if (!selectedOrder || !user) return;
+    setIsOpeningPayment(true);
+    try {
+      const paymentItems = (selectedOrder.order_items || []).map((it) => ({
+        id: it.car_id,
+        name: it.car ? `${it.car.make} ${it.car.model} (Cọc 10%)` : 'Xe ô tô AutoMatch (Cọc 10%)',
+        price: Math.round((it.price || 0) * 0.10),
+        itemCount: it.quantity || 1,
+      }));
+
+      const payload = {
+        order_id: selectedOrder.id,
+        items: paymentItems,
+        email: user.email || '',
+        address: selectedOrder.showroom?.address || '',
+        name: user.user_metadata?.full_name || 'Khách hàng',
+        phone: user.user_metadata?.phone || '',
+        note: `Thanh toán cọc cho đơn hàng #${selectedOrder.id.slice(0, 8)}`,
+        userid: user.id,
+      };
+
+      const response = await createZaloPayOrder(payload);
+      if (response.return_code === 1 && response.order_url) {
+        await openZaloPayUrl(response.order_url);
+        if (id) {
+          await fetchOrderDetails(id);
+        }
+      } else {
+        globalAlert('Thông báo', response.return_message || 'Không thể tạo liên kết thanh toán mới.');
+      }
+    } catch (err: any) {
+      globalAlert('Lỗi thanh toán', err.message || 'Không thể mở cổng thanh toán ZaloPay.');
+    } finally {
+      setIsOpeningPayment(false);
     }
   };
 
@@ -170,7 +211,7 @@ export default function OrderDetailScreen() {
       <View style={styles.screen}>
         <View style={styles.header}>
           <View style={styles.headerInner}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => safeBack()}>
               <Ionicons name="arrow-back" size={16} color={colors.text} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Chi Tiết Hợp Đồng Đặt Cọc</Text>
@@ -245,13 +286,7 @@ export default function OrderDetailScreen() {
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Phương thức cọc:</Text>
-          <Text style={styles.infoValue}>
-            {selectedOrder.payment_method === 'zalopay'
-              ? 'ZaloPay Gateway (Online)'
-              : selectedOrder.payment_method === 'cash'
-                ? 'Chuyển khoản trực tiếp'
-                : selectedOrder.payment_method || 'Chuyển khoản trực tiếp'}
-          </Text>
+          <Text style={styles.infoValue}>ZaloPay Gateway (Online)</Text>
         </View>
 
         <View style={styles.infoRow}>
@@ -399,6 +434,14 @@ export default function OrderDetailScreen() {
                 </View>
               )}
               <Button
+                title={isOpeningPayment ? 'Đang mở cổng ZaloPay...' : 'Mở cổng thanh toán ZaloPay'}
+                variant="primary"
+                size="sm"
+                onPress={handleReopenPayment}
+                loading={isOpeningPayment}
+                icon={<Ionicons name="open-outline" size={14} color="#FFFFFF" />}
+              />
+              <Button
                 title={checkingPayment ? 'Đang kiểm tra...' : 'Kiểm tra & Đồng bộ trạng thái ZaloPay'}
                 variant="outline"
                 size="sm"
@@ -492,7 +535,7 @@ export default function OrderDetailScreen() {
       {/* Top Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => safeBack()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>

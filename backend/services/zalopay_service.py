@@ -191,6 +191,8 @@ class ZaloPayService:
 
         # Tự động cập nhật DB nếu ZaloPay xác nhận thanh toán thành công (return_code = 1)
         if result.get("return_code") == 1 and db:
+            result["is_waiting_payment"] = False
+            result["friendly_message"] = "Đã thanh toán cọc thành công qua ZaloPay!"
             try:
                 await asyncio.to_thread(
                     db.table("orders").update({
@@ -202,5 +204,12 @@ class ZaloPayService:
                 logger.info(f"Auto-synchronized order status to deposit_paid for app_trans_id {app_trans_id}")
             except Exception as sync_err:
                 logger.warning(f"Could not auto-sync order for app_trans_id {app_trans_id}: {sync_err}")
+        elif result.get("return_code") == 2 and (result.get("is_processing") or result.get("sub_return_code") == -86):
+            # ZaloPay Sandbox trả về code 2 / sub_code -86 khi đơn chưa được thanh toán
+            result["is_waiting_payment"] = True
+            result["friendly_message"] = "Đang chờ thanh toán trên cổng ZaloPay (chưa quét mã hoặc chưa xác nhận)."
+        else:
+            result["is_waiting_payment"] = False
+            result["friendly_message"] = result.get("return_message") or "Giao dịch chưa hoàn thành."
 
         return result
