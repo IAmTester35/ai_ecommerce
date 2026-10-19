@@ -48,6 +48,8 @@ web/.vercel
 
 # typescript
 web/*.tsbuildinfo
-web/next-env.d.ts
-supabase/.temp
-!supabase/functions/
+# Supabase
+supabase/.temp/
+supabase/.branches/
+supabase/*.dump.sql
+supabase/remote_schema_dump.sql
