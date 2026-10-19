@@ -115,7 +115,7 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="checkout"
-          options={{ title: 'Thanh Toán Đặt Cọc', headerBackTitle: 'Quay lại' }}
+          options={{ headerShown: false }}
         />
         <Stack.Screen
           name="orders"

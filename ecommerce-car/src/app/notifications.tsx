@@ -16,6 +16,7 @@ import { useNotificationStore } from '../store/useNotificationStore';
 import { Card } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { NotificationItem } from '../types';
+import { safeBack } from '../utils/navigation';
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
@@ -124,7 +125,7 @@ export default function NotificationsScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => safeBack()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>

@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { colors, radii, spacing, typography } from '../../theme';
 import { useAuthStore } from '../../store/useAuthStore';
+import { safeBack } from '../../utils/navigation';
 import { globalAlert } from '../../store/useDialogStore';
 import { ResponsiveContainer } from '../../components/ui/ResponsiveContainer';
 import { Input } from '../../components/ui/Input';
@@ -148,13 +149,7 @@ export default function RegisterScreen() {
           <TouchableOpacity
             activeOpacity={0.7}
             style={styles.backButton}
-            onPress={() => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/(tabs)/' as any);
-              }
-            }}
+            onPress={() => safeBack()}
           >
             <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>

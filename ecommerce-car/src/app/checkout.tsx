@@ -26,6 +26,7 @@ import { formatVnd, formatVndPrice, toVndAmount } from '../utils/currency';
 import { FALLBACK_CAR_URL } from '../constants/images';
 import { Showroom, Voucher } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { safeBack } from '../utils/navigation';
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
@@ -51,7 +52,7 @@ export default function CheckoutScreen() {
   const [note, setNote] = useState('');
   const [voucherInput, setVoucherInput] = useState('');
   const [isApplyingVoucher, setIsApplyingVoucher] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'zalopay' | 'cash'>('zalopay');
+  const selectedPaymentMethod = 'zalopay';
   const [agreedTerms, setAgreedTerms] = useState(false);
 
   const fallbackImage = FALLBACK_CAR_URL;
@@ -200,7 +201,7 @@ export default function CheckoutScreen() {
           console.warn('[checkout] ZaloPay payment gateway error:', zaloErr);
           globalAlert(
             'Đã tạo đơn đặt cọc',
-            `Đơn hàng #${orderId.slice(0, 8).toUpperCase()} đã được tạo thành công trên hệ thống. Cổng thanh toán ZaloPay trực tuyến tạm thời gián đoạn. Bạn có thể chuyển khoản trực tiếp hoặc theo dõi tiến độ đơn hàng.`,
+            `Đơn hàng #${orderId.slice(0, 8).toUpperCase()} đã được tạo thành công trên hệ thống. Cổng thanh toán ZaloPay trực tuyến tạm thời gián đoạn. Vui lòng theo dõi tiến độ hoặc thử thanh toán lại trong chi tiết đơn hàng.`,
             [
               {
                 text: 'Xem đơn hàng',
@@ -209,13 +210,6 @@ export default function CheckoutScreen() {
             ]
           );
         }
-      } else {
-        // Direct / Transfer deposit
-        globalAlert(
-          'Đã tiếp nhận đơn hàng',
-          `Đơn hàng #${orderId.slice(0, 8).toUpperCase()} đã được ghi nhận. Showroom ${selectedShowroom?.name || 'AutoMatch'} sẽ liên hệ theo số ${phone} để hoàn tất thủ tục bàn giao.`
-        );
-        router.replace(`/order/${orderId}` as any);
       }
     } catch (err: any) {
       globalAlert('Lỗi đặt cọc', err.message || 'Có lỗi xảy ra trong quá trình xử lý.');
@@ -327,11 +321,7 @@ export default function CheckoutScreen() {
 
       {/* Action Button inside Sidebar */}
       <Button
-        title={
-          selectedPaymentMethod === 'zalopay'
-            ? `Thanh toán cọc ${formatVnd(depositAmountVnd)} qua ZaloPay`
-            : `Xác nhận đặt cọc ${formatVnd(depositAmountVnd)}`
-        }
+        title={`Thanh toán cọc ${formatVnd(depositAmountVnd)} qua ZaloPay`}
         onPress={handleProcessPayment}
         loading={isButtonLoading}
         disabled={isButtonLoading}
@@ -347,7 +337,7 @@ export default function CheckoutScreen() {
       {/* Top Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => safeBack()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Xác Nhận Đặt Cọc Xe</Text>
@@ -590,13 +580,11 @@ export default function CheckoutScreen() {
               <Text style={styles.sectionTitle}>Phương thức thanh toán cọc</Text>
             </View>
 
-            <TouchableOpacity
-              activeOpacity={0.85}
+            <View
               style={[
                 styles.paymentOptionCard,
-                selectedPaymentMethod === 'zalopay' && styles.paymentOptionSelected,
+                styles.paymentOptionSelected,
               ]}
-              onPress={() => setSelectedPaymentMethod('zalopay')}
             >
               <View style={styles.paymentOptionHeader}>
                 <View style={styles.paymentIconCircle}>
@@ -605,41 +593,15 @@ export default function CheckoutScreen() {
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={styles.paymentOptionTitle}>ZaloPay Gateway (Trực tuyến)</Text>
-                    <Badge label="Khuyên dùng" variant="primary" size="xs" />
+                    <Badge label="Chính thức" variant="primary" size="xs" />
                   </View>
                   <Text style={styles.paymentOptionSub}>
                     QR ZaloPay / Thẻ ATM Nội địa / VISA, Mastercard
                   </Text>
                 </View>
               </View>
-              {selectedPaymentMethod === 'zalopay' && (
-                <Ionicons name="checkmark-circle" size={16} color={colors.primaryHover} />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[
-                styles.paymentOptionCard,
-                selectedPaymentMethod === 'cash' && styles.paymentOptionSelected,
-              ]}
-              onPress={() => setSelectedPaymentMethod('cash')}
-            >
-              <View style={styles.paymentOptionHeader}>
-                <View style={styles.paymentIconCircle}>
-                  <Ionicons name="wallet-outline" size={16} color={colors.textSecondary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.paymentOptionTitle}>Chuyển khoản trực tiếp</Text>
-                  <Text style={styles.paymentOptionSub}>
-                    Chuyển khoản đặt cọc qua số tài khoản chính thức của AutoMatch
-                  </Text>
-                </View>
-              </View>
-              {selectedPaymentMethod === 'cash' && (
-                <Ionicons name="checkmark-circle" size={16} color={colors.primaryHover} />
-              )}
-            </TouchableOpacity>
+              <Ionicons name="checkmark-circle" size={16} color={colors.primaryHover} />
+            </View>
 
             {/* Terms Checkbox */}
             <TouchableOpacity
@@ -672,11 +634,7 @@ export default function CheckoutScreen() {
                 </View>
 
                 <Button
-                  title={
-                    selectedPaymentMethod === 'zalopay'
-                      ? `Thanh toán cọc ${formatVnd(depositAmountVnd)} qua ZaloPay`
-                      : `Xác nhận đặt cọc ${formatVnd(depositAmountVnd)}`
-                  }
+                  title={`Thanh toán cọc ${formatVnd(depositAmountVnd)} qua ZaloPay`}
                   onPress={handleProcessPayment}
                   loading={isButtonLoading}
                   disabled={isButtonLoading}

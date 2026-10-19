@@ -37,6 +37,7 @@ import { CarCard } from '../../components/car/CarCard';
 import { DepositButton } from '../../components/car/DepositButton';
 import { PriceBreakdownModal } from '../../components/car/PriceBreakdownModal';
 import { CarSpecInput, formatVndPrice } from '../../utils/currency';
+import { safeBack } from '../../utils/navigation';
 import { Review, CarQA } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 
@@ -170,7 +171,7 @@ export default function CarDetailScreen() {
           title="Quay lại Kho xe"
           variant="outline"
           size="sm"
-          onPress={() => router.back()}
+          onPress={() => safeBack()}
           style={{ marginTop: spacing.md }}
         />
       </View>
@@ -310,7 +311,7 @@ export default function CarDetailScreen() {
         <View style={[styles.topNavBar, { paddingTop: Math.max(insets.top, 44) }]}>
           <TouchableOpacity
             style={styles.floatingBackBtn}
-            onPress={() => router.back()}
+            onPress={() => safeBack()}
           >
             <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>

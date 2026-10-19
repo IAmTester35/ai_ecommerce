@@ -23,6 +23,7 @@ import { Order, OrderStatus } from '../types';
 import { FALLBACK_CAR_URL } from '../constants/images';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { isOrderExpired } from '../utils/orderUtils';
+import { safeBack } from '../utils/navigation';
 
 const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'Tất cả' },
@@ -175,7 +176,7 @@ export default function OrdersScreen() {
       {/* Header */}
       <View style={[styles.header, { paddingTop: Math.max(insets.top, 44) }]}>
         <View style={styles.headerInner}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => safeBack()}>
             <Ionicons name="arrow-back" size={16} color={colors.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Đơn Hàng & Hợp Đồng</Text>

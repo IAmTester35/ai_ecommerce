@@ -22,7 +22,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { formatVnd, formatVndPrice } from '../../utils/currency';
-import { OrderStatus, DepositStatus } from '../../types';
+import { OrderStatus, DepositStatus, PaymentItem } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 import { supabase } from '../../api/supabaseClient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -134,8 +134,8 @@ export default function OrderDetailScreen() {
     if (!selectedOrder || !user) return;
     setIsOpeningPayment(true);
     try {
-      const paymentItems = (selectedOrder.order_items || []).map((it) => ({
-        id: it.car_id,
+      const paymentItems: PaymentItem[] = (selectedOrder.order_items || []).map((it) => ({
+        id: it.car_id || it.id,
         name: it.car ? `${it.car.make} ${it.car.model} (Cọc 10%)` : 'Xe ô tô AutoMatch (Cọc 10%)',
         price: Math.round((it.price || 0) * 0.10),
         itemCount: it.quantity || 1,

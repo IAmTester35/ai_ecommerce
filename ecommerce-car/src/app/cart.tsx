@@ -21,6 +21,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SwipeableCartItem } from '../components/car/SwipeableCartItem';
 import { formatVnd, toVndAmount } from '../utils/currency';
+import { safeBack } from '../utils/navigation';
 
 const QUICK_CATEGORIES = [
   { label: 'SUV Đa Dụng', query: 'SUV' },
@@ -121,7 +122,7 @@ export default function CartScreen() {
           <View style={styles.headerInner}>
             <TouchableOpacity
               style={styles.backBtn}
-              onPress={() => router.back()}
+              onPress={() => safeBack()}
               accessibilityLabel="Quay lại"
             >
               <Ionicons name="arrow-back" size={16} color={colors.text} />
@@ -375,7 +376,7 @@ export default function CartScreen() {
         <View style={styles.headerInner}>
           <TouchableOpacity
             style={styles.backBtn}
-            onPress={() => router.back()}
+            onPress={() => safeBack()}
             accessibilityLabel="Quay lại"
           >
             <Ionicons name="arrow-back" size={16} color={colors.text} />
