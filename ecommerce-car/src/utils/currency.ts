@@ -108,6 +108,21 @@ export const formatUsd = (amountInUsd?: number | null): string => {
 };
 
 /**
+ * Normalizes price to VND: if price is under 1,000,000, it is treated as USD MSRP
+ * and converted via usdToVnd with automotive duties/taxes. Otherwise, it is already VND.
+ */
+export const toVndAmount = (
+  price?: number | null,
+  spec?: CarSpecInput
+): number => {
+  if (!price || price <= 0 || isNaN(price)) return 0;
+  if (price < 1_000_000) {
+    return usdToVnd(price, spec);
+  }
+  return price;
+};
+
+/**
  * Formats a car's price (stored in USD in DB) into VND for UI display.
  * @param price Raw price value from database (USD) or already converted VND
  * @param unit The unit of the input price parameter ('usd' | 'vnd'). Defaults to 'usd'.
@@ -119,16 +134,10 @@ export const formatVndPrice = (
   spec?: CarSpecInput
 ): string => {
   if (!price || price <= 0 || isNaN(price)) return 'Liên hệ giá';
-  let isUsd = false;
   if (unit === 'usd') {
-    isUsd = price < 1_000_000;
-  } else if (unit === 'vnd') {
-    isUsd = false;
-  } else {
-    isUsd = price < 1_000_000;
+    return formatVnd(usdToVnd(price, spec));
   }
-  const vndAmount = isUsd ? usdToVnd(price, spec) : price;
-  return formatVnd(vndAmount);
+  return formatVnd(toVndAmount(price, spec));
 };
 
 /**

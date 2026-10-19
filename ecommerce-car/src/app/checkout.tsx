@@ -22,7 +22,7 @@ import { ResponsiveContainer } from '../components/ui/ResponsiveContainer';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
-import { formatVnd, formatVndPrice, usdToVnd } from '../utils/currency';
+import { formatVnd, formatVndPrice, toVndAmount } from '../utils/currency';
 import { FALLBACK_CAR_URL } from '../constants/images';
 import { Showroom, Voucher } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -74,13 +74,10 @@ export default function CheckoutScreen() {
   // 2. Financial Calculations
   const rawTotalVnd = useMemo(() => {
     return items.reduce((sum, item) => {
-      const price = item.car?.price || 0;
-      const itemPriceVnd = price > 0 && price < 1_000_000
-        ? usdToVnd(price, {
-            engineHp: item.car?.engine_hp,
-            fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
-          })
-        : price;
+      const itemPriceVnd = toVndAmount(item.car?.price, {
+        engineHp: item.car?.engine_hp,
+        fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+      });
       return sum + itemPriceVnd * item.quantity;
     }, 0);
   }, [items]);
@@ -91,8 +88,8 @@ export default function CheckoutScreen() {
   }, [rawTotalVnd, recalculateDiscount]);
 
   const netTotalVnd = Math.max(0, rawTotalVnd - discountAmount);
-  // Standard 10% deposit
-  const depositAmountVnd = Math.round(netTotalVnd * 0.10);
+  // Standard 10% deposit (capped at net total)
+  const depositAmountVnd = Math.min(Math.round(netTotalVnd * 0.10), netTotalVnd);
   // Remaining 90% amount to pay at Showroom
   const remainingAmountVnd = Math.max(0, netTotalVnd - depositAmountVnd);
 
@@ -159,13 +156,10 @@ export default function CheckoutScreen() {
       if (selectedPaymentMethod === 'zalopay') {
         // Step 2: Build ZaloPay payload with deposit prices
         const paymentItems = items.map((item) => {
-          const price = item.car?.price || 0;
-          const itemPriceVnd = price > 0 && price < 1_000_000
-            ? usdToVnd(price, {
-                engineHp: item.car?.engine_hp,
-                fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
-              })
-            : price;
+          const itemPriceVnd = toVndAmount(item.car?.price, {
+            engineHp: item.car?.engine_hp,
+            fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+          });
           return {
             id: item.car_id,
             name: item.car ? `${item.car.make} ${item.car.model} (Cọc 10%)` : 'Xe ô tô AutoMatch (Cọc 10%)',

@@ -20,7 +20,7 @@ import { ResponsiveContainer } from '../components/ui/ResponsiveContainer';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { SwipeableCartItem } from '../components/car/SwipeableCartItem';
-import { formatVnd, usdToVnd } from '../utils/currency';
+import { formatVnd, toVndAmount } from '../utils/currency';
 
 const QUICK_CATEGORIES = [
   { label: 'SUV Đa Dụng', query: 'SUV' },
@@ -56,13 +56,10 @@ export default function CartScreen() {
   // 2. Financial Calculations
   const rawTotalVnd = useMemo(() => {
     return items.reduce((sum, item) => {
-      const price = item.car?.price || 0;
-      const itemPriceVnd = price > 0 && price < 1_000_000
-        ? usdToVnd(price, {
-            engineHp: item.car?.engine_hp,
-            fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
-          })
-        : price;
+      const itemPriceVnd = toVndAmount(item.car?.price, {
+        engineHp: item.car?.engine_hp,
+        fuelType: item.car?.metadata?.engine_fuel_type || item.car?.metadata?.fuel_type,
+      });
       return sum + itemPriceVnd * item.quantity;
     }, 0);
   }, [items]);
@@ -73,9 +70,9 @@ export default function CartScreen() {
   }, [rawTotalVnd, recalculateDiscount]);
 
   const netTotalVnd = Math.max(0, rawTotalVnd - discountAmount);
-  // Standard 10% deposit for vehicle reservations
+  // Standard 10% deposit for vehicle reservations (capped at net total)
   const depositRate = 0.10;
-  const depositAmountVnd = Math.round(netTotalVnd * depositRate);
+  const depositAmountVnd = Math.min(Math.round(netTotalVnd * depositRate), netTotalVnd);
   const remainingAmountVnd = Math.max(0, netTotalVnd - depositAmountVnd);
 
   // Handle Promo Code submission
