@@ -118,11 +118,13 @@ export default function OrderDetailScreen() {
       if (id) {
         await fetchOrderDetails(id);
       }
-      const message = (res as any).friendly_message || res.return_message || 'Chưa nhận được phản hồi.';
-      globalAlert(
-        res.return_code === 1 ? 'Thành công' : 'Trạng thái ZaloPay',
-        message
-      );
+      if (res.return_code === 1) {
+        globalAlert('Thành công', 'Đã xác nhận thanh toán cọc thành công từ ZaloPay!');
+      } else {
+        const subMsg = res.sub_return_code ? ` (Mã: ${res.return_code}, Phụ: ${res.sub_return_code})` : '';
+        const msg = `${res.friendly_message || res.return_message || 'Chưa nhận được phản hồi.'}${subMsg}\n\n* Thử nghiệm Sandbox: Chọn Thẻ ATM -> Ngân hàng NCB -> Số thẻ: 9704198526191432198 (OTP: 111111).`;
+        globalAlert('Trạng thái ZaloPay', msg);
+      }
     } catch (err: any) {
       globalAlert('Lỗi kiểm tra', err.message || 'Không thể lấy trạng thái từ ZaloPay.');
     } finally {
@@ -387,11 +389,24 @@ export default function OrderDetailScreen() {
 
           {statusResult && (
             <View style={styles.statusResultBox}>
-              <Text style={styles.statusResultTitle}>Kết quả đối soát ZaloPay:</Text>
-              <Text style={styles.statusResultText}>• {statusResult.return_message}</Text>
-              {statusResult.zp_trans_id && (
-                <Text style={styles.statusResultText}>• Mã ZaloPay: {statusResult.zp_trans_id}</Text>
-              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+                <Text style={styles.statusResultTitle}>Đối soát ZaloPay</Text>
+                <Badge
+                  label={
+                    statusResult.return_code === 1
+                      ? 'Thành công'
+                      : statusResult.sub_return_code === -86
+                      ? 'Chưa thanh toán (-86)'
+                      : `Mã ${statusResult.return_code}`
+                  }
+                  variant={statusResult.return_code === 1 ? 'success' : 'warning'}
+                  size="sm"
+                />
+              </View>
+              <Text style={styles.statusResultText}>• {statusResult.friendly_message || statusResult.return_message}</Text>
+              {statusResult.zp_trans_id ? (
+                <Text style={styles.statusResultText}>• Mã GD ZaloPay: {statusResult.zp_trans_id}</Text>
+              ) : null}
             </View>
           )}
 
@@ -449,6 +464,21 @@ export default function OrderDetailScreen() {
                 loading={checkingPayment || isProcessing}
                 icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
               />
+              <View style={styles.sandboxGuideBox}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Ionicons name="card-outline" size={13} color={colors.primaryHover} />
+                  <Text style={styles.sandboxGuideTitle}>Hướng dẫn test ZaloPay Sandbox</Text>
+                </View>
+                <Text style={styles.sandboxGuideDesc}>
+                  Sandbox không nhận app hoặc thẻ thật. Chọn <Text style={{ fontWeight: '700', color: colors.text }}>"Thẻ ATM"</Text> trên cổng ZaloPay và điền:
+                </Text>
+                <View style={styles.sandboxTable}>
+                  <Text style={styles.sandboxRowText}><Text style={styles.sandboxRowLabel}>Ngân hàng:</Text> NCB</Text>
+                  <Text style={styles.sandboxRowText}><Text style={styles.sandboxRowLabel}>Số thẻ:</Text> 9704 1985 2619 1432 198</Text>
+                  <Text style={styles.sandboxRowText}><Text style={styles.sandboxRowLabel}>Chủ thẻ:</Text> NGUYEN VAN A</Text>
+                  <Text style={styles.sandboxRowText}><Text style={styles.sandboxRowLabel}>Phát hành:</Text> 07/15  |  <Text style={styles.sandboxRowLabel}>OTP:</Text> 111111</Text>
+                </View>
+              </View>
             </View>
           )}
         </Card>
@@ -823,19 +853,55 @@ const styles = StyleSheet.create({
   },
   statusResultBox: {
     backgroundColor: colors.background,
-    borderRadius: radii.xs,
-    padding: spacing.xs + 2,
+    borderRadius: radii.sm,
+    padding: spacing.xs + 4,
     marginTop: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   statusResultTitle: {
     color: colors.textSecondary,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: typography.weights.semibold,
   },
   statusResultText: {
     color: colors.textMuted,
-    fontSize: 9.5,
-    marginTop: 1,
+    fontSize: 11,
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  sandboxGuideBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.06)',
+    borderRadius: radii.sm,
+    padding: spacing.xs + 4,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+    marginTop: 2,
+  },
+  sandboxGuideTitle: {
+    fontSize: 11.5,
+    fontWeight: typography.weights.semibold,
+    color: colors.primaryHover,
+  },
+  sandboxGuideDesc: {
+    fontSize: 10.5,
+    color: colors.textSecondary,
+    lineHeight: 14,
+    marginBottom: 4,
+  },
+  sandboxTable: {
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    borderRadius: radii.xs,
+    padding: 6,
+    gap: 2,
+  },
+  sandboxRowText: {
+    fontSize: 10.5,
+    color: colors.text,
+  },
+  sandboxRowLabel: {
+    color: colors.textMuted,
+    fontWeight: typography.weights.medium,
   },
   itemCard: {
     flexDirection: 'row',

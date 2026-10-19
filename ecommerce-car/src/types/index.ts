@@ -168,6 +168,10 @@ export interface PaymentStatusRequest {
 export interface PaymentStatusResponse {
   return_code: number;
   return_message: string;
+  sub_return_code?: number;
+  sub_return_message?: string;
+  friendly_message?: string;
+  is_waiting_payment?: boolean;
   is_processing?: boolean;
   amount?: number;
   zp_trans_id?: string;
