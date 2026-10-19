@@ -147,6 +147,9 @@ CREATE TABLE orders (
     deposit_status TEXT DEFAULT 'unpaid' CHECK (deposit_status IN ('unpaid', 'paid', 'refunded')), -- Trạng thái tiền cọc
     contract_url TEXT,
     app_trans_id TEXT,                                            -- Mã giao dịch đối soát ZaloPay (YYMMDD_XXXXXX)
+    phone TEXT,                                                   -- Số điện thoại người nhận / đặt cọc
+    customer_name TEXT,                                           -- Họ tên người nhận xe
+    note TEXT,                                                    -- Ghi chú nhận xe
     cancellation_reason TEXT,                                     -- Lý do hủy đơn hàng
     cancelled_by UUID REFERENCES profiles(id) ON DELETE SET NULL, -- Người thực hiện hủy
     cancelled_at TIMESTAMPTZ,                                     -- Thời điểm hủy

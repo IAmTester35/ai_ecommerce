@@ -136,6 +136,9 @@ export interface Order {
   refund_reason?: string | null;
   refund_trans_id?: string | null;
   refunded_at?: string | null;
+  phone?: string | null;
+  customer_name?: string | null;
+  note?: string | null;
   created_at: string;
   updated_at: string;
   profile?: Profile | null;

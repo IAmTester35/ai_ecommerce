@@ -25,12 +25,13 @@ import { Badge } from '../components/ui/Badge';
 import { formatVnd, formatVndPrice, toVndAmount } from '../utils/currency';
 import { FALLBACK_CAR_URL } from '../constants/images';
 import { Showroom, Voucher } from '../types';
+import { supabase } from '../api/supabaseClient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { safeBack } from '../utils/navigation';
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
-  const { user, profile } = useAuthStore();
+  const { user, profile, updateProfile } = useAuthStore();
   const { items, checkout, isCheckingOut } = useCartStore();
   const { createZaloPayOrder, openZaloPayUrl, isProcessing } = usePaymentStore();
   const { showrooms, selectedShowroom, fetchShowrooms, selectShowroom } = useShowroomStore();
@@ -153,6 +154,35 @@ export default function CheckoutScreen() {
         appliedVoucher?.code,
         0.10
       );
+
+      // Step 1.1: Persist phone, customer_name, and note to orders table
+      try {
+        await supabase
+          .from('orders')
+          .update({
+            phone: phone.trim(),
+            customer_name: name.trim(),
+            note: note.trim() || null,
+          })
+          .eq('id', orderId);
+      } catch (orderUpdateErr) {
+        console.warn('[checkout] Could not update order with phone/name:', orderUpdateErr);
+      }
+
+      // Step 1.2: Sync phone & name to user profile & auth metadata if provided
+      if (phone.trim() || name.trim()) {
+        try {
+          await updateProfile({
+            phone: phone.trim(),
+            full_name: name.trim(),
+          });
+          await supabase.auth.updateUser({
+            data: { phone: phone.trim(), full_name: name.trim() },
+          });
+        } catch (profileErr) {
+          console.warn('[checkout] Could not sync user profile phone:', profileErr);
+        }
+      }
 
       if (selectedPaymentMethod === 'zalopay') {
         // Step 2: Build ZaloPay payload with deposit prices

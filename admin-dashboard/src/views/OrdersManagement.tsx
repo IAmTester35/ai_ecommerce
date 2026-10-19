@@ -302,7 +302,7 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
       `"${o.id}"`,
       `"${o.profile?.full_name || 'Khách hàng'}"`,
       `"${o.profile?.email || ''}"`,
-      `"${o.profile?.phone || ''}"`,
+      `"${o.phone || o.profile?.phone || ''}"`,
       `"${o.showroom?.name || 'Showroom Trung Tâm'}"`,
       `"${o.app_trans_id || 'N/A'}"`,
       o.total_amount,
@@ -698,10 +698,10 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
                 </div>
                 <div className="space-y-1 text-xs">
                   <p className="font-bold text-slate-900">
-                    {selectedOrder.profile?.full_name || 'Khách Hàng'}
+                    {selectedOrder.customer_name || selectedOrder.profile?.full_name || 'Khách Hàng'}
                   </p>
                   <p className="text-slate-500">{selectedOrder.profile?.email}</p>
-                  <p className="text-slate-500">{selectedOrder.profile?.phone || 'Chưa cập nhật SĐT'}</p>
+                  <p className="text-slate-500">{selectedOrder.phone || selectedOrder.profile?.phone || 'Chưa cập nhật SĐT'}</p>
                 </div>
               </div>
 
@@ -1129,7 +1129,7 @@ export const OrdersManagement: React.FC<OrdersManagementProps> = ({ initialTab =
                   <h5 className="font-bold text-slate-900 mb-1">BÊN NHẬN (KHÁCH HÀNG):</h5>
                   <p>Họ và tên: {selectedOrder.profile?.full_name || 'Khách Hàng'}</p>
                   <p>Email: {selectedOrder.profile?.email}</p>
-                  <p>Điện thoại: {selectedOrder.profile?.phone || 'Chưa cập nhật'}</p>
+                  <p>Điện thoại: {selectedOrder.phone || selectedOrder.profile?.phone || 'Chưa cập nhật'}</p>
                 </div>
               </div>
 

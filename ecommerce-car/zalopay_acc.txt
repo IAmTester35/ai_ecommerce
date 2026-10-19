@@ -1,0 +1,3 @@
+Trên giao diện ZaloPay, chọn Thẻ ATM / Tài khoản ngân hàng.
+Chọn ngân hàng: NCB.
+Số thẻ: 9704198526191432198 | Tên: NGUYEN VAN A | Ngày: 07/15 | OTP: 111111.

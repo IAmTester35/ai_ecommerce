@@ -32,7 +32,7 @@ import { safeBack } from '../../utils/navigation';
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id, app_trans_id } = useLocalSearchParams<{ id: string; app_trans_id?: string }>();
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const { selectedOrder, fetchOrderDetails, isLoading } = useOrderStore();
   const { checkPaymentStatus, createZaloPayOrder, openZaloPayUrl, isProcessing, statusResult } = usePaymentStore();
   const { isLargeScreen } = useResponsive();
@@ -148,9 +148,9 @@ export default function OrderDetailScreen() {
         items: paymentItems,
         email: user.email || '',
         address: selectedOrder.showroom?.address || '',
-        name: user.user_metadata?.full_name || 'Khách hàng',
-        phone: user.user_metadata?.phone || '',
-        note: `Thanh toán cọc cho đơn hàng #${selectedOrder.id.slice(0, 8)}`,
+        name: selectedOrder.customer_name || user.user_metadata?.full_name || 'Khách hàng',
+        phone: selectedOrder.phone || profile?.phone || user.user_metadata?.phone || '',
+        note: selectedOrder.note || `Thanh toán cọc cho đơn hàng #${selectedOrder.id.slice(0, 8)}`,
         userid: user.id,
       };
 
@@ -367,6 +367,38 @@ export default function OrderDetailScreen() {
               <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
               <Text style={styles.showroomText}>Giờ mở cửa: {selectedOrder.showroom.opening_hours || '08:00 - 20:00'}</Text>
             </View>
+          </View>
+        </Card>
+      )}
+
+      {/* 2.1 Customer Contact Information Card */}
+      {(selectedOrder.customer_name || selectedOrder.phone || profile?.phone) && (
+        <Card style={styles.showroomCard} padding={spacing.md}>
+          <View style={styles.showroomHeaderRow}>
+            <View style={styles.showroomIconBox}>
+              <Ionicons name="person" size={16} color={colors.primaryHover} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.showroomCardTitle}>Thông Tin Người Đặt Cọc</Text>
+              <Text style={styles.showroomName}>
+                {selectedOrder.customer_name || profile?.full_name || 'Khách hàng'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.showroomDetailsList}>
+            <View style={styles.showroomItem}>
+              <Ionicons name="call-outline" size={13} color={colors.textSecondary} />
+              <Text style={styles.showroomText}>
+                Số điện thoại: {selectedOrder.phone || profile?.phone || 'Chưa cập nhật'}
+              </Text>
+            </View>
+            {selectedOrder.note ? (
+              <View style={styles.showroomItem}>
+                <Ionicons name="document-text-outline" size={13} color={colors.textSecondary} />
+                <Text style={styles.showroomText}>Ghi chú: {selectedOrder.note}</Text>
+              </View>
+            ) : null}
           </View>
         </Card>
       )}
