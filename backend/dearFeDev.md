@@ -304,8 +304,9 @@ Hỗ trợ khởi tạo thanh toán ZaloPay, kiểm tra trạng thái và tự �
   ```
 
 #### C. Callback tự động (ZaloPay Webhook)
-- **Endpoint:** `POST /api/payment/callback`
-- Tự động gọi từ hệ thống ZaloPay sau khi thanh toán thành công để cập nhật bảng `orders` (`payment_status = 'paid'`, `status = 'processing'`) và lưu thông báo mới vào bảng `notifications` của Supabase.
+- **Supabase Edge Function Live URL:** `https://vafxrjhzgzihjiphvhms.supabase.co/functions/v1/zalopay-callback`
+- **Backend Fallback Endpoint:** `POST /api/payment/callback`
+- Tự động gọi từ hệ thống ZaloPay sau khi thanh toán thành công để cập nhật bảng `orders` (`payment_status = 'paid'`, `deposit_status = 'paid'`, `status = 'deposit_paid'`) và lưu thông báo mới vào bảng `notifications` của Supabase.
 
 ---
 
