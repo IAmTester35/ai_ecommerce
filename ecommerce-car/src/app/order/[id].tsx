@@ -48,12 +48,12 @@ export default function OrderDetailScreen() {
   useEffect(() => {
     if (!id) return;
     const channel = supabase
-      .channel(`order-realtime-${id}`)
+      .channel(`order-realtime-${id}-${Date.now()}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` },
         () => {
-          fetchOrderDetails(id);
+          useOrderStore.getState().fetchOrderDetails(id);
         }
       )
       .subscribe();
@@ -61,7 +61,7 @@ export default function OrderDetailScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, fetchOrderDetails]);
+  }, [id]);
 
   const effectiveTransId = app_trans_id || selectedOrder?.app_trans_id;
 
