@@ -26,6 +26,7 @@ import { OrderStatus, DepositStatus } from '../../types';
 import { FALLBACK_CAR_URL } from '../../constants/images';
 import { supabase } from '../../api/supabaseClient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { isOrderExpired, getRemainingPaymentSeconds, formatCountdown } from '../../utils/orderUtils';
 
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -36,6 +37,23 @@ export default function OrderDetailScreen() {
   const { isLargeScreen } = useResponsive();
 
   const [checkingPayment, setCheckingPayment] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(() => getRemainingPaymentSeconds(selectedOrder));
+
+  // Countdown timer for 15-minute payment window
+  useEffect(() => {
+    if (!selectedOrder || selectedOrder.status !== 'pending' || selectedOrder.deposit_status !== 'unpaid') {
+      return;
+    }
+    setRemainingSeconds(getRemainingPaymentSeconds(selectedOrder));
+    const timer = setInterval(() => {
+      const left = getRemainingPaymentSeconds(selectedOrder);
+      setRemainingSeconds(left);
+      if (left <= 0) {
+        clearInterval(timer);
+      }
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [selectedOrder]);
 
   // 1. Fetch chi tiết đơn hàng khi mount
   useEffect(() => {
@@ -110,6 +128,9 @@ export default function OrderDetailScreen() {
   };
 
   const getOrderStatusBadge = (status: OrderStatus) => {
+    if (isOrderExpired(selectedOrder)) {
+      return <Badge label="Thất bại (Hết hạn)" variant="danger" size="xs" dot />;
+    }
     switch (status) {
       case 'completed':
         return <Badge label="Đã giao xe" variant="success" size="xs" dot />;
@@ -128,6 +149,9 @@ export default function OrderDetailScreen() {
   };
 
   const getDepositStatusBadge = (depositStatus: DepositStatus) => {
+    if (isOrderExpired(selectedOrder)) {
+      return <Badge label="Hết hạn cọc" variant="danger" size="xs" dot />;
+    }
     switch (depositStatus) {
       case 'paid':
         return <Badge label="Đã nộp cọc" variant="success" size="xs" dot />;
@@ -343,16 +367,46 @@ export default function OrderDetailScreen() {
                 Đã thanh toán cọc thành công qua cổng ZaloPay
               </Text>
             </View>
+          ) : isOrderExpired(selectedOrder) ? (
+            <View style={{ marginTop: spacing.sm, padding: spacing.sm, backgroundColor: 'rgba(239, 68, 68, 0.08)', borderRadius: radii.md, borderWidth: 1, borderColor: 'rgba(239, 68, 68, 0.25)', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="time-outline" size={16} color={colors.danger} />
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.danger }}>
+                  Giao dịch đã hết hạn thanh toán
+                </Text>
+              </View>
+              <Text style={{ fontSize: 11.5, color: colors.textSecondary, lineHeight: 17 }}>
+                Liên kết thanh toán ZaloPay chỉ có hiệu lực trong vòng 15 phút kể từ lúc khởi tạo đơn. Đơn hàng này đã quá thời hạn và được đánh dấu thất bại.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                <Button
+                  title="Khám phá xe khác"
+                  variant="outline"
+                  size="sm"
+                  onPress={() => router.push('/(tabs)/catalog' as any)}
+                  style={{ flex: 1 }}
+                />
+              </View>
+            </View>
           ) : (
-            <Button
-              title={checkingPayment ? 'Đang kiểm tra...' : 'Kiểm tra & Đồng bộ trạng thái ZaloPay'}
-              variant="outline"
-              size="sm"
-              onPress={handleCheckPaymentStatus}
-              loading={checkingPayment || isProcessing}
-              icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
-              style={{ marginTop: spacing.xs + 2 }}
-            />
+            <View style={{ marginTop: spacing.xs + 2, gap: 8 }}>
+              {remainingSeconds > 0 && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(245, 158, 11, 0.1)', paddingVertical: 6, paddingHorizontal: 10, borderRadius: radii.sm, borderWidth: 1, borderColor: 'rgba(245, 158, 11, 0.2)' }}>
+                  <Ionicons name="hourglass-outline" size={13} color={colors.warning} />
+                  <Text style={{ fontSize: 11.5, color: colors.warning, fontWeight: '600' }}>
+                    Thời gian thanh toán còn lại: {formatCountdown(remainingSeconds)}
+                  </Text>
+                </View>
+              )}
+              <Button
+                title={checkingPayment ? 'Đang kiểm tra...' : 'Kiểm tra & Đồng bộ trạng thái ZaloPay'}
+                variant="outline"
+                size="sm"
+                onPress={handleCheckPaymentStatus}
+                loading={checkingPayment || isProcessing}
+                icon={<Ionicons name="refresh" size={12} color={colors.primaryHover} />}
+              />
+            </View>
           )}
         </Card>
       )}

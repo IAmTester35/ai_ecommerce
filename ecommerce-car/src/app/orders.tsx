@@ -22,6 +22,7 @@ import { formatVndPrice } from '../components/ui/PriceTag';
 import { Order, OrderStatus } from '../types';
 import { FALLBACK_CAR_URL } from '../constants/images';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { isOrderExpired } from '../utils/orderUtils';
 
 const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'all', label: 'Tất cả' },
@@ -29,7 +30,7 @@ const STATUS_TABS: { id: string; label: string }[] = [
   { id: 'deposit_paid', label: 'Đã cọc' },
   { id: 'ready_for_pickup', label: 'Nhận xe' },
   { id: 'completed', label: 'Đã giao' },
-  { id: 'cancelled', label: 'Đã hủy' },
+  { id: 'cancelled', label: 'Thất bại / Hủy' },
 ];
 
 export default function OrdersScreen() {
@@ -58,11 +59,20 @@ export default function OrdersScreen() {
 
   const filteredOrders = useMemo(() => {
     if (selectedStatusTab === 'all') return orders;
+    if (selectedStatusTab === 'pending') {
+      return orders.filter((o) => o.status === 'pending' && !isOrderExpired(o));
+    }
+    if (selectedStatusTab === 'cancelled') {
+      return orders.filter((o) => o.status === 'cancelled' || (o.status === 'pending' && isOrderExpired(o)));
+    }
     return orders.filter((o) => o.status === selectedStatusTab);
   }, [orders, selectedStatusTab]);
 
-  const getOrderStatusBadge = (status: OrderStatus) => {
-    switch (status) {
+  const getOrderStatusBadge = (order: Order) => {
+    if (isOrderExpired(order)) {
+      return <Badge label="Thất bại (Hết hạn)" variant="danger" size="xs" dot />;
+    }
+    switch (order.status) {
       case 'completed':
         return <Badge label="Đã giao xe" variant="success" size="xs" dot />;
       case 'ready_for_pickup':
@@ -114,7 +124,7 @@ export default function OrdersScreen() {
                 <Text style={styles.dateText}>{createdDate}</Text>
               </View>
             </View>
-            {getOrderStatusBadge(item.status)}
+            {getOrderStatusBadge(item)}
           </View>
 
           <View style={styles.divider} />
