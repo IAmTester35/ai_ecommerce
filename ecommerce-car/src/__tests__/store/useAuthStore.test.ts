@@ -123,7 +123,7 @@ describe('useAuthStore Suite - Zustand Authentication Store', () => {
       expect(useAuthStore.getState().profile).toEqual(mockProfile);
     });
 
-    it('detects when email confirmation is required (user created without session)', async () => {
+    it('detects when email confirmation is required and does NOT authenticate state', async () => {
       const mockUser = { id: 'u2', email: 'verify@test.com' } as any;
       (authService.signUp as jest.Mock).mockResolvedValueOnce({
         user: mockUser,
@@ -132,9 +132,12 @@ describe('useAuthStore Suite - Zustand Authentication Store', () => {
 
       const res = await useAuthStore.getState().signUp('verify@test.com', 'pwd123');
       expect(res.needEmailConfirmation).toBe(true);
+      expect(useAuthStore.getState().user).toBeNull();
+      expect(useAuthStore.getState().session).toBeNull();
+      expect(useAuthStore.getState().profile).toBeNull();
     });
 
-    it('sets error and throws when signup fails', async () => {
+    it('sets error and resets auth state when signup fails', async () => {
       (authService.signUp as jest.Mock).mockRejectedValueOnce(
         new Error('User already registered')
       );
@@ -144,6 +147,8 @@ describe('useAuthStore Suite - Zustand Authentication Store', () => {
       ).rejects.toThrow('Email này đã được đăng ký');
 
       expect(useAuthStore.getState().error).toContain('Email này đã được đăng ký');
+      expect(useAuthStore.getState().user).toBeNull();
+      expect(useAuthStore.getState().session).toBeNull();
       expect(useAuthStore.getState().isLoading).toBe(false);
     });
   });

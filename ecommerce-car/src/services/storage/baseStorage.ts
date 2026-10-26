@@ -15,8 +15,7 @@ export const baseStorage: IStorage = {
   getItem: (key: string): string | null => {
     try {
       if (hasLocalStorage()) {
-        const val = window.localStorage.getItem(key);
-        if (val !== null) return val;
+        return window.localStorage.getItem(key);
       }
       return memoryStore.get(key) ?? null;
     } catch {
@@ -26,29 +25,38 @@ export const baseStorage: IStorage = {
 
   setItem: (key: string, value: string): void => {
     try {
-      memoryStore.set(key, value);
       if (hasLocalStorage()) {
         window.localStorage.setItem(key, value);
+      } else {
+        memoryStore.set(key, value);
       }
-    } catch {}
+    } catch {
+      memoryStore.set(key, value);
+    }
   },
 
   removeItem: (key: string): void => {
     try {
-      memoryStore.delete(key);
       if (hasLocalStorage()) {
         window.localStorage.removeItem(key);
+      } else {
+        memoryStore.delete(key);
       }
-    } catch {}
+    } catch {
+      memoryStore.delete(key);
+    }
   },
 
   clear: (): void => {
     try {
-      memoryStore.clear();
       if (hasLocalStorage()) {
         window.localStorage.clear();
+      } else {
+        memoryStore.clear();
       }
-    } catch {}
+    } catch {
+      memoryStore.clear();
+    }
   },
 };
 

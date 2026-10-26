@@ -32,6 +32,9 @@ export const formatAuthError = (err: any): string => {
   if (msg.includes('Signup is disabled')) {
     return 'Hệ thống tạm ngắt đăng ký tài khoản mới.';
   }
+  if (msg.includes('vô hiệu hóa') || msg.includes('disabled') || msg.includes('deactivated')) {
+    return 'Tài khoản của bạn đã bị vô hiệu hóa.';
+  }
   return msg || 'Thao tác không thành công. Vui lòng thử lại.';
 };
 
@@ -79,13 +82,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // 2. Register listener once
       if (!isAuthListenerRegistered) {
         isAuthListenerRegistered = true;
-        supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        supabase.auth.onAuthStateChange(async (event, newSession) => {
+          if (event === 'INITIAL_SESSION') return;
+          const currentStoreUser = get().user;
           const newUser = newSession?.user ?? null;
+
+          if (!newUser) {
+            set({ session: null, user: null, profile: null });
+            return;
+          }
+
           set({ session: newSession, user: newUser });
-          if (newUser) {
+          // Deduplicate profile fetch if already loaded for the same user
+          if (currentStoreUser?.id !== newUser.id || !get().profile) {
             await get().fetchProfile();
-          } else {
-            set({ profile: null });
           }
         });
       }
@@ -112,18 +122,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const data = await authService.signUp(email, password, fullName, phone);
       const user = data.user ?? null;
       const session = data.session ?? null;
-      set({ session, user, isLoading: false });
 
+      // Supabase requires email verification when session is null
+      const needEmailConfirmation = !session;
+
+      if (needEmailConfirmation) {
+        // Do not authenticate state if user is unconfirmed/unauthenticated
+        set({ session: null, user: null, profile: null, isLoading: false });
+        return { needEmailConfirmation: true };
+      }
+
+      set({ session, user, isLoading: false });
       if (user) {
         await get().fetchProfile();
       }
 
-      // If there is a user but no session, Supabase requires email verification
-      const needEmailConfirmation = !!(user && !session);
-      return { needEmailConfirmation };
+      return { needEmailConfirmation: false };
     } catch (err: any) {
       const errorMsg = formatAuthError(err);
-      set({ error: errorMsg, isLoading: false });
+      set({ session: null, user: null, profile: null, error: errorMsg, isLoading: false });
       throw new Error(errorMsg);
     }
   },
@@ -147,10 +164,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await authService.signOut();
-      set({ session: null, user: null, profile: null, isLoading: false });
     } catch (err: any) {
       const errorMsg = formatAuthError(err);
-      set({ error: errorMsg, isLoading: false });
+      set({ error: errorMsg });
+    } finally {
+      set({ session: null, user: null, profile: null, isLoading: false });
     }
   },
 
@@ -179,26 +197,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchProfile: async () => {
-    const { user } = get();
-    if (!user) return;
+    const { user, session } = get();
+    if (!user || !session) {
+      set({ profile: null });
+      return;
+    }
     try {
       const profile = await authService.ensureProfile(user);
       if (profile) {
+        if (profile.is_active === false) {
+          await authService.signOut();
+          set({ session: null, user: null, profile: null, error: 'Tài khoản của bạn đã bị vô hiệu hóa.' });
+          return;
+        }
         set({ profile });
-      } else {
-        // Fallback profile from user metadata if database row is newly created
-        set({
-          profile: {
-            id: user.id,
-            email: user.email || '',
-            full_name: user.user_metadata?.full_name || null,
-            phone: user.user_metadata?.phone || null,
-            role: 'user',
-            avatar_url: null,
-            created_at: user.created_at,
-            updated_at: user.created_at,
-          },
-        });
       }
     } catch (err: any) {
       console.warn('[useAuthStore] Error fetching profile:', err);

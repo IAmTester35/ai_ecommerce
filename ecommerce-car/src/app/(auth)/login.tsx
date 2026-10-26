@@ -57,11 +57,13 @@ export default function LoginScreen() {
 
     try {
       await signIn(email.trim(), password);
-      // If we can go back, go back; otherwise go to tabs profile
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)/profile' as any);
+      const state = useAuthStore.getState();
+      if (state.session) {
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)/profile' as any);
+        }
       }
     } catch {
       // Error is set in store and displayed in banner

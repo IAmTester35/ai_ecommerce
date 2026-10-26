@@ -101,10 +101,10 @@ export default function RegisterScreen() {
       if (needEmailConfirmation) {
         globalAlert(
           'Đăng ký thành công',
-          'Vui lòng kiểm tra email kích hoạt tài khoản.',
+          'Vui lòng kiểm tra email kích hoạt tài khoản trước khi đăng nhập.',
           [
             {
-              text: 'Đăng nhập',
+              text: 'Đăng nhập ngay',
               onPress: () => router.replace('/(auth)/login' as any),
             },
           ]

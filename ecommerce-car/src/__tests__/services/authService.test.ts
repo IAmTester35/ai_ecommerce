@@ -51,15 +51,29 @@ describe('AuthService Suite - Authentication & Profile Management', () => {
       });
 
       expect(supabase.from).toHaveBeenCalledWith('profiles');
-      expect(upsertMock).toHaveBeenCalledWith({
-        id: 'user-123',
-        email: 'test@example.com',
-        full_name: 'John Doe',
-        phone: '0912345678',
-        role: 'user',
-      });
+      expect(upsertMock).toHaveBeenCalledWith(
+        {
+          id: 'user-123',
+          email: 'test@example.com',
+          full_name: 'John Doe',
+          phone: '0912345678',
+          role: 'user',
+        },
+        { onConflict: 'id', ignoreDuplicates: true }
+      );
 
       expect(res.user?.id).toBe('user-123');
+    });
+
+    it('detects duplicate email from empty identities array and throws error', async () => {
+      (supabase.auth.signUp as jest.Mock).mockResolvedValueOnce({
+        data: { user: { id: 'u1', identities: [] }, session: null },
+        error: null,
+      });
+
+      await expect(
+        authService.signUp('dup@example.com', 'pwd123')
+      ).rejects.toThrow('User already registered');
     });
 
     // UNHAPPY / ERROR CASES
@@ -179,10 +193,7 @@ describe('AuthService Suite - Authentication & Profile Management', () => {
         error: null,
       });
       await authService.resetPassword('reset@test.com');
-      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
-        'reset@test.com',
-        expect.objectContaining({ redirectTo: 'automatch://reset-password' })
-      );
+      expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith('reset@test.com');
     });
 
     it('updatePassword updates auth user password', async () => {
