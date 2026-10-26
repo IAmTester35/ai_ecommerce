@@ -1,5 +1,8 @@
+name: ai_ecommerce
+
 services:
   ecommerce-car:
+    image: ghcr.io/iamtester35/ai_ecommerce-ecommerce-car:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -12,8 +15,19 @@ services:
     ports:
       - "8081:80"
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    networks:
+      - automatch_net
+
+networks:
+  automatch_net:
+    driver: bridge

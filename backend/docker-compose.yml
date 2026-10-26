@@ -1,5 +1,8 @@
+name: ai_ecommerce
+
 services:
   backend:
+    image: ghcr.io/iamtester35/ai_ecommerce-backend:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,10 +11,38 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - path: .env
+        required: false
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL_EXTRACT=${GEMINI_MODEL_EXTRACT:-gemini-flash-lite-latest}
+      - GEMINI_MODEL_GEN=${GEMINI_MODEL_GEN:-gemini-flash-lite-latest}
+      - GEMINI_MODEL_EMBED=${GEMINI_MODEL_EMBED:-gemini-embedding-2}
+      - JINA_API_KEY=${JINA_API_KEY}
+      - ZALOPAY_APP_ID=${ZALOPAY_APP_ID:-2554}
+      - ZALOPAY_KEY1=${ZALOPAY_KEY1}
+      - ZALOPAY_KEY2=${ZALOPAY_KEY2}
+      - ZALOPAY_ENDPOINT=${ZALOPAY_ENDPOINT:-https://sb-openapi.zalopay.vn/v2/create}
+      - ZALOPAY_QUERY_ENDPOINT=${ZALOPAY_QUERY_ENDPOINT:-https://sb-openapi.zalopay.vn/v2/query}
+      - ZALOPAY_CALLBACK_URL=${ZALOPAY_CALLBACK_URL}
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 60s
+      timeout: 5s
       retries: 3
       start_period: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    volumes:
+      - .:/app
+    networks:
+      - automatch_net
+
+networks:
+  automatch_net:
+    driver: bridge

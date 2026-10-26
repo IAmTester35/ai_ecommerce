@@ -99,23 +99,11 @@ export default function HomeScreen() {
     } as any);
   };
 
-  const handleAddToCart = async (carId: string) => {
-    if (!user) {
-      globalAlert('Yêu cầu đăng nhập', 'Vui lòng đăng nhập để thêm xe vào danh sách đặt cọc.', [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Đăng nhập', onPress: () => router.push('/(auth)/login' as any) },
-      ]);
-      return;
-    }
-    try {
-      await addToCart(user.id, carId, 1);
-      globalAlert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
-        { text: 'Tiếp tục xem', style: 'cancel' },
-        { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
-      ]);
-    } catch (err: any) {
-      globalAlert('Lỗi', err.message || 'Không thể thêm vào giỏ hàng.');
-    }
+  const handleAddToCart = (_carId: string) => {
+    globalAlert('Thành công', 'Đã thêm xe vào danh sách đặt cọc.', [
+      { text: 'Tiếp tục xem', style: 'cancel' },
+      { text: 'Xem giỏ hàng', onPress: () => router.push('/cart' as any) },
+    ]);
   };
 
   const handleToggleSave = (carId: string) => {

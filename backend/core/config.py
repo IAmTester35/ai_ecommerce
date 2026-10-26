@@ -12,14 +12,14 @@ class Settings:
 
     # Google Gemini
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL_EXTRACT: str = os.getenv("GEMINI_MODEL_EXTRACT", "gemini-3.1-flash-lite")
-    GEMINI_MODEL_GEN: str = os.getenv("GEMINI_MODEL_GEN", "gemini-3.5-flash-lite")
+    GEMINI_MODEL_EXTRACT: str = os.getenv("GEMINI_MODEL_EXTRACT", "gemini-flash-lite-latest")
+    GEMINI_MODEL_GEN: str = os.getenv("GEMINI_MODEL_GEN", "gemini-flash-lite-latest")
     GEMINI_MODEL_EMBED: str = os.getenv("GEMINI_MODEL_EMBED", "gemini-embedding-2")
 
     # Jina AI
     JINA_API_KEY: str = os.getenv("JINA_API_KEY", "")
 
-    # ZaloPay
+    # ZaloPay (Sandbox)
     ZALOPAY_APP_ID: int = int(os.getenv("ZALOPAY_APP_ID", "2554")) if os.getenv("ZALOPAY_APP_ID", "2554").isdigit() else 2554
     ZALOPAY_KEY1: str = os.getenv("ZALOPAY_KEY1", "")
     ZALOPAY_KEY2: str = os.getenv("ZALOPAY_KEY2", "")

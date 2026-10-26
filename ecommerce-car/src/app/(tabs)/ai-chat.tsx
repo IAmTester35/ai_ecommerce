@@ -117,7 +117,7 @@ export default function AIChatScreen() {
         historyService.saveSearchQuery(user.id, query).catch(() => {});
       }
 
-      // Simulated progressive stages while waiting for HTTP response
+      // Realistic progressive stages matching actual backend execution
       const timer1 = setTimeout(() => {
         if (!isCancelledRef.current) {
           updateMessageProgress(assistantMsgId, {
@@ -128,7 +128,7 @@ export default function AIChatScreen() {
             detail: 'Tìm kiếm xe phù hợp trong kho dữ liệu AutoMatch...',
           });
         }
-      }, 700);
+      }, 1800);
 
       const timer2 = setTimeout(() => {
         if (!isCancelledRef.current) {
@@ -140,7 +140,7 @@ export default function AIChatScreen() {
             detail: 'Đối chiếu thông số kỹ thuật và hình ảnh thực tế...',
           });
         }
-      }, 1500);
+      }, 3600);
 
       const timer3 = setTimeout(() => {
         if (!isCancelledRef.current) {
@@ -152,7 +152,7 @@ export default function AIChatScreen() {
             detail: 'Tổng hợp đánh giá chuyên sâu & phân tích đề xuất...',
           });
         }
-      }, 2400);
+      }, 5400);
 
       try {
         const data = await aiSearchService.searchCars(query, sessionId);

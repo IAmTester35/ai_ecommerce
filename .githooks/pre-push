@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+echo "========================================================================"
+echo "🔐 [Git Pre-Push Hook] Tu dong ma hoa .env thanh secrets.enc (AES-256)..."
+echo "========================================================================"
+
+if [ -f "$REPO_ROOT/scripts/encrypt_env.sh" ]; then
+    "$REPO_ROOT/scripts/encrypt_env.sh"
+
+    # Neu secrets.enc co thay doi
+    if git status --porcelain "$REPO_ROOT/secrets.enc" | grep -q "secrets.enc"; then
+        echo "  [+] Phat hien secrets.enc moi. Tu dong commit truoc khi push..."
+        git add "$REPO_ROOT/secrets.enc"
+        git commit -m "chore(vault): auto-update encrypted secrets.enc [skip ci]" || true
+    fi
+fi
+
+exit 0

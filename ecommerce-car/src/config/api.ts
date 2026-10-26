@@ -9,8 +9,15 @@ export const getApiBaseUrl = (): string => {
     return envUrl;
   }
 
-  // Web environment
+  // Web environment (mobile browser or desktop browser in LAN)
   if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && window.location) {
+      const hostname = window.location.hostname;
+      if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        const protocol = window.location.protocol || 'http:';
+        return `${protocol}//${hostname}:8000`;
+      }
+    }
     return envUrl || 'http://localhost:8000';
   }
 

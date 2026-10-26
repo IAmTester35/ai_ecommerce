@@ -125,6 +125,14 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
     lg: { minHeight: 48, paddingHorizontal: 20, fontSize: 14, iconSize: 16, borderRadius: radii.md },
   }[size];
 
+  const flattenedStyle = StyleSheet.flatten(style) as ViewStyle | undefined;
+  const customHeight = flattenedStyle?.height;
+  const defaultHeight = variant === 'mini' ? 26 : sizeStyles.minHeight;
+  const buttonHeight =
+    typeof customHeight === 'number' || (typeof customHeight === 'string' && customHeight !== '100%')
+      ? customHeight
+      : defaultHeight;
+
   return (
     <>
       <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
@@ -142,8 +150,8 @@ export const DepositButton: React.FC<DepositButtonProps> = ({
             variant === 'mini' && styles.miniButton,
             isSuccess && styles.successButton,
             {
-              height: '100%',
-              minHeight: variant === 'mini' ? 26 : sizeStyles.minHeight,
+              height: buttonHeight,
+              minHeight: buttonHeight,
               paddingHorizontal: variant === 'mini' ? 8 : sizeStyles.paddingHorizontal,
               borderRadius: variant === 'pill' ? radii.full : variant === 'mini' ? radii.xs : sizeStyles.borderRadius,
             },

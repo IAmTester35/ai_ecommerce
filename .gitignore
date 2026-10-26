@@ -1,6 +1,10 @@
 .venv
 .env
 */.env
+*.env.local
+secret.txt
+*.key
+!secrets.enc
 car/data/*.csv
 car/review/*.csv
 # Python

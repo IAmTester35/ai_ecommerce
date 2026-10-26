@@ -115,7 +115,12 @@ export const CarCard: React.FC<CarCardProps> = ({
           )}
 
           <View style={styles.listActions}>
-            <DepositButton carId={car.id} variant="mini" size="sm" />
+            <DepositButton
+              carId={car.id}
+              variant="mini"
+              size="sm"
+              onSuccess={() => onPressAddToCart?.(car.id)}
+            />
             {onPressCompare && (
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -228,7 +233,13 @@ export const CarCard: React.FC<CarCardProps> = ({
         {/* Action bar only in regular full-width grid if actions provided */}
         {(onPressAddToCart || onPressCompare) && !isCompact && (
           <View style={styles.quickActionRow}>
-            <DepositButton carId={car.id} variant="pill" size="sm" />
+            <DepositButton
+              carId={car.id}
+              variant="pill"
+              size="sm"
+              style={{ flex: 1 }}
+              onSuccess={() => onPressAddToCart?.(car.id)}
+            />
             {onPressCompare && (
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -373,6 +384,7 @@ const styles = StyleSheet.create({
   },
   quickActionRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.xs,
     marginTop: spacing.sm,
     paddingTop: spacing.xs,
@@ -381,32 +393,34 @@ const styles = StyleSheet.create({
   },
   actionPillPrimary: {
     flex: 1,
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.primary,
-    paddingVertical: 6,
-    borderRadius: radii.sm,
+    borderRadius: radii.full,
     gap: 4,
   },
   actionPillPrimaryText: {
     color: '#FFFFFF',
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: typography.weights.semibold,
   },
   actionPillOutline: {
     flex: 1,
+    height: 36,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    paddingVertical: 6,
-    borderRadius: radii.sm,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     gap: 4,
   },
   actionPillOutlineText: {
     color: colors.textSecondary,
-    fontSize: 11,
+    fontSize: 11.5,
     fontWeight: typography.weights.medium,
   },
 

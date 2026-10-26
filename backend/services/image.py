@@ -1,6 +1,7 @@
 import httpx
 import asyncio
 import os
+import time
 import logging
 from typing import List, Dict, Optional, Set
 import xml.etree.ElementTree as ET
@@ -51,7 +52,7 @@ async def fetch_from_wikimedia_commons(client: httpx.AsyncClient, query: str) ->
         "format": "json"
     }
     try:
-        response = await client.get(url, params=params, headers=HTTP_HEADERS, timeout=4.0)
+        response = await client.get(url, params=params, headers=HTTP_HEADERS, timeout=2.0)
         if response.status_code == 200:
             data = response.json()
             pages = data.get("query", {}).get("pages", {})
@@ -81,7 +82,7 @@ async def fetch_from_wikipedia_pageimages(client: httpx.AsyncClient, query: str)
         "pithumbsize": 960
     }
     try:
-        response = await client.get(url, params=params, headers=HTTP_HEADERS, timeout=4.0)
+        response = await client.get(url, params=params, headers=HTTP_HEADERS, timeout=2.0)
         if response.status_code == 200:
             data = response.json()
             pages = data.get("query", {}).get("pages", {})
@@ -176,6 +177,7 @@ async def fetch_images_for_cars(cars: List[Dict]) -> List[Dict]:
     if not cars:
         return []
 
+    t_start = time.time()
     async with httpx.AsyncClient() as client:
         tasks = [fetch_single_car_image(client, car) for car in cars]
         images = await asyncio.gather(*tasks, return_exceptions=True)
@@ -187,4 +189,5 @@ async def fetch_images_for_cars(cars: List[Dict]) -> List[Dict]:
             else:
                 cars[idx]["image_url"] = image_url
                 
+    logger.info(f"[Timer] fetch_images_for_cars ({len(cars)} cars) took {time.time() - t_start:.2f}s")
     return cars

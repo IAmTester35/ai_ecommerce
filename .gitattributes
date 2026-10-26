@@ -1,0 +1,16 @@
+# Ensure consistent LF line endings across platforms (especially Windows)
+* text=auto eol=lf
+
+*.conf text eol=lf
+*.sh text eol=lf
+*.env text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Dockerfile* text eol=lf
+
+# Windows Batch scripts require CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Encrypted secrets binary
+secrets.enc binary

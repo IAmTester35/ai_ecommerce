@@ -3,18 +3,15 @@ import time
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.config import settings
+from core.logger import setup_logging
 from routers import ai_search, payment, notifications, reviews
 
-# Cấu hình logging chuẩn xuất ra stdout cho Docker logs
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
-)
+# Cấu hình logging chuẩn có màu ANSI và lọc spam healthcheck
+setup_logging(level=logging.INFO)
 logger = logging.getLogger("backend")
 
 @asynccontextmanager
@@ -33,16 +30,26 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Middleware ghi log toàn bộ HTTP request & response time
+# Endpoint Healthcheck chuyên dụng cho Docker / Kubernetes
+@app.get("/health", include_in_schema=False)
+async def health_check():
+    return JSONResponse(content={"status": "ok", "service": "automatch-ai-backend"})
+
+# Middleware ghi log HTTP request & response time (bỏ qua health check và swagger docs tĩnh)
+EXCLUDED_LOG_PATHS = {"/health", "/docs", "/openapi.json", "/favicon.ico"}
+
 @app.middleware("http")
 async def log_requests_middleware(request: Request, call_next):
+    path = request.url.path
+    if path in EXCLUDED_LOG_PATHS:
+        return await call_next(request)
+
     start_time = time.time()
     client_ip = request.client.host if request.client else "unknown"
     method = request.method
-    path = request.url.path
     query_params = str(request.query_params)
-    
     req_desc = f"{method} {path}" + (f"?{query_params}" if query_params else "")
+    
     logger.info(f"➡️ [REQ] {client_ip} | {req_desc}")
     
     try:

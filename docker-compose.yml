@@ -1,5 +1,8 @@
+name: ai_ecommerce
+
 services:
   backend:
+    image: ghcr.io/iamtester35/ai_ecommerce-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -8,11 +11,26 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/.env
+      - path: ./backend/.env
+        required: false
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL_EXTRACT=${GEMINI_MODEL_EXTRACT:-gemini-flash-lite-latest}
+      - GEMINI_MODEL_GEN=${GEMINI_MODEL_GEN:-gemini-flash-lite-latest}
+      - GEMINI_MODEL_EMBED=${GEMINI_MODEL_EMBED:-gemini-embedding-2}
+      - JINA_API_KEY=${JINA_API_KEY}
+      - ZALOPAY_APP_ID=${ZALOPAY_APP_ID:-2554}
+      - ZALOPAY_KEY1=${ZALOPAY_KEY1}
+      - ZALOPAY_KEY2=${ZALOPAY_KEY2}
+      - ZALOPAY_ENDPOINT=${ZALOPAY_ENDPOINT:-https://sb-openapi.zalopay.vn/v2/create}
+      - ZALOPAY_QUERY_ENDPOINT=${ZALOPAY_QUERY_ENDPOINT:-https://sb-openapi.zalopay.vn/v2/query}
+      - ZALOPAY_CALLBACK_URL=${ZALOPAY_CALLBACK_URL}
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 60s
+      timeout: 5s
       retries: 3
       start_period: 5s
     deploy:
@@ -26,12 +44,13 @@ services:
       - automatch_net
 
   admin-dashboard:
+    image: ghcr.io/iamtester35/ai_ecommerce-admin-dashboard:latest
     build:
       context: ./admin-dashboard
       dockerfile: Dockerfile
       args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
     container_name: automatch_admin_dashboard
     restart: unless-stopped
@@ -55,12 +74,13 @@ services:
       - automatch_net
 
   ecommerce-car:
+    image: ghcr.io/iamtester35/ai_ecommerce-ecommerce-car:latest
     build:
       context: ./ecommerce-car
       dockerfile: Dockerfile
       args:
-        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL}
-        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+        EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
         EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:8000}
     container_name: automatch_ecommerce_car
     restart: unless-stopped

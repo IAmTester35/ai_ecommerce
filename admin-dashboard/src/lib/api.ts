@@ -1,4 +1,19 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+function getApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    return envUrl;
+  }
+  if (typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    if (hostname && hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      const protocol = window.location.protocol || 'http:';
+      return `${protocol}//${hostname}:8000`;
+    }
+  }
+  return envUrl || 'http://localhost:8000';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 export async function sendBroadcastNotification(title: string, body: string): Promise<boolean> {
   try {

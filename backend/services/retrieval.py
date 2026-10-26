@@ -92,7 +92,7 @@ async def hybrid_search(
     t_start = time.time()
     query_vector = await get_embedding(soft_intent)
     t_embed = time.time()
-    logger.debug(f"[Timer] get_embedding took {t_embed - t_start:.2f}s")
+    logger.info(f"[Timer] get_embedding took {t_embed - t_start:.2f}s")
 
     fetch_count = max(15, top_k * 5)
     base_params = {
@@ -175,6 +175,7 @@ async def hybrid_search(
 
         results = reranked_cars if reranked_cars else results[:top_k]
         t_rerank_end = time.time()
-        logger.debug(f"[Timer] Jina Reranker took {t_rerank_end - t_rerank_start:.2f}s")
+        logger.info(f"[Timer] Jina Reranker took {t_rerank_end - t_rerank_start:.2f}s")
 
+    logger.info(f"[Hybrid Search] Final {len(results)} cars selected (conflict={conflict_detected}, relaxed={relaxed_terms})")
     return results, conflict_detected, relaxed_terms
