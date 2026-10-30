@@ -8,26 +8,28 @@ echo               KHOI DONG VA CAP NHAT HE THONG AI ECOMMERCE
 echo ========================================================================
 echo.
 
-:: 1. Kiem tra va tu dong cai dat Git neu chua co
+:: 1. Kiem tra Git (neu co san hoac tu dong cai dat de dong bo code)
 where git >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [!] Git chua duoc cai dat tren may tinh.
-    where choco >nul 2>&1
-    if %errorlevel% equ 0 (
-        echo [i] Phat hien Chocolatey. Dang tien hanh tu dong cai dat Git...
-        choco install git -y --no-progress
+    echo [i] Git chua duoc cai dat tren may. Dang kiem tra trinh quan ly goi...
+    where winget >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo [i] Phat hien winget. Dang tu dong cai dat Git...
+        winget install --id Git.Git -e --source winget -h --accept-source-agreements --accept-package-agreements >nul 2>&1
         set "PATH=%PATH%;C:\Program Files\Git\cmd;C:\Program Files\Git\bin"
-        where git >nul 2>&1
-        if !errorlevel! neq 0 (
-            echo [!] Da cai xong Git, vui long khoi dong lai script nay de cap nhat PATH!
-            pause
-            exit /b 1
-        )
-        echo [+] Cai dat Git thanh cong!
     ) else (
-        echo [X] Khong tim thay Git hoac Chocolatey. Vui long cai dat Git: https://git-scm.com/
-        pause
-        exit /b 1
+        where choco >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo [i] Phat hien Chocolatey. Dang tien hanh tu dong cai dat Git...
+            choco install git -y --no-progress >nul 2>&1
+            set "PATH=%PATH%;C:\Program Files\Git\cmd;C:\Program Files\Git\bin"
+        )
+    )
+    where git >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo [i] He thong se bo qua dong bo Git va khoi dong truc tiep qua Docker.
+    ) else (
+        echo [+] Cai dat Git thanh cong!
     )
 )
 
@@ -40,13 +42,18 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: 3. Tu dong dong bo code moi nhat
-git rev-parse --is-inside-work-tree >nul 2>&1
+:: 3. Tu dong dong bo code moi nhat (neu la Git repo)
+where git >nul 2>&1
 if %errorlevel% equ 0 (
-    echo [1/3] Dang dong bo code moi nhat tu GitHub...
-    git pull origin main 2>nul || git pull
+    git rev-parse --is-inside-work-tree >nul 2>&1
+    if !errorlevel! equ 0 (
+        echo [1/3] Dang dong bo code moi nhat tu GitHub...
+        git pull origin main 2>nul || git pull
+    ) else (
+        echo [1/3] Bo qua dong bo Git (thu muc khong phai Git repository).
+    )
 ) else (
-    echo [1/3] Bo qua dong bo Git (thu muc khong phai Git repository).
+    echo [1/3] Bo qua dong bo Git (Git chua duoc cai dat).
 )
 
 :: 4. Tu dong giai ma .env neu may co file secret.txt
@@ -56,40 +63,56 @@ if exist "secrets.enc" (
         powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\decrypt_env.ps1"
     ) else (
         echo [!] Khong tim thay file secret.txt chua khoa giai ma.
+        if not exist ".env" (
+            if exist ".env.example" copy ".env.example" ".env" >nul
+        )
         if not exist "backend\.env" (
             if exist "backend\.env.example" copy "backend\.env.example" "backend\.env" >nul
         )
     )
 ) else (
+    if not exist ".env" (
+        if exist ".env.example" copy ".env.example" ".env" >nul
+    )
     if not exist "backend\.env" (
         if exist "backend\.env.example" copy "backend\.env.example" "backend\.env" >nul
     )
 )
 
-:: 4. Ho tro tu dong cho phep Firewall cho mang LAN (neu co quyen Admin)
+:: 5. Ho tro tu dong cho phep Firewall cho mang LAN (neu co quyen Admin)
 echo [2/3] Kiem tra cau hinh mang noi bo (Firewall)...
 powershell -NoProfile -Command "if (-not (Get-NetFirewallRule -DisplayName 'AI_Ecommerce_LAN' -ErrorAction SilentlyContinue)) { try { New-NetFirewallRule -DisplayName 'AI_Ecommerce_LAN' -Direction Inbound -LocalPort 5173,8081,8000 -Protocol TCP -Action Allow -ErrorAction Stop | Out-Null; Write-Host '  [+] Da tu dong mo Firewall cho mang LAN (Port 5173, 8081, 8000).' } catch { Write-Host '  [i] Khong the tu tao Rule Firewall (Can quyen Administrator neu can thiet bi khac ket noi).' } }" 2>nul
 
-:: 5. Khoi dong Docker: uu tien tai ban pre-build tu GitHub de tiet kiem CPU/RAM cho may
+:: 6. Khoi dong Docker: uu tien tai ban pre-build tu GitHub de tiet kiem CPU/RAM cho may
 echo [3/3] Dang cap nhat va khoi dong he thong...
+set "USE_PREBUILT=0"
+
 docker compose pull 2>nul
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     echo   [+] Da tai ban pre-build tu GitHub thanh cong. Dang khoi chay...
     docker compose up -d
-) else (
-    echo   [i] Dang build truc tiep cac container tren may...
+    if !errorlevel! equ 0 (
+        set "USE_PREBUILT=1"
+    ) else (
+        echo   [!] Ban pre-build khong the khoi chay. Chuyen sang che do tu build container...
+    )
+)
+
+if "!USE_PREBUILT!"=="0" (
+    echo   [i] Dang build truc tiep cac container tren may (che do tu build fallback)...
     docker compose up --build -d
 )
-if %errorlevel% neq 0 (
+
+if !errorlevel! neq 0 (
     echo.
     echo [X] Khoi dong Docker that bai! Vui long kiem tra loi phia tren.
     pause
     exit /b 1
 )
 
-:: 6. Tim dia chi IP LAN cua may
+:: 7. Tim dia chi IP LAN cua may
 set "LAN_IP=localhost"
-for /f "tokens=*" %%i in ('powershell -NoProfile -Command "(Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' -and $_.IPAddress -notlike '169.254.*' -and $_.IPAddress -notlike '172.*' -and $_.IPAddress -notlike '10.*' } | Select-Object -First 1).IPAddress" 2^>nul') do set "LAN_IP=%%i"
+for /f "tokens=*" %%i in ('powershell -NoProfile -Command "$ip = (Get-NetRoute -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Sort-Object { $_.RouteMetric + $_.InterfaceMetric } | Select-Object -First 1 | Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue).IPAddress; if (-not $ip) { $ip = (Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' -and $_.InterfaceAlias -notlike '*vEthernet*' -and $_.InterfaceAlias -notlike '*Virtual*' -and $_.IPAddress -notlike '169.254.*' } | Select-Object -First 1).IPAddress }; if ($ip) { $ip } else { 'localhost' }" 2^>nul') do set "LAN_IP=%%i"
 
 echo.
 echo ========================================================================

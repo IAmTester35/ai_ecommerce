@@ -13,7 +13,7 @@ if [ -f "$REPO_ROOT/scripts/encrypt_env.sh" ]; then
     if git status --porcelain "$REPO_ROOT/secrets.enc" | grep -q "secrets.enc"; then
         echo "  [+] Phat hien secrets.enc moi. Tu dong commit truoc khi push..."
         git add "$REPO_ROOT/secrets.enc"
-        git commit -m "chore(vault): auto-update encrypted secrets.enc [skip ci]" || true
+        git commit -m "chore(vault): auto-update encrypted secrets.enc" || true
     fi
 fi
 

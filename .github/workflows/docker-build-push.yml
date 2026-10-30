@@ -1,0 +1,66 @@
+name: Build and Push Docker Images to GHCR
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+            image: ghcr.io/iamtester35/ai_ecommerce-backend
+            build_args: ""
+          - service: admin-dashboard
+            context: ./admin-dashboard
+            dockerfile: ./admin-dashboard/Dockerfile
+            image: ghcr.io/iamtester35/ai_ecommerce-admin-dashboard
+            build_args: |
+              VITE_SUPABASE_URL=https://vafxrjhzgzihjiphvhms.supabase.co
+              VITE_SUPABASE_ANON_KEY=sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi
+              VITE_API_URL=http://localhost:8000
+          - service: ecommerce-car
+            context: ./ecommerce-car
+            dockerfile: ./ecommerce-car/Dockerfile
+            image: ghcr.io/iamtester35/ai_ecommerce-ecommerce-car
+            build_args: |
+              EXPO_PUBLIC_SUPABASE_URL=https://vafxrjhzgzihjiphvhms.supabase.co
+              EXPO_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi
+              EXPO_PUBLIC_API_URL=http://localhost:8000
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ matrix.image }}:latest
+            ${{ matrix.image }}:${{ github.sha }}
+          build-args: ${{ matrix.build_args }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

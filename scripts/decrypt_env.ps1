@@ -36,7 +36,10 @@ if (-not $openssl) {
 
 if ($openssl) {
     Write-Host "[i] Dang giai ma bang OpenSSL..." -ForegroundColor Cyan
-    & $openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass "file:$SecretFile" -in $EncFile | tar -xf -
+    $tempTar = [System.IO.Path]::GetTempFileName()
+    & $openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -pass "file:$SecretFile" -in $EncFile -out $tempTar
+    tar -xf $tempTar
+    Remove-Item -Force $tempTar
     Write-Host "[+] Giai ma va khoi phuc toan bo file .env thanh cong!" -ForegroundColor Green
     exit 0
 }

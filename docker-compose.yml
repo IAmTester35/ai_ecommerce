@@ -13,25 +13,11 @@ services:
     env_file:
       - path: ./backend/.env
         required: false
-    environment:
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_MODEL_EXTRACT=${GEMINI_MODEL_EXTRACT:-gemini-flash-lite-latest}
-      - GEMINI_MODEL_GEN=${GEMINI_MODEL_GEN:-gemini-flash-lite-latest}
-      - GEMINI_MODEL_EMBED=${GEMINI_MODEL_EMBED:-gemini-embedding-2}
-      - JINA_API_KEY=${JINA_API_KEY}
-      - ZALOPAY_APP_ID=${ZALOPAY_APP_ID:-2554}
-      - ZALOPAY_KEY1=${ZALOPAY_KEY1}
-      - ZALOPAY_KEY2=${ZALOPAY_KEY2}
-      - ZALOPAY_ENDPOINT=${ZALOPAY_ENDPOINT:-https://sb-openapi.zalopay.vn/v2/create}
-      - ZALOPAY_QUERY_ENDPOINT=${ZALOPAY_QUERY_ENDPOINT:-https://sb-openapi.zalopay.vn/v2/query}
-      - ZALOPAY_CALLBACK_URL=${ZALOPAY_CALLBACK_URL}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 60s
-      timeout: 5s
-      retries: 3
+      interval: 10s
+      timeout: 3s
+      retries: 5
       start_period: 5s
     deploy:
       resources:
