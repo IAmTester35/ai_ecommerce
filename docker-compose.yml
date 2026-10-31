@@ -6,7 +6,6 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: automatch_ai_backend
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -38,7 +37,6 @@ services:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
         VITE_API_URL: ${VITE_API_URL:-http://localhost:8000}
-    container_name: automatch_admin_dashboard
     restart: unless-stopped
     ports:
       - "5173:80"
@@ -68,7 +66,6 @@ services:
         EXPO_PUBLIC_SUPABASE_URL: ${EXPO_PUBLIC_SUPABASE_URL:-https://vafxrjhzgzihjiphvhms.supabase.co}
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${EXPO_PUBLIC_SUPABASE_ANON_KEY:-sb_publishable_DjAOlK1l0azyNgfzA9Gv3Q_43bQNxgi}
         EXPO_PUBLIC_API_URL: ${EXPO_PUBLIC_API_URL:-http://localhost:8000}
-    container_name: automatch_ecommerce_car
     restart: unless-stopped
     ports:
       - "8081:80"

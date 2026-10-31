@@ -6,7 +6,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: automatch_ai_backend
     restart: unless-stopped
     ports:
       - "8000:8000"
